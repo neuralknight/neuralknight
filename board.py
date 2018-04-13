@@ -2,7 +2,7 @@
 Chess state handling model.
 """
 
-from itertools import chain, starmap
+from itertools import chain, count, starmap
 
 EMOJI = [
   '⌛', '‼',
@@ -27,156 +27,193 @@ INITIAL_BOARD = [
 # low bit indicates active player piece
 
 
+def _unit(i):
+    return -1 if i < 0 else (0 if i == 0 else 1)
+
+
 class Board:
     """
     Chess board state model.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, board=None) -> None:
         """
         Set up board.
         """
-        self.board = [[p for p in row] for row in INITIAL_BOARD]
+        self.board = [[p for p in row] for row in board or INITIAL_BOARD]
+
+    def is_on_board(self, posX, posY, move):
+        """
+        Validate a move against board bounds.
+        """
+        return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
+
+    def validate_ending(self, posX, posY, move):
+        """
+        Validate a move against ending location.
+        """
+        return not (self.board[posX + move[0]][posY + move[1]] & 1)
+
+    def validate_move(self, posX, posY, move):
+        """
+        Validate clear path along move.
+        """
+        return (
+            self.validate_ending(posX, posY, move) and
+            all(
+                map(
+                    lambda _range:
+                        not self.board
+                        [posX + _unit(move[0]) * _range]
+                        [posY + _unit(move[1]) * _range],
+                    range(1, max(abs(move[0]), abs(move[1]))))))
+
+    def validation_for_piece(self, piece):
+        """
+        Get final validation function for piece.
+        """
+        return (
+            None,
+            self.validate_move,
+            self.validate_ending,
+            self.validate_ending,
+            None,
+            self.validate_move,
+            self.validate_move)[piece // 2]
+
+    def moves_for_piece(self, piece, posX, posY):
+        """
+        Get all possible moves for piece type.
+        """
+        return filter(self.is_on_board, (
+            None,  # No piece
+            (  # Bishop
+                (-8, -8), (-7, -7), (-6, -6), (-5, -5),
+                (-4, -4), (-3, -3), (-2, -2), (-1, -1),
+                (1, 1), (2, 2), (3, 3), (4, 4),
+                (5, 5), (6, 6), (7, 7), (8, 8),
+                (-8, 8), (-7, 7), (-6, 6), (-5, 5),
+                (-4, 4), (-3, 3), (-2, 2), (-1, 1),
+                (1, -1), (2, -2), (3, -3), (4, -4),
+                (5, -5), (6, -6), (7, -7), (8, -8)),
+            (  # King
+              (-1, -1), (-1, 0), (-1, 1), (0, -1),
+              (0, 1), (1, -1), (1, 0), (1, 1)),
+            (  # Knight
+              (-2, -1), (-2, 1), (-1, -2), (-1, 2),
+              (1, -2), (1, 2), (2, -1), (2, 1)),
+            filter(  # Pawn
+              None,
+              (
+                (
+                  None if (
+                    self.board[posX][posY - 1]) else (0, -1),
+                  None if (
+                    posY != 6 or
+                    self.board[posX][posY - 1] or
+                    self.board[posX][posY - 2]) else (0, -2),
+                  (1, -1)
+                ) if (
+                  (posX < 7) and
+                  (posY > 0) and
+                  ((self.board[posX + 1][posY - 1] & 0xE)) and
+                  self.validate_ending((1, -1))
+                ) else None,
+                (-1, -1) if (
+                  (posX > 0) and
+                  ((posY > 0)) and
+                  ((self.board[posX - 1][posY - 1] & 0xE)) and
+                  (self.validate_ending((-1, -1)))
+                ) else None
+              )
+            ),
+            (  # Queen
+              (-8, -8), (-7, -7), (-6, -6), (-5, -5),
+              (-4, -4), (-3, -3), (-2, -2), (-1, -1),
+              (1, 1), (2, 2), (3, 3), (4, 4),
+              (5, 5), (6, 6), (7, 7), (8, 8),
+              (-8, 8), (-7, 7), (-6, 6), (-5, 5),
+              (-4, 4), (-3, 3), (-2, 2), (-1, 1),
+              (1, -1), (2, -2), (3, -3), (4, -4),
+              (5, -5), (6, -6), (7, -7), (8, -8),
+              (0, -8), (0, -7), (0, -6), (0, -5),
+              (0, -4), (0, -3), (0, -2), (0, -1),
+              (0, 1), (0, 2), (0, 3), (0, 4),
+              (0, 5), (0, 6), (0, 7), (0, 8),
+              (-8, 0), (-7, 0), (-6, 0), (-5, 0),
+              (-4, 0), (-3, 0), (-2, 0), (-1, 0),
+              (1, 0), (2, 0), (3, 0), (4, 0),
+              (5, 0), (6, 0), (7, 0), (8, 0)
+            ),
+            (  # Rook
+              (0, -8), (0, -7), (0, -6), (0, -5),
+              (0, -4), (0, -3), (0, -2), (0, -1),
+              (0, 1), (0, 2), (0, 3), (0, 4),
+              (0, 5), (0, 6), (0, 7), (0, 8),
+              (-8, 0), (-7, 0), (-6, 0), (-5, 0),
+              (-4, 0), (-3, 0), (-2, 0), (-1, 0),
+              (1, 0), (2, 0), (3, 0), (4, 0),
+              (5, 0), (6, 0), (7, 0), (8, 0)
+            )
+          )[piece // 2])
+
+    def valid_moves_for_piece(self, piece, posX, posY):
+        """
+        Get all valid moves for piece type.
+        """
+        return filter(
+            self.validation_for_piece(piece),
+            self.moves_for_piece(piece, posX, posY))
+
+    def lookahead_boards_for_piece(self, piece, posX, posY):
+        """
+        Get all future board states.
+        """
+        def f3(m):
+            return map(
+                count(),
+                self.board,
+                lambda pieceY, row: map(
+                    count(),
+                    row,
+                    lambda pieceX, pp:
+                        0
+                        if (posX == pieceX) and (posY == pieceY) else
+                        (
+                            piece + (-1 if piece & 1 else 1)
+                            if (
+                                ((posX + m[0]) == pieceX) and
+                                (posY + m[1]) == pieceY) else
+                            pp + ((1 if piece % 2 == 0 else -1)))))
+
+        return map(
+            f3,
+            self.valid_moves_for_piece(piece, posX, posY))
+
+    @staticmethod
+    def active_piece(piece):
+        """
+        Validate piece as active.
+        """
+        return piece & 1 and piece > 1
+
+    def active_pieces(self):
+        """
+        Get all pieces for current player.
+        """
+        return filter(
+            self.active_piece,
+            map(
+                lambda posY, row: map(
+                    lambda posX, piece: (posX, posY, piece), count(), row),
+                count(), self.board))
 
     def get_moves(self) -> None:
         """
         Provide an iterable of valid moves for current board state.
         """
-        def make_moves(posX, posY, piece):
-            def unit(i):
-                return -1 if i < 0 else (0 if i == 0 else 1)
-            def f3(m):
-                return map(
-                    range(10),
-                    self.board,
-                    lambda pieceY, row: map(
-                        range(10),
-                        row,
-                        lambda pieceX, pp:
-                            0
-                            if (posX == pieceX) and (posY == pieceY) else
-                            (
-                                piece + (-1 if piece & 1 else 1)
-                                if (
-                                    ((posX + m[0]) == pieceX) and
-                                    (posY + m[1]) == pieceY) else
-                                pp.add(r.branch(piece.mod(2).eq(0), 1, -1)))))
-
-            def validate_ending(m):
-                return not (self.board[posX + m[0]][posY + m[1]] & 1)
-
-            def validate_move(m):
-                return (
-                    validate_ending(m) and
-                    any(
-                        map(
-                            lambda _range:
-                                self.board
-                                [posX + unit(m[0]) * _range]
-                                [posY + unit(m[1]) * _range],
-                            range(1, max(abs(m[0]), abs(m[1]))))))
-
-            def is_on_board(m):
-                return 0 <= posX + m[0] < 8 and 0 <= posY + m[1] < 8
-            return map(
-                f3,
-                filter(
-                    (
-                        None,
-                        validate_move,
-                        validate_ending,
-                        validate_ending,
-                        None,
-                        validate_move,
-                        validate_move)[piece // 2],
-                    filter(
-                        is_on_board,
-                        (
-                            None,
-                            (
-                                (-8, -8), (-7, -7), (-6, -6), (-5, -5),
-                                (-4, -4), (-3, -3), (-2, -2), (-1, -1),
-                                (1, 1), (2, 2), (3, 3), (4, 4),
-                                (5, 5), (6, 6), (7, 7), (8, 8),
-                                (-8, 8), (-7, 7), (-6, 6), (-5, 5),
-                                (-4, 4), (-3, 3), (-2, 2), (-1, 1),
-                                (1, -1), (2, -2), (3, -3), (4, -4),
-                                (5, -5), (6, -6), (7, -7), (8, -8)),
-                            (
-                              (-1, -1), (-1, 0), (-1, 1), (0, -1),
-                              (0, 1), (1, -1), (1, 0), (1, 1)),
-                            (
-                              (-2, -1), (-2, 1), (-1, -2), (-1, 2),
-                              (1, -2), (1, 2), (2, -1), (2, 1)),
-                            r.branch(false, (), ()).append(
-                              r.branch(false, (), ()).append(
-                                r.branch(false, (), ()))),
-                            filter(
-                              None,
-                              (
-                                (
-                                  None if board[posX][posY - 1] else (0, -1),
-                                  None if (
-                                    posY != 6 or
-                                    board[posX][posY - 1] or
-                                    board[posX][posY - 2]) else (0, -2),
-                                  (1, -1)
-                                ) if (
-                                  (posX < 7) and
-                                  (posY > 0) and
-                                  ((board[posX + 1][posY - 1] & 0xE)) and
-                                  validate_ending((1, -1))
-                                ) else None,
-                                (-1, -1) if (
-                                  (posX > 0) and
-                                  ((posY > 0)) and
-                                  ((board[posX.sub(1)][posY.sub(1)] & 0xE)) and
-                                  (validate_ending((-1, -1)))
-                                ) else None
-                              )
-                            ),
-                            (
-                              (-8, -8), (-7, -7), (-6, -6), (-5, -5),
-                              (-4, -4), (-3, -3), (-2, -2), (-1, -1),
-                              (1, 1), (2, 2), (3, 3), (4, 4),
-                              (5, 5), (6, 6), (7, 7), (8, 8),
-                              (-8, 8), (-7, 7), (-6, 6), (-5, 5),
-                              (-4, 4), (-3, 3), (-2, 2), (-1, 1),
-                              (1, -1), (2, -2), (3, -3), (4, -4),
-                              (5, -5), (6, -6), (7, -7), (8, -8),
-                              (0, -8), (0, -7), (0, -6), (0, -5),
-                              (0, -4), (0, -3), (0, -2), (0, -1),
-                              (0, 1), (0, 2), (0, 3), (0, 4),
-                              (0, 5), (0, 6), (0, 7), (0, 8),
-                              (-8, 0), (-7, 0), (-6, 0), (-5, 0),
-                              (-4, 0), (-3, 0), (-2, 0), (-1, 0),
-                              (1, 0), (2, 0), (3, 0), (4, 0),
-                              (5, 0), (6, 0), (7, 0), (8, 0)
-                            ),
-                            (
-                              (0, -8), (0, -7), (0, -6), (0, -5),
-                              (0, -4), (0, -3), (0, -2), (0, -1),
-                              (0, 1), (0, 2), (0, 3), (0, 4),
-                              (0, 5), (0, 6), (0, 7), (0, 8),
-                              (-8, 0), (-7, 0), (-6, 0), (-5, 0),
-                              (-4, 0), (-3, 0), (-2, 0), (-1, 0),
-                              (1, 0), (2, 0), (3, 0), (4, 0),
-                              (5, 0), (6, 0), (7, 0), (8, 0)
-                            )
-                          )[piece // 2])))
-
         return chain.from_iterable(
-            starmap(
-                make_moves,
-                filter(
-                    lambda t: t[2] > 1 and t[2] & 1,
-                    map(
-                        lambda posY, row: map(
-                            lambda posX, piece: (posX, posY, piece),
-                            range(10),
-                            row),
-                        range(10),
-                        self.board))))
+            starmap(self.lookahead_boards_for_piece, self.active_pieces()))
 
     def has_king(self):
         """
@@ -196,7 +233,7 @@ class Board:
 #     return r.table('chess')
 #       .insert(
 #         r.branch(
-#           moves.map(has_king).contains(false),
+#           moves.map(has_king).contains(False),
 #           {
 #             id: board,
 #             children: moves.filter(def (newBoard): return has_king(newBoard).not() })
