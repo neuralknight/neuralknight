@@ -250,32 +250,36 @@ class Board:
         return any(map(lambda row: (KING & 1) in row, self.board))
 
 
-# r.table('chess')
-#   .changes({includeInitial: true, includeTypes: true, squash: true})
-#   .filter(lambda row): return row('type').eq('add') })
-#   .getField('new_val')
-#   .forEach(lambda row):
-#     board = row('id')
-#     tup = board.map(unwrap_row)
-#     moves = lookahead_boards(tup)
-#     return r.table('chess')
-#       .insert(
-#         r.branch(
-#           moves.map(has_king).contains(False),
-#           {
-#             id: board,
-#             children: moves.filter(def (newBoard): return has_king(newBoard).not() })
-#           },
-#           moves.map().append({
-#             id: board,
-#             children: moves
-#           })
-#         ),
-#         {conflict: def (id, oldDoc, newDoc):
-#           return {
-#             id: id,
-#             children: oldDoc('children').setUnion(newDoc('children'))
-#           }
-#         }}
-#       )
-#   })
+if __name__ == '__main__':
+    board = Board()
+    seen = set()
+    while board:
+        if not all(board.lookahead_boards(1)):
+            continue
+        for future in board.lookahead_boards(1):
+            pass
+.forEach(lambda row):
+board = row('id')
+tup = board.map(unwrap_row)
+moves = lookahead_boards(tup)
+return r.table('chess')
+  .insert(
+    r.branch(
+      moves.map(has_king).contains(False),
+      {
+        id: board,
+        children: moves.filter(def (newBoard): return has_king(newBoard).not() })
+      },
+      moves.map().append({
+        id: board,
+        children: moves
+      })
+    ),
+    {conflict: def (id, oldDoc, newDoc):
+      return {
+        id: id,
+        children: oldDoc('children').setUnion(newDoc('children'))
+      }
+    }}
+  )
+})
