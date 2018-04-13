@@ -42,6 +42,12 @@ class Board:
         """
         self.board = [row[:] for row in (board or INITIAL_BOARD)]
 
+    def __bool__(self):
+        """
+        Ensure active player king on board.
+        """
+        return self.has_king()
+
     def __repr__(self):
         """
         Output the raw view of board.
