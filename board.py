@@ -40,7 +40,19 @@ class Board:
         """
         Set up board.
         """
-        self.board = [[p for p in row] for row in board or INITIAL_BOARD]
+        self.board = [row[:] for row in (board or INITIAL_BOARD)]
+
+    def __repr__(self):
+        """
+        Output the raw view of board.
+        """
+        return f'Board({ self.board !r})'
+
+    def __str__(self):
+        """
+        Output the emoji view of board.
+        """
+        return '\n'.join(''.join(EMOJI[p] for p in row) for row in self.board)
 
     def is_on_board(self, posX, posY, move):
         """
@@ -169,7 +181,7 @@ class Board:
         """
         Get all future board states.
         """
-        def f3(m):
+        def mutate_board(move):
             return map(
                 count(),
                 self.board,
@@ -180,15 +192,18 @@ class Board:
                         0
                         if (posX == pieceX) and (posY == pieceY) else
                         (
-                            piece + (-1 if piece & 1 else 1)
+                            (
+                                (piece ^ 1)
+                                if piece & 1 else
+                                ((piece | 1) if piece else 0))
                             if (
-                                ((posX + m[0]) == pieceX) and
-                                (posY + m[1]) == pieceY) else
+                                ((posX + move[0]) == pieceX) and
+                                (posY + move[1]) == pieceY) else
                             pp + ((1 if piece % 2 == 0 else -1)))))
 
-        return map(
-            f3,
-            self.valid_moves_for_piece(piece, posX, posY))
+        return map(Board, map(
+            mutate_board,
+            self.valid_moves_for_piece(piece, posX, posY)))
 
     @staticmethod
     def active_piece(piece):
@@ -208,7 +223,7 @@ class Board:
                     lambda posX, piece: (posX, posY, piece), count(), row),
                 count(), self.board))
 
-    def get_moves(self) -> None:
+    def lookahead_boards(self, n=4) -> None:
         """
         Provide an iterable of valid moves for current board state.
         """
@@ -229,7 +244,7 @@ class Board:
 #   .forEach(lambda row):
 #     board = row('id')
 #     tup = board.map(unwrap_row)
-#     moves = get_moves(tup)
+#     moves = lookahead_boards(tup)
 #     return r.table('chess')
 #       .insert(
 #         r.branch(
