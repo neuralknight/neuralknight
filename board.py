@@ -233,8 +233,15 @@ class Board:
         """
         Provide an iterable of valid moves for current board state.
         """
+        if n == 0:
+            return [self]
         return chain.from_iterable(
-            starmap(self.lookahead_boards_for_piece, self.active_pieces()))
+            map(
+                lambda board: board.lookahead_boards(n - 1),
+                chain.from_iterable(
+                    starmap(
+                        self.lookahead_boards_for_piece,
+                        self.active_pieces()))))
 
     def has_king(self):
         """
