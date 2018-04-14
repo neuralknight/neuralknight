@@ -1,4 +1,5 @@
 import sklearn
+from sklearn.naive_bayes import GaussianNB
 
 def train_classifier(x_train, y_train):
     '''Trains classifier given a set of features and corresponding labels
@@ -13,7 +14,7 @@ def train_classifier(x_train, y_train):
 
     '''
 
-    gnb = sklearn.naive_bayes.GaussianNB()
+    gnb = GaussianNB()
     classifier = gnb.fit(x_train, y_train)
 
     return(classifier)
