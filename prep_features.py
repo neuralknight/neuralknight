@@ -1,5 +1,6 @@
 # import adam's module up here
 from random import randint
+from numpy import array as ndarray
 
 def prep_feature_matrix(board, num_leaves):
     '''Creates a matrix of input features for predictor algorithm
@@ -55,4 +56,4 @@ def encode_states(chosen_states):
                     encoded_state.append(feature)
         encoded_states.append(encoded_state)
 
-    return encoded_states
+    return ndarray(encoded_states)
