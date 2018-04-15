@@ -1,6 +1,9 @@
-# import adam's module up here
+import requests
 from random import randint
 from numpy import array as ndarray
+
+# PORT = 8080
+API_URL = 'http://localhost:6543'
 
 def evaluate_boards(boards):
     '''Determine value for each board state in array of board states
@@ -172,3 +175,36 @@ def evaluate_boards(boards):
             best_board = board
 
     return best_board
+
+
+get_boards(game_id):
+    '''Retrieves potential board states'''
+    boards = []
+    response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, game_id))
+    data = response.json()
+    while data['uuid']:
+        pass
+
+    return boards
+
+post_best_board(best_board, game_id):
+    data = {'best_board': best_board}
+    response = requests.post(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
+        
+init_game():
+    '''Initialize a new game'''
+    response = requests.post('{}/v1.0/games'.format(API_URL))
+    data = response.json()
+    game_id = data['id']
+    return game_id
+
+play_game():
+    '''Play a game'''
+    game_id = init_game()
+    
+    game_over = False
+    while not game_over:
+        boards = get_boards(game_id)
+        best_board = evaluate_boards(boards)
+        post_best_board(best_board, game_id)
+
