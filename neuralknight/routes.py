@@ -3,3 +3,5 @@ def includeme(config):
     config.add_route('home', '/')
     config.add_route('games', '/games')
     config.add_route('game_states', '/games/{game}/states')
+    config.add_route('issue_agent', '/issue-agent')
+    config.add_route('agent', '/agent/{agent_id}')
