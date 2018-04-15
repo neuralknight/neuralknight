@@ -249,6 +249,9 @@ class Board:
                     count(), filter(self.active_piece, row)),
                 count(), self.board))
 
+    def update(self, board):
+        pass
+
     def lookahead_boards(self, n=4) -> None:
         """
         Provide an iterable of valid moves for current board state.
