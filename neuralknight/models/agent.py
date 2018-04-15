@@ -25,6 +25,7 @@ def evaluate_boards(boards):
     king_val = 20000
 
     # Piece squares - from http://www.chessbin.com/post/Piece-Square-Table
+    # Own piece squares
     own_pawn_squares = [
         [ 0,  0,  0,  0,  0,  0,  0,  0],
         [50, 50, 50, 50, 50, 50, 50, 50],
@@ -35,27 +36,7 @@ def evaluate_boards(boards):
         [ 5, 10, 10,-25,-25, 10, 10,  5],
         [ 0,  0,  0,  0,  0,  0,  0,  0],
     ]
-    opp_pawn_squares = [
-        [ 0,  0,  0,  0,  0,  0,  0,  0],
-        [ 0,  0,  0,  0,  0,  0,  0,  0],
-        [-5, -5,-10,-15,-15,-10, -5, -5],
-        [ 0,  0,  0,-25,-25,  0,  0,  0],
-        [-5, -5,-10,-27,-27,-10, -5, -5],
-        [-10,-10,-20,-30,-30,-20,-10,-10],
-        [-50, -50, -50, -50, -50, -50, -50,-50],
-        [ 0,  0,  0,  0,  0,  0,  0,  0],
-    ]
     own_knight_squares = [
-        [-50,-40,-30,-30,-30,-30,-40,-50],
-        [-40,-20,  0,  0,  0,  0,-20,-40],
-        [-30,  0, 10, 15, 15, 10,  0,-30],
-        [-30,  5, 15, 20, 20, 15,  5,-30],
-        [-30,  0, 15, 20, 20, 15,  0,-30],
-        [-30,  5, 10, 15, 15, 10,  5,-30],
-        [-40,-20,  0,  5,  5,  0,-20,-40],
-        [-50,-40,-20,-30,-30,-20,-40,-50],
-    ]
-    opp_knight_squares = [
         [-50,-40,-30,-30,-30,-30,-40,-50],
         [-40,-20,  0,  0,  0,  0,-20,-40],
         [-30,  0, 10, 15, 15, 10,  0,-30],
@@ -75,27 +56,7 @@ def evaluate_boards(boards):
         [-10,  5,  0,  0,  0,  0,  5,-10],
         [-20,-10,-40,-10,-10,-40,-10,-20],
     ]
-    opp_bishop_squares = [
-        [-20,-10,-10,-10,-10,-10,-10,-20],
-        [-10,  0,  0,  0,  0,  0,  0,-10],
-        [-10,  0,  5, 10, 10,  5,  0,-10],
-        [-10,  5,  5, 10, 10,  5,  5,-10],
-        [-10,  0, 10, 10, 10, 10,  0,-10],
-        [-10, 10, 10, 10, 10, 10, 10,-10],
-        [-10,  5,  0,  0,  0,  0,  5,-10],
-        [-20,-10,-40,-10,-10,-40,-10,-20],
-    ]
     own_rook_squares = [
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0],
-    ]
-    opp_rook_squares = [
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
@@ -115,7 +76,49 @@ def evaluate_boards(boards):
         [-10,  5,  0,  0,  0,  0,  5,-10],
         [-20,-10,-40,-10,-10,-40,-10,-20],
     ]
-    opp_king_squares = [
+    
+    #Opp piece squares
+    opp_pawn_squares = [
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
+        [-5, -5,-10,-15,-15,-10,-5,-5],
+        [-10,-10,-15,-25,-25,-15,-10,-10],
+        [-20, -20,-25,-30,-30,-25,-20,-20],
+        [-30,-30,-35,-40,-40,-35,-30,-30],
+        [-50,-50,-50,-50,-50,-50,-50,-50],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
+    ]
+    opp_knight_squares = [ # temp zeroed below
+        [-50,-40,-30,-30,-30,-30,-40,-50],
+        [-40,-20,  0,  0,  0,  0,-20,-40],
+        [-30,  0, 10, 15, 15, 10,  0,-30],
+        [-30,  5, 15, 20, 20, 15,  5,-30],
+        [-30,  0, 15, 20, 20, 15,  0,-30],
+        [-30,  5, 10, 15, 15, 10,  5,-30],
+        [-40,-20,  0,  5,  5,  0,-20,-40],
+        [-50,-40,-20,-30,-30,-20,-40,-50],
+    ]
+    opp_bishop_squares = [ # temp zeroed below
+        [-20,-10,-10,-10,-10,-10,-10,-20],
+        [-10,  0,  0,  0,  0,  0,  0,-10],
+        [-10,  0,  5, 10, 10,  5,  0,-10],
+        [-10,  5,  5, 10, 10,  5,  5,-10],
+        [-10,  0, 10, 10, 10, 10,  0,-10],
+        [-10, 10, 10, 10, 10, 10, 10,-10],
+        [-10,  5,  0,  0,  0,  0,  5,-10],
+        [-20,-10,-40,-10,-10,-40,-10,-20],
+    ]
+    opp_rook_squares = [ # temp zeroed below
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+         [0,  0,  0,  0,  0,  0,  0,  0],
+    ]
+    opp_king_squares = [ # temp zeroed below
         [-20,-10,-10,-10,-10,-10,-10,-20],
         [-10,  0,  0,  0,  0,  0,  0,-10],
         [-10,  0,  5, 10, 10,  5,  0,-10],
@@ -135,6 +138,9 @@ def evaluate_boards(boards):
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
     ]
+
+    # opp squares zeroed for now
+    opp_knight_squares = opp_bishop_squares = opp_rook_squares = opp_king_squares = zero_squares
 
     # Pair encoded pieces to values
     value_map = {
@@ -177,28 +183,35 @@ def evaluate_boards(boards):
     return best_board
 
 
-get_boards(game_id):
+def get_boards(game_id):
     '''Retrieves potential board states'''
-    boards = []
     response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, game_id))
     data = response.json()
-    while data['uuid']:
-        pass
+    boards = data['boards']
+    while data['cursor']:
+        response = requests.get(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data={'cursor': data['cursor']})
+        data = response.json()
+        for board in data['boards']:
+            boards.append(board)
 
     return boards
 
-post_best_board(best_board, game_id):
+def put_best_board(best_board, game_id):
     data = {'best_board': best_board}
-    response = requests.post(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
-        
-init_game():
+    response = requests.put(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
+    data = response.json()
+    
+    return data['end']
+
+def init_game():
     '''Initialize a new game'''
     response = requests.post('{}/v1.0/games'.format(API_URL))
     data = response.json()
     game_id = data['id']
+
     return game_id
 
-play_game():
+def play_game():
     '''Play a game'''
     game_id = init_game()
     
@@ -206,5 +219,4 @@ play_game():
     while not game_over:
         boards = get_boards(game_id)
         best_board = evaluate_boards(boards)
-        post_best_board(best_board, game_id)
-
+        game_over = put_best_board(best_board, game_id)
