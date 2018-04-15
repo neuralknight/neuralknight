@@ -41,13 +41,25 @@ class Board:
         """
         Set up board.
         """
-        self.board = [row[:] for row in (board or INITIAL_BOARD)]
+        self.board = board or INITIAL_BOARD
 
     def __bool__(self):
         """
         Ensure active player king on board.
         """
         return self.has_king()
+
+    def __contains__(self, piece):
+        """
+        Ensure piece on board.
+        """
+        return any(map(lambda row: piece in row, self.board))
+
+    def __iter__(self):
+        """
+        Provide next boards at one lookahead.
+        """
+        return self.lookahead_boards(1)
 
     def __repr__(self):
         """
@@ -190,7 +202,6 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
-            import pdb; pdb.set_trace()
             return map(
                 count(),
                 self.board,
@@ -251,7 +262,7 @@ class Board:
         """
         Ensure active player king on board.
         """
-        return any(map(lambda row: (KING & 1) in row, self.board))
+        return (KING | 1) in self
 
 
 if __name__ == '__main__':
