@@ -41,13 +41,25 @@ class Board:
         """
         Set up board.
         """
-        self.board = [row[:] for row in (board or INITIAL_BOARD)]
+        self.board = board or INITIAL_BOARD
 
     def __bool__(self):
         """
         Ensure active player king on board.
         """
         return self.has_king()
+
+    def __contains__(self, piece):
+        """
+        Ensure piece on board.
+        """
+        return any(map(lambda row: piece in row, self.board))
+
+    def __iter__(self):
+        """
+        Provide next boards at one lookahead.
+        """
+        return self.lookahead_boards(1)
 
     def __repr__(self):
         """
@@ -65,8 +77,7 @@ class Board:
         """
         Validate a move against board bounds.
         """
-        if move:
-            return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
+        return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
 
     def validate_ending(self, posX, posY, move):
         """
@@ -101,12 +112,36 @@ class Board:
             partial(self.validate_move, posX, posY),
             partial(self.validate_move, posX, posY))[piece // 2]
 
+    def moves_for_pawn(self, piece, posX, posY):
+        """
+        Get all possible moves for pawn.
+        """
+        if (
+                self.is_on_board(posX, posY, (0, -1)) and
+                (not self.board[posX][posY - 1])):
+            yield (0, -1)
+        if (
+                posY == 6 and
+                (not self.board[posX][posY - 1]) and
+                (not self.board[posX][posY - 2])):
+            yield (0, -2)
+        if (
+                self.is_on_board(posX, posY, (1, -1)) and
+                self.inactive_piece(self.board[posX + 1][posY - 1])):
+            yield (1, -1)
+        if (
+                self.is_on_board(posX, posY, (1, 1)) and
+                self.inactive_piece(self.board[posX + 1][posY + 1])):
+            yield (1, 1)
+        if piece & 0x10:
+            pass  # en passant
+
     def moves_for_piece(self, piece, posX, posY):
         """
         Get all possible moves for piece type.
         """
         return filter(partial(self.is_on_board, posX, posY), (
-            [None],  # No piece
+            (),  # No piece
             (  # Bishop
                 (-8, -8), (-7, -7), (-6, -6), (-5, -5),
                 (-4, -4), (-3, -3), (-2, -2), (-1, -1),
@@ -122,31 +157,7 @@ class Board:
             (  # Knight
               (-2, -1), (-2, 1), (-1, -2), (-1, 2),
               (1, -2), (1, 2), (2, -1), (2, 1)),
-            filter(  # Pawn
-              None,
-              (
-                (
-                  None if (
-                    self.board[posX][posY - 1]) else (0, -1),
-                  None if (
-                    posY != 6 or
-                    self.board[posX][posY - 1] or
-                    self.board[posX][posY - 2]) else (0, -2),
-                  (1, -1)
-                ) if (
-                  (posX < 7) and
-                  (posY > 0) and
-                  ((self.board[posX + 1][posY - 1] & 0xE)) and
-                  self.validate_ending(posX, posY, (1, -1))
-                ) else None,
-                (-1, -1) if (
-                  (posX > 0) and
-                  ((posY > 0)) and
-                  ((self.board[posX - 1][posY - 1] & 0xE)) and
-                  (self.validate_ending(posX, posY, (-1, -1)))
-                ) else None
-              )
-            ),
+            self.moves_for_pawn(piece, posX, posY),  # Pawn
             (  # Queen
               (-8, -8), (-7, -7), (-6, -6), (-5, -5),
               (-4, -4), (-3, -3), (-2, -2), (-1, -1),
@@ -190,13 +201,8 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
-            import pdb; pdb.set_trace()
-            return map(
-                count(),
-                self.board,
-                lambda pieceY, row: map(
-                    count(),
-                    row,
+            return list(map(
+                lambda pieceY, row: list(map(
                     lambda pieceX, pp:
                         0
                         if (posX == pieceX) and (posY == pieceY) else
@@ -208,7 +214,11 @@ class Board:
                             if (
                                 ((posX + move[0]) == pieceX) and
                                 (posY + move[1]) == pieceY) else
-                            pp + ((1 if piece % 2 == 0 else -1)))))
+                            pp + ((1 if piece % 2 == 0 else -1))),
+                    count(),
+                    row)),
+                count(),
+                self.board))
 
         return map(Board, map(
             mutate_board,
@@ -219,29 +229,44 @@ class Board:
         """
         Validate piece as active.
         """
-        return piece[2] & 1 and piece[2] > 1
+        return piece & 1 and piece & 0xE
+
+    @staticmethod
+    def inactive_piece(piece):
+        """
+        Validate piece as inactive.
+        """
+        return piece ^ 1
 
     def active_pieces(self):
         """
         Get all pieces for current player.
         """
-        return filter(
-            self.active_piece,
-            chain.from_iterable(
-                map(
-                    lambda posY, row: map(
-                        lambda posX, piece: (piece, posX, posY), count(), row),
-                    count(), self.board)))
+        return chain.from_iterable(
+            map(
+                lambda posY, row: map(
+                    lambda posX, piece: (piece, posX, posY),
+                    count(), filter(self.active_piece, row)),
+                count(), self.board))
 
     def lookahead_boards(self, n=4) -> None:
         """
         Provide an iterable of valid moves for current board state.
         """
         if n == 0:
-            return [(self,)]
+            return iter(((self,),))
+        if n == 1:
+            return chain.from_iterable(
+                map(
+                    lambda board: board.lookahead_boards(n - 1),
+                    chain.from_iterable(
+                        starmap(
+                            self.lookahead_boards_for_piece,
+                            self.active_pieces()))))
         return chain.from_iterable(
             map(
-                lambda board: board.lookahead_boards(n - 1),
+                lambda board: map(
+                    lambda n: (board,) + n, board.lookahead_boards(n - 1)),
                 chain.from_iterable(
                     starmap(
                         self.lookahead_boards_for_piece,
@@ -251,7 +276,7 @@ class Board:
         """
         Ensure active player king on board.
         """
-        return any(map(lambda row: (KING & 1) in row, self.board))
+        return (KING | 1) in self
 
 
 if __name__ == '__main__':
