@@ -3,6 +3,7 @@ Chess state handling model.
 """
 
 from itertools import chain, count, starmap
+from functools import partial
 
 EMOJI = [
   '⌛', '‼',
@@ -22,8 +23,8 @@ INITIAL_BOARD = [
     _FIRST_ROW,
     _PAWN_ROW,
     *[[0 for _ in range(8)] for _ in range(4)],
-    [piece & 1 for piece in _PAWN_ROW],
-    [piece & 1 for piece in _FIRST_ROW]]
+    [piece | 1 for piece in _PAWN_ROW],
+    [piece | 1 for piece in _FIRST_ROW]]
 # low bit indicates active player piece
 
 
@@ -64,7 +65,8 @@ class Board:
         """
         Validate a move against board bounds.
         """
-        return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
+        if move:
+            return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
 
     def validate_ending(self, posX, posY, move):
         """
@@ -86,25 +88,25 @@ class Board:
                         [posY + _unit(move[1]) * _range],
                     range(1, max(abs(move[0]), abs(move[1]))))))
 
-    def validation_for_piece(self, piece):
+    def validation_for_piece(self, piece, posX, posY):
         """
         Get final validation function for piece.
         """
         return (
             None,
-            self.validate_move,
-            self.validate_ending,
-            self.validate_ending,
+            partial(self.validate_move, posX, posY),
+            partial(self.validate_ending, posX, posY),
+            partial(self.validate_ending, posX, posY),
             None,
-            self.validate_move,
-            self.validate_move)[piece // 2]
+            partial(self.validate_move, posX, posY),
+            partial(self.validate_move, posX, posY))[piece // 2]
 
     def moves_for_piece(self, piece, posX, posY):
         """
         Get all possible moves for piece type.
         """
-        return filter(self.is_on_board, (
-            None,  # No piece
+        return filter(partial(self.is_on_board, posX, posY), (
+            [None],  # No piece
             (  # Bishop
                 (-8, -8), (-7, -7), (-6, -6), (-5, -5),
                 (-4, -4), (-3, -3), (-2, -2), (-1, -1),
@@ -135,13 +137,13 @@ class Board:
                   (posX < 7) and
                   (posY > 0) and
                   ((self.board[posX + 1][posY - 1] & 0xE)) and
-                  self.validate_ending((1, -1))
+                  self.validate_ending(posX, posY, (1, -1))
                 ) else None,
                 (-1, -1) if (
                   (posX > 0) and
                   ((posY > 0)) and
                   ((self.board[posX - 1][posY - 1] & 0xE)) and
-                  (self.validate_ending((-1, -1)))
+                  (self.validate_ending(posX, posY, (-1, -1)))
                 ) else None
               )
             ),
@@ -180,7 +182,7 @@ class Board:
         Get all valid moves for piece type.
         """
         return filter(
-            self.validation_for_piece(piece),
+            self.validation_for_piece(piece, posX, posY),
             self.moves_for_piece(piece, posX, posY))
 
     def lookahead_boards_for_piece(self, piece, posX, posY):
@@ -188,6 +190,7 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
+            import pdb; pdb.set_trace()
             return map(
                 count(),
                 self.board,
@@ -216,7 +219,7 @@ class Board:
         """
         Validate piece as active.
         """
-        return piece & 1 and piece > 1
+        return piece[2] & 1 and piece[2] > 1
 
     def active_pieces(self):
         """
@@ -224,10 +227,11 @@ class Board:
         """
         return filter(
             self.active_piece,
-            map(
-                lambda posY, row: map(
-                    lambda posX, piece: (posX, posY, piece), count(), row),
-                count(), self.board))
+            chain.from_iterable(
+                map(
+                    lambda posY, row: map(
+                        lambda posX, piece: (piece, posX, posY), count(), row),
+                    count(), self.board)))
 
     def lookahead_boards(self, n=4) -> None:
         """
