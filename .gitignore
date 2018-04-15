@@ -100,3 +100,16 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# pyramid
+*~
+env*/
+tmp/
+Data.fs*
+*.sublime-project
+*.sublime-workspace
+.*.sw?
+.sw?
+.DS_Store
+coverage
+test
