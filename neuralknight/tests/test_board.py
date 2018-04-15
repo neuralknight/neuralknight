@@ -20,6 +20,7 @@ def test_first_move_available(start_board):
 
 
 def test_lookahead_length(start_board):
+    assert len(next(start_board.lookahead_boards(1))) == 1
     assert len(next(start_board.lookahead_boards(5))) == 5
 
 
@@ -41,3 +42,8 @@ def test_moves_consumption_lookahead_2(start_board):
     deque(it, maxlen=0)
     with raises(StopIteration):
         next(it)
+
+
+def test_board_mutations_are_valid(start_board):
+    mutated_board = next(start_board.lookahead_boards(1))[0]
+    assert -1 not in mutated_board

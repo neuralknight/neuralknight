@@ -55,5 +55,6 @@ def put_state(request):
     """
     Make a move to a new state on the board.
     """
-    GAMES[request.matchdict['game']].update(request.PUT['state'])
+    game = request.matchdict['game']
+    GAMES[game] = GAMES[game].update(request.PUT['state'])
     return {'end': not GAMES[request.matchdict['game']]}

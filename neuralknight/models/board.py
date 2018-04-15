@@ -201,24 +201,10 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
-            return list(map(
-                lambda pieceY, row: list(map(
-                    lambda pieceX, pp:
-                        0
-                        if (posX == pieceX) and (posY == pieceY) else
-                        (
-                            (
-                                (piece ^ 1)
-                                if piece & 1 else
-                                ((piece | 1) if piece else 0))
-                            if (
-                                ((posX + move[0]) == pieceX) and
-                                (posY + move[1]) == pieceY) else
-                            pp + ((1 if piece % 2 == 0 else -1))),
-                    count(),
-                    row)),
-                count(),
-                self.board))
+            new_state = [row[:] for row in self.board]
+            new_state[posX][posY] = 0
+            new_state[posX + move[0]][posY + move[1]] = piece
+            return new_state
 
         return map(Board, map(
             mutate_board,
@@ -249,19 +235,33 @@ class Board:
                     count(), filter(self.active_piece, row)),
                 count(), self.board))
 
-    def update(self, board):
-        pass
+    def swap(self, swap=True):
+        """
+        Rotate active player.
+        """
+        if swap:
+            return Board(reversed(list(map(
+                lambda row: reversed(list(map(
+                    lambda pp: (pp & 0xE) | ((0 if pp & 1 else 1)),
+                    row))),
+                self.board))))
+        return self
 
-    def lookahead_boards(self, n=4) -> None:
+    def update(self, board):
+        """
+        Validate and return new board state.
+        """
+
+    def lookahead_boards(self, n=4, swap=False) -> None:
         """
         Provide an iterable of valid moves for current board state.
         """
         if n == 0:
-            return iter(((self,),))
+            return iter(((self.swap(swap),),))
         if n == 1:
             return chain.from_iterable(
                 map(
-                    lambda board: board.lookahead_boards(n - 1),
+                    lambda board: board.lookahead_boards(n - 1, not swap),
                     chain.from_iterable(
                         starmap(
                             self.lookahead_boards_for_piece,
@@ -269,7 +269,8 @@ class Board:
         return chain.from_iterable(
             map(
                 lambda board: map(
-                    lambda n: (board,) + n, board.lookahead_boards(n - 1)),
+                    lambda n: (board.swap(swap),) + n,
+                    board.lookahead_boards(n - 1, not swap)),
                 chain.from_iterable(
                     starmap(
                         self.lookahead_boards_for_piece,
