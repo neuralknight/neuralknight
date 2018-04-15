@@ -1,7 +1,7 @@
 from neuralknight.models.board import Board
 from os import environ
 from pyramid.testing import DummyRequest, setUp, tearDown
-from pyramid_stocks.models.meta import Base
+from neuralknight.models.meta import Base
 from pytest import fixture
 
 
