@@ -1,7 +1,7 @@
 from collections import deque
 from pytest import raises
 
-from .board import KING, QUEEN
+from neuralknight.models.board import KING, QUEEN
 
 
 def test_board_creation_valid(start_board):

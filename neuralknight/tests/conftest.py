@@ -1,4 +1,4 @@
-from .board import Board
+from neuralknight.models.board import Board
 from pytest import fixture
 
 
