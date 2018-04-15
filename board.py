@@ -202,12 +202,8 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
-            return map(
-                count(),
-                self.board,
-                lambda pieceY, row: map(
-                    count(),
-                    row,
+            return list(map(
+                lambda pieceY, row: list(map(
                     lambda pieceX, pp:
                         0
                         if (posX == pieceX) and (posY == pieceY) else
@@ -219,7 +215,11 @@ class Board:
                             if (
                                 ((posX + move[0]) == pieceX) and
                                 (posY + move[1]) == pieceY) else
-                            pp + ((1 if piece % 2 == 0 else -1)))))
+                            pp + ((1 if piece % 2 == 0 else -1))),
+                    count(),
+                    row)),
+                count(),
+                self.board))
 
         return map(Board, map(
             mutate_board,
@@ -249,10 +249,19 @@ class Board:
         Provide an iterable of valid moves for current board state.
         """
         if n == 0:
-            return [(self,)]
+            return iter(((self,),))
+        if n == 1:
+            return chain.from_iterable(
+                map(
+                    lambda board: board.lookahead_boards(n - 1),
+                    chain.from_iterable(
+                        starmap(
+                            self.lookahead_boards_for_piece,
+                            self.active_pieces()))))
         return chain.from_iterable(
             map(
-                lambda board: board.lookahead_boards(n - 1),
+                lambda board: map(
+                    lambda n: (board,) + n, board.lookahead_boards(n - 1)),
                 chain.from_iterable(
                     starmap(
                         self.lookahead_boards_for_piece,
