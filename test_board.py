@@ -1,3 +1,6 @@
+from collections import deque
+from pytest import raises
+
 from .board import KING, QUEEN
 
 
@@ -24,3 +27,17 @@ def test_more_than_one_next_move(start_board):
     it = start_board.lookahead_boards(1)
     assert next(it)
     assert next(it)
+
+
+def test_moves_consumption_lookahead_1(start_board):
+    it = start_board.lookahead_boards(1)
+    deque(it, maxlen=0)
+    with raises(StopIteration):
+        next(it)
+
+
+def test_moves_consumption_lookahead_2(start_board):
+    it = start_board.lookahead_boards(2)
+    deque(it, maxlen=0)
+    with raises(StopIteration):
+        next(it)

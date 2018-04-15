@@ -77,8 +77,7 @@ class Board:
         """
         Validate a move against board bounds.
         """
-        if move:
-            return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
+        return 0 <= (posX + move[0]) < 8 and 0 <= (posY + move[1]) < 8
 
     def validate_ending(self, posX, posY, move):
         """
@@ -113,12 +112,36 @@ class Board:
             partial(self.validate_move, posX, posY),
             partial(self.validate_move, posX, posY))[piece // 2]
 
+    def moves_for_pawn(self, piece, posX, posY):
+        """
+        Get all possible moves for pawn.
+        """
+        if (
+                self.is_on_board(posX, posY, (0, -1)) and
+                (not self.board[posX][posY - 1])):
+            yield (0, -1)
+        if (
+                posY == 6 and
+                (not self.board[posX][posY - 1]) and
+                (not self.board[posX][posY - 2])):
+            yield (0, -2)
+        if (
+                self.is_on_board(posX, posY, (1, -1)) and
+                self.inactive_piece(self.board[posX + 1][posY - 1])):
+            yield (1, -1)
+        if (
+                self.is_on_board(posX, posY, (1, 1)) and
+                self.inactive_piece(self.board[posX + 1][posY + 1])):
+            yield (1, 1)
+        if piece & 0x10:
+            pass  # en passant
+
     def moves_for_piece(self, piece, posX, posY):
         """
         Get all possible moves for piece type.
         """
         return filter(partial(self.is_on_board, posX, posY), (
-            [None],  # No piece
+            (),  # No piece
             (  # Bishop
                 (-8, -8), (-7, -7), (-6, -6), (-5, -5),
                 (-4, -4), (-3, -3), (-2, -2), (-1, -1),
@@ -134,31 +157,7 @@ class Board:
             (  # Knight
               (-2, -1), (-2, 1), (-1, -2), (-1, 2),
               (1, -2), (1, 2), (2, -1), (2, 1)),
-            filter(  # Pawn
-              None,
-              (
-                (
-                  None if (
-                    self.board[posX][posY - 1]) else (0, -1),
-                  None if (
-                    posY != 6 or
-                    self.board[posX][posY - 1] or
-                    self.board[posX][posY - 2]) else (0, -2),
-                  (1, -1)
-                ) if (
-                  (posX < 7) and
-                  (posY > 0) and
-                  ((self.board[posX + 1][posY - 1] & 0xE)) and
-                  self.validate_ending(posX, posY, (1, -1))
-                ) else None,
-                (-1, -1) if (
-                  (posX > 0) and
-                  ((posY > 0)) and
-                  ((self.board[posX - 1][posY - 1] & 0xE)) and
-                  (self.validate_ending(posX, posY, (-1, -1)))
-                ) else None
-              )
-            ),
+            self.moves_for_pawn(piece, posX, posY),  # Pawn
             (  # Queen
               (-8, -8), (-7, -7), (-6, -6), (-5, -5),
               (-4, -4), (-3, -3), (-2, -2), (-1, -1),
@@ -230,19 +229,25 @@ class Board:
         """
         Validate piece as active.
         """
-        return piece[2] & 1 and piece[2] > 1
+        return piece & 1 and piece & 0xE
+
+    @staticmethod
+    def inactive_piece(piece):
+        """
+        Validate piece as inactive.
+        """
+        return piece ^ 1
 
     def active_pieces(self):
         """
         Get all pieces for current player.
         """
-        return filter(
-            self.active_piece,
-            chain.from_iterable(
-                map(
-                    lambda posY, row: map(
-                        lambda posX, piece: (piece, posX, posY), count(), row),
-                    count(), self.board)))
+        return chain.from_iterable(
+            map(
+                lambda posY, row: map(
+                    lambda posX, piece: (piece, posX, posY),
+                    count(), filter(self.active_piece, row)),
+                count(), self.board))
 
     def lookahead_boards(self, n=4) -> None:
         """
