@@ -1,6 +1,9 @@
-# import adam's module up here
+import requests
 from random import randint
 from numpy import array as ndarray
+
+# PORT = 8080
+API_URL = 'http://localhost:6543'
 
 def evaluate_boards(boards):
     '''Determine value for each board state in array of board states
@@ -14,36 +17,34 @@ def evaluate_boards(boards):
     '''
 
     # Piece values
-    pawn_val = 1
-    knight_val = 3
-    bishop_val = 3
-    rook_val = 5
-    queen_val = 10
-    king_val = 200
+    pawn_val = 100
+    knight_val = 300
+    bishop_val = 300
+    rook_val = 500
+    queen_val = 1000
+    king_val = 20000
 
     # Piece squares - from http://www.chessbin.com/post/Piece-Square-Table
     own_pawn_squares = [
-         [0,  0,  0,  0,  0,  0,  0,  0,],
-        [50, 50, 50, 50, 50, 50, 50, 50,],
-        [10, 10, 20, 30, 30, 20, 10, 10,],
-         [5,  5, 10, 27, 27, 10,  5,  5,],
-         [0,  0,  0, 25, 25,  0,  0,  0,],
-         [5, -5,-10,  0,  0,-10, -5,  5,],
-         [5, 10, 10,-25,-25, 10, 10,  5,],
-         [0,  0,  0,  0,  0,  0,  0,  0,],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
+        [50, 50, 50, 50, 50, 50, 50, 50],
+        [10, 10, 20, 30, 30, 20, 10, 10],
+        [ 5,  5, 10, 27, 27, 10,  5,  5],
+        [ 0,  0,  0, 25, 25,  0,  0,  0],
+        [ 5, -5,-10,  0,  0,-10, -5,  5],
+        [ 5, 10, 10,-25,-25, 10, 10,  5],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
     ]
-
     opp_pawn_squares = [
-         [0,  0,  0,  0,  0,  0,  0,  0,],
-         [0,  0,  0,  0,  0,  0,  0,  0,],
-         [-5,-5,-10,-15,-15,-10, -5, -5,],
-         [0,  0,  0, -25, -25,  0,  0,  0,],
-         [-5,  -5, -10, -27, -27, -10,  -5,  -5,],
-        [-10, -10, -20, -30, -30, -20, -10, -10,],
-        [-50, -50, -50, -50, -50, -50, -50, -50,],
-         [0,  0,  0,  0,  0,  0,  0,  0,],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
+        [-5, -5,-10,-15,-15,-10, -5, -5],
+        [ 0,  0,  0,-25,-25,  0,  0,  0],
+        [-5, -5,-10,-27,-27,-10, -5, -5],
+        [-10,-10,-20,-30,-30,-20,-10,-10],
+        [-50, -50, -50, -50, -50, -50, -50,-50],
+        [ 0,  0,  0,  0,  0,  0,  0,  0],
     ]
-
     own_knight_squares = [
         [-50,-40,-30,-30,-30,-30,-40,-50],
         [-40,-20,  0,  0,  0,  0,-20,-40],
@@ -54,7 +55,6 @@ def evaluate_boards(boards):
         [-40,-20,  0,  5,  5,  0,-20,-40],
         [-50,-40,-20,-30,-30,-20,-40,-50],
     ]
-
     opp_knight_squares = [
         [-50,-40,-30,-30,-30,-30,-40,-50],
         [-40,-20,  0,  0,  0,  0,-20,-40],
@@ -65,7 +65,6 @@ def evaluate_boards(boards):
         [-40,-20,  0,  5,  5,  0,-20,-40],
         [-50,-40,-20,-30,-30,-20,-40,-50],
     ]
-
     own_bishop_squares = [
         [-20,-10,-10,-10,-10,-10,-10,-20],
         [-10,  0,  0,  0,  0,  0,  0,-10],
@@ -76,7 +75,6 @@ def evaluate_boards(boards):
         [-10,  5,  0,  0,  0,  0,  5,-10],
         [-20,-10,-40,-10,-10,-40,-10,-20],
     ]
-
     opp_bishop_squares = [
         [-20,-10,-10,-10,-10,-10,-10,-20],
         [-10,  0,  0,  0,  0,  0,  0,-10],
@@ -87,7 +85,6 @@ def evaluate_boards(boards):
         [-10,  5,  0,  0,  0,  0,  5,-10],
         [-20,-10,-40,-10,-10,-40,-10,-20],
     ]
-
     own_rook_squares = [
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
@@ -98,7 +95,6 @@ def evaluate_boards(boards):
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
     ]
-
     opp_rook_squares = [
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
@@ -109,7 +105,6 @@ def evaluate_boards(boards):
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
     ]
-    
     own_king_squares = [
         [-20,-10,-10,-10,-10,-10,-10,-20],
         [-10,  0,  0,  0,  0,  0,  0,-10],
@@ -120,7 +115,6 @@ def evaluate_boards(boards):
         [-10,  5,  0,  0,  0,  0,  5,-10],
         [-20,-10,-40,-10,-10,-40,-10,-20],
     ]
-
     opp_king_squares = [
         [-20,-10,-10,-10,-10,-10,-10,-20],
         [-10,  0,  0,  0,  0,  0,  0,-10],
@@ -131,7 +125,6 @@ def evaluate_boards(boards):
         [-10,  5,  0,  0,  0,  0,  5,-10],
         [-20,-10,-40,-10,-10,-40,-10,-20],
     ]    
-
     zero_squares = [
          [0,  0,  0,  0,  0,  0,  0,  0],
          [0,  0,  0,  0,  0,  0,  0,  0],
@@ -182,3 +175,36 @@ def evaluate_boards(boards):
             best_board = board
 
     return best_board
+
+
+get_boards(game_id):
+    '''Retrieves potential board states'''
+    boards = []
+    response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, game_id))
+    data = response.json()
+    while data['uuid']:
+        pass
+
+    return boards
+
+post_best_board(best_board, game_id):
+    data = {'best_board': best_board}
+    response = requests.post(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
+        
+init_game():
+    '''Initialize a new game'''
+    response = requests.post('{}/v1.0/games'.format(API_URL))
+    data = response.json()
+    game_id = data['id']
+    return game_id
+
+play_game():
+    '''Play a game'''
+    game_id = init_game()
+    
+    game_over = False
+    while not game_over:
+        boards = get_boards(game_id)
+        best_board = evaluate_boards(boards)
+        post_best_board(best_board, game_id)
+
