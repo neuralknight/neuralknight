@@ -191,14 +191,15 @@ def put_best_board(best_board, game_id):
     data = {'best_board': best_board}
     response = requests.put(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
     data = response.json()
-    if data['end']:
-        return True
+    
+    return data['end']
 
 def init_game():
     '''Initialize a new game'''
     response = requests.post('{}/v1.0/games'.format(API_URL))
     data = response.json()
     game_id = data['id']
+
     return game_id
 
 def play_game():
