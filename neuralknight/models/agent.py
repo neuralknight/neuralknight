@@ -177,7 +177,7 @@ def evaluate_boards(boards):
     return best_board
 
 
-get_boards(game_id):
+def get_boards(game_id):
     '''Retrieves potential board states'''
     boards = []
     response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, game_id))
@@ -187,18 +187,21 @@ get_boards(game_id):
 
     return boards
 
-post_best_board(best_board, game_id):
+def put_best_board(best_board, game_id):
     data = {'best_board': best_board}
-    response = requests.post(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
-        
-init_game():
+    response = requests.put(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
+    data = response.json()
+    if data['end']:
+        return True
+
+def init_game():
     '''Initialize a new game'''
     response = requests.post('{}/v1.0/games'.format(API_URL))
     data = response.json()
     game_id = data['id']
     return game_id
 
-play_game():
+def play_game():
     '''Play a game'''
     game_id = init_game()
     
@@ -206,5 +209,4 @@ play_game():
     while not game_over:
         boards = get_boards(game_id)
         best_board = evaluate_boards(boards)
-        post_best_board(best_board, game_id)
-
+        game_over = put_best_board(best_board, game_id)
