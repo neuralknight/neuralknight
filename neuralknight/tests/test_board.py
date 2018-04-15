@@ -47,3 +47,34 @@ def test_moves_consumption_lookahead_2(start_board):
 def test_board_mutations_are_valid(start_board):
     mutated_board = next(start_board.lookahead_boards(1))[0]
     assert -1 not in mutated_board
+
+
+def test_board_lookahead_player_is_constant(start_board):
+    states = next(start_board.lookahead_boards(3))
+    assert states[0].board == [
+        [12, 6, 2, 10, 4, 2, 6, 12],
+        [8, 8, 8, 8, 8, 8, 8, 8],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [9, 0, 0, 0, 0, 0, 0, 0],
+        [0, 9, 9, 9, 9, 9, 9, 9],
+        [13, 7, 3, 11, 5, 3, 7, 13]]
+    assert states[1].board == [
+        [12, 0, 2, 10, 4, 2, 6, 12],
+        [8, 8, 8, 8, 8, 8, 8, 8],
+        [6, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [9, 0, 0, 0, 0, 0, 0, 0],
+        [0, 9, 9, 9, 9, 9, 9, 9],
+        [13, 7, 3, 11, 5, 3, 7, 13]]
+    assert states[2].board == [
+        [12, 0, 2, 10, 4, 2, 6, 12],
+        [8, 8, 8, 8, 8, 8, 8, 8],
+        [6, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [9, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 9, 9, 9, 9, 9, 9, 9],
+        [13, 7, 3, 11, 5, 3, 7, 13]]

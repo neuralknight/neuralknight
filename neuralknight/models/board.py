@@ -37,11 +37,12 @@ class Board:
     Chess board state model.
     """
 
-    def __init__(self, board=None) -> None:
+    def __init__(self, board=None, active_player=1) -> None:
         """
         Set up board.
         """
         self.board = board or INITIAL_BOARD
+        self.active_player = active_player
 
     def __bool__(self):
         """
@@ -83,7 +84,8 @@ class Board:
         """
         Validate a move against ending location.
         """
-        return not (self.board[posX + move[0]][posY + move[1]] & 1)
+        return not self.active_piece(
+            self.board[posY + move[1]][posX + move[0]])
 
     def validate_move(self, posX, posY, move):
         """
@@ -95,8 +97,8 @@ class Board:
                 map(
                     lambda _range:
                         not self.board
-                        [posX + _unit(move[0]) * _range]
-                        [posY + _unit(move[1]) * _range],
+                        [posY + _unit(move[1]) * _range]
+                        [posX + _unit(move[0]) * _range],
                     range(1, max(abs(move[0]), abs(move[1]))))))
 
     def validation_for_piece(self, piece, posX, posY):
@@ -118,20 +120,20 @@ class Board:
         """
         if (
                 self.is_on_board(posX, posY, (0, -1)) and
-                (not self.board[posX][posY - 1])):
+                (not self.board[posY - 1][posX])):
             yield (0, -1)
         if (
                 posY == 6 and
-                (not self.board[posX][posY - 1]) and
-                (not self.board[posX][posY - 2])):
+                (not self.board[posY - 1][posX]) and
+                (not self.board[posY - 2][posX])):
             yield (0, -2)
         if (
                 self.is_on_board(posX, posY, (1, -1)) and
-                self.inactive_piece(self.board[posX + 1][posY - 1])):
+                self.inactive_piece(self.board[posY - 1][posX + 1])):
             yield (1, -1)
         if (
                 self.is_on_board(posX, posY, (1, 1)) and
-                self.inactive_piece(self.board[posX + 1][posY + 1])):
+                self.inactive_piece(self.board[posY + 1][posX + 1])):
             yield (1, 1)
         if piece & 0x10:
             pass  # en passant
@@ -201,28 +203,33 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
+            print('start:', posX, posY)
+            print('move:', *move)
             new_state = [row[:] for row in self.board]
-            new_state[posX][posY] = 0
-            new_state[posX + move[0]][posY + move[1]] = piece
-            return new_state
+            assert new_state == self.board
+            new_state[posY][posX] = 0
+            new_state[posY + move[1]][posX + move[0]] = piece
+            return Board(new_state, 0 if self.active_player else 1)
 
-        return map(Board, map(
+        return map(
             mutate_board,
-            self.valid_moves_for_piece(piece, posX, posY)))
+            self.valid_moves_for_piece(piece, posX, posY))
 
-    @staticmethod
-    def active_piece(piece):
+    def active_piece(self, piece):
         """
         Validate piece as active.
         """
-        return piece & 1 and piece & 0xE
+        if self.active_player:
+            return piece & 1 and piece & 0xE
+        return (not piece & 1) and piece & 0xE
 
-    @staticmethod
-    def inactive_piece(piece):
+    def inactive_piece(self, piece):
         """
         Validate piece as inactive.
         """
-        return piece ^ 1
+        if self.active_player:
+            return (not piece & 1) and piece & 0xE
+        return piece & 1 and piece & 0xE
 
     def active_pieces(self):
         """
@@ -235,33 +242,33 @@ class Board:
                     count(), filter(self.active_piece, row)),
                 count(), self.board))
 
-    def swap(self, swap=True):
+    def swap(self):
         """
         Rotate active player.
         """
-        if swap:
-            return Board(reversed(list(map(
-                lambda row: reversed(list(map(
-                    lambda pp: (pp & 0xE) | ((0 if pp & 1 else 1)),
-                    row))),
-                self.board))))
-        return self
+        return Board(list(map(
+            lambda row: list(map(
+                lambda pp:
+                    pp & 0xE | (1 if self.inactive_piece(pp) else 0),
+                row))[::-1],
+            self.board))[::-1])
 
     def update(self, board):
         """
         Validate and return new board state.
         """
+        return Board(board).swap()
 
-    def lookahead_boards(self, n=4, swap=False) -> None:
+    def lookahead_boards(self, n=4) -> None:
         """
         Provide an iterable of valid moves for current board state.
         """
         if n == 0:
-            return iter(((self.swap(swap),),))
+            return iter(((self,),))
         if n == 1:
             return chain.from_iterable(
                 map(
-                    lambda board: board.lookahead_boards(n - 1, not swap),
+                    lambda board: board.lookahead_boards(n - 1),
                     chain.from_iterable(
                         starmap(
                             self.lookahead_boards_for_piece,
@@ -269,8 +276,8 @@ class Board:
         return chain.from_iterable(
             map(
                 lambda board: map(
-                    lambda n: (board.swap(swap),) + n,
-                    board.lookahead_boards(n - 1, not swap)),
+                    lambda n: (board,) + n,
+                    board.lookahead_boards(n - 1)),
                 chain.from_iterable(
                     starmap(
                         self.lookahead_boards_for_piece,

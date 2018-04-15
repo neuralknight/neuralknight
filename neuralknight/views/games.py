@@ -5,14 +5,17 @@ from uuid import uuid4
 from ..models import Board
 
 games = Service(
-    name='games', path='/v1.0/games', description='Game states')
+    name='games', path='/v1.0/games', description='Create game')
 game_states = Service(
     name='game_states',
     path='/v1.0/games/{game}/states',
     description='Game states')
+game_interaction = Service(
+    name='game_interaction',
+    path='/v1.0/games/{game}',
+    description='Game interaction')
 
 CURSORS = {}
-
 GAMES = {}
 
 
@@ -50,7 +53,7 @@ def get_states(request):
         'boards': [[b.board for b in btup] for btup in states]}
 
 
-@game_states.put()
+@game_interaction.put()
 def put_state(request):
     """
     Make a move to a new state on the board.
