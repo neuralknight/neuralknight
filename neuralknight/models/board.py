@@ -5,31 +5,12 @@ Chess state handling model.
 from itertools import chain, count, starmap
 from functools import partial
 
-EMOJI = [
-  '⌛', '‼',
-  '♗', '♝', '♕', '♛', '♘', '♞', '♙', '♟', '♔', '♚', '♖', '♜', '▫', '▪']
+from .board_constants import (
+    EMOJI, INITIAL_BOARD, unit,
+    BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK,
+    BISHOP_MOVES, KING_MOVES, KNIGHT_MOVES, QUEEN_MOVES, ROOK_MOVES)
 
-BISHOP = 0B10
-KING = 0B100
-KNIGHT = 0B110
-PAWN = 0B1000
-QUEEN = 0B1010
-ROOK = 0B1100
-
-_FIRST_ROW = [ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK]
-_PAWN_ROW = [PAWN for _ in range(8)]
-
-INITIAL_BOARD = [
-    _FIRST_ROW,
-    _PAWN_ROW,
-    *[[0 for _ in range(8)] for _ in range(4)],
-    [piece | 1 for piece in _PAWN_ROW],
-    [piece | 1 for piece in _FIRST_ROW]]
-# low bit indicates active player piece
-
-
-def _unit(i):
-    return -1 if i < 0 else (0 if i == 0 else 1)
+__all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
 
 
 class Board:
@@ -37,11 +18,12 @@ class Board:
     Chess board state model.
     """
 
-    def __init__(self, board=None) -> None:
+    def __init__(self, board=None, active_player=1) -> None:
         """
         Set up board.
         """
         self.board = board or INITIAL_BOARD
+        self.active_player = active_player
 
     def __bool__(self):
         """
@@ -83,7 +65,8 @@ class Board:
         """
         Validate a move against ending location.
         """
-        return not (self.board[posX + move[0]][posY + move[1]] & 1)
+        return not self.active_piece(
+            self.board[posY + move[1]][posX + move[0]])
 
     def validate_move(self, posX, posY, move):
         """
@@ -95,8 +78,8 @@ class Board:
                 map(
                     lambda _range:
                         not self.board
-                        [posX + _unit(move[0]) * _range]
-                        [posY + _unit(move[1]) * _range],
+                        [posY + unit(move[1]) * _range]
+                        [posX + unit(move[0]) * _range],
                     range(1, max(abs(move[0]), abs(move[1]))))))
 
     def validation_for_piece(self, piece, posX, posY):
@@ -118,20 +101,20 @@ class Board:
         """
         if (
                 self.is_on_board(posX, posY, (0, -1)) and
-                (not self.board[posX][posY - 1])):
+                (not self.board[posY - 1][posX])):
             yield (0, -1)
         if (
                 posY == 6 and
-                (not self.board[posX][posY - 1]) and
-                (not self.board[posX][posY - 2])):
+                (not self.board[posY - 1][posX]) and
+                (not self.board[posY - 2][posX])):
             yield (0, -2)
         if (
                 self.is_on_board(posX, posY, (1, -1)) and
-                self.inactive_piece(self.board[posX + 1][posY - 1])):
+                self.inactive_piece(self.board[posY - 1][posX + 1])):
             yield (1, -1)
         if (
                 self.is_on_board(posX, posY, (1, 1)) and
-                self.inactive_piece(self.board[posX + 1][posY + 1])):
+                self.inactive_piece(self.board[posY + 1][posX + 1])):
             yield (1, 1)
         if piece & 0x10:
             pass  # en passant
@@ -142,50 +125,12 @@ class Board:
         """
         return filter(partial(self.is_on_board, posX, posY), (
             (),  # No piece
-            (  # Bishop
-                (-8, -8), (-7, -7), (-6, -6), (-5, -5),
-                (-4, -4), (-3, -3), (-2, -2), (-1, -1),
-                (1, 1), (2, 2), (3, 3), (4, 4),
-                (5, 5), (6, 6), (7, 7), (8, 8),
-                (-8, 8), (-7, 7), (-6, 6), (-5, 5),
-                (-4, 4), (-3, 3), (-2, 2), (-1, 1),
-                (1, -1), (2, -2), (3, -3), (4, -4),
-                (5, -5), (6, -6), (7, -7), (8, -8)),
-            (  # King
-              (-1, -1), (-1, 0), (-1, 1), (0, -1),
-              (0, 1), (1, -1), (1, 0), (1, 1)),
-            (  # Knight
-              (-2, -1), (-2, 1), (-1, -2), (-1, 2),
-              (1, -2), (1, 2), (2, -1), (2, 1)),
-            self.moves_for_pawn(piece, posX, posY),  # Pawn
-            (  # Queen
-              (-8, -8), (-7, -7), (-6, -6), (-5, -5),
-              (-4, -4), (-3, -3), (-2, -2), (-1, -1),
-              (1, 1), (2, 2), (3, 3), (4, 4),
-              (5, 5), (6, 6), (7, 7), (8, 8),
-              (-8, 8), (-7, 7), (-6, 6), (-5, 5),
-              (-4, 4), (-3, 3), (-2, 2), (-1, 1),
-              (1, -1), (2, -2), (3, -3), (4, -4),
-              (5, -5), (6, -6), (7, -7), (8, -8),
-              (0, -8), (0, -7), (0, -6), (0, -5),
-              (0, -4), (0, -3), (0, -2), (0, -1),
-              (0, 1), (0, 2), (0, 3), (0, 4),
-              (0, 5), (0, 6), (0, 7), (0, 8),
-              (-8, 0), (-7, 0), (-6, 0), (-5, 0),
-              (-4, 0), (-3, 0), (-2, 0), (-1, 0),
-              (1, 0), (2, 0), (3, 0), (4, 0),
-              (5, 0), (6, 0), (7, 0), (8, 0)
-            ),
-            (  # Rook
-              (0, -8), (0, -7), (0, -6), (0, -5),
-              (0, -4), (0, -3), (0, -2), (0, -1),
-              (0, 1), (0, 2), (0, 3), (0, 4),
-              (0, 5), (0, 6), (0, 7), (0, 8),
-              (-8, 0), (-7, 0), (-6, 0), (-5, 0),
-              (-4, 0), (-3, 0), (-2, 0), (-1, 0),
-              (1, 0), (2, 0), (3, 0), (4, 0),
-              (5, 0), (6, 0), (7, 0), (8, 0)
-            )
+            BISHOP_MOVES,
+            KING_MOVES,
+            KNIGHT_MOVES,
+            self.moves_for_pawn(piece, posX, posY),
+            QUEEN_MOVES,
+            ROOK_MOVES
           )[piece // 2])
 
     def valid_moves_for_piece(self, piece, posX, posY):
@@ -201,42 +146,30 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
-            return list(map(
-                lambda pieceY, row: list(map(
-                    lambda pieceX, pp:
-                        0
-                        if (posX == pieceX) and (posY == pieceY) else
-                        (
-                            (
-                                (piece ^ 1)
-                                if piece & 1 else
-                                ((piece | 1) if piece else 0))
-                            if (
-                                ((posX + move[0]) == pieceX) and
-                                (posY + move[1]) == pieceY) else
-                            pp + ((1 if piece % 2 == 0 else -1))),
-                    count(),
-                    row)),
-                count(),
-                self.board))
+            new_state = [row[:] for row in self.board]
+            new_state[posY][posX] = 0
+            new_state[posY + move[1]][posX + move[0]] = piece
+            return Board(new_state, 0 if self.active_player else 1)
 
-        return map(Board, map(
+        return map(
             mutate_board,
-            self.valid_moves_for_piece(piece, posX, posY)))
+            self.valid_moves_for_piece(piece, posX, posY))
 
-    @staticmethod
-    def active_piece(piece):
+    def active_piece(self, piece):
         """
         Validate piece as active.
         """
-        return piece & 1 and piece & 0xE
+        if self.active_player:
+            return piece & 1 and piece & 0xE
+        return (not piece & 1) and piece & 0xE
 
-    @staticmethod
-    def inactive_piece(piece):
+    def inactive_piece(self, piece):
         """
         Validate piece as inactive.
         """
-        return piece ^ 1
+        if self.active_player:
+            return (not piece & 1) and piece & 0xE
+        return piece & 1 and piece & 0xE
 
     def active_pieces(self):
         """
@@ -249,8 +182,50 @@ class Board:
                     count(), filter(self.active_piece, row)),
                 count(), self.board))
 
+    def swap(self):
+        """
+        Rotate active player.
+        """
+        return Board(list(map(
+            lambda row: list(map(
+                lambda pp:
+                    pp & 0xE | (1 if self.inactive_piece(pp) else 0),
+                row))[::-1],
+            self.board))[::-1])
+
     def update(self, board):
-        pass
+        """
+        Validate and return new board state.
+        """
+        mutation = tuple(filter(None, chain.from_iterable(map(
+            lambda posY, old_row, new_row: map(
+                lambda posX, old_piece, new_piece:
+                    None
+                    if old_piece == new_piece else
+                    (posX, posY, old_piece, new_piece),
+                count(),
+                old_row, new_row),
+            count(),
+            self.board, board))))
+        if len(mutation) != 2:
+            raise RuntimeError
+        if mutation[0][3] == 0:
+            old, new = mutation
+        elif mutation[1][3] == 0:
+            new, old = mutation
+        else:
+            raise RuntimeError
+        if self.active_piece(new[2]):
+            raise RuntimeError
+        posX, posY, piece, _ = old
+        if not self.active_piece(piece):
+            raise RuntimeError
+        if old[2] != new[3]:
+            raise RuntimeError
+        move = (new[0] - posX, new[1] - posY)
+        if move not in self.valid_moves_for_piece(piece, posX, posY):
+            raise RuntimeError
+        return Board(board).swap()
 
     def lookahead_boards(self, n=4) -> None:
         """
@@ -269,7 +244,8 @@ class Board:
         return chain.from_iterable(
             map(
                 lambda board: map(
-                    lambda n: (board,) + n, board.lookahead_boards(n - 1)),
+                    lambda n: (board,) + n,
+                    board.lookahead_boards(n - 1)),
                 chain.from_iterable(
                     starmap(
                         self.lookahead_boards_for_piece,
