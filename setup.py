@@ -11,6 +11,7 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 requires = [
     'cornice',
     'plaster_pastedeploy',
+    'psycopg2-binary',
     'pyramid >= 1.9a',
     'pyramid_debugtoolbar',
     'pyramid_jinja2',
