@@ -60,7 +60,7 @@ def post_game(request):
     active_game = {'id': game_uuid}
     future = executor.submit(
         requests.post,
-        request.route_url('issue_agent'), post=active_game)
+        request.route_url('issue_agent'), data=active_game)
     future.add_done_callback(set_player_2)
     if player1:
         executor.submit(
@@ -113,11 +113,12 @@ def put_state(request):
     """
     state = Board(request.json['state'])
     game_uuid = request.matchdict['game']
+    moving_player = board.active_player()
     GAMES[game_uuid] = GAMES[game_uuid].update(state)
     board = GAMES[game_uuid]
     executor.submit(
         requests.put,
-        request.route_url('agent'), agent_id=board.active_player()
+        request.route_url('agent', agent_id=board.active_player())
     ).add_done_callback(lambda fut: fut.result())
     table_game = request.dbsession.query(TableGame).filter(
         TableGame.game == game_uuid).first()
@@ -129,6 +130,11 @@ def put_state(request):
     table_board.game_link.append(table_game)
     request.dbsession.add(table_board)
     if not board:
+        executor.submit(
+            requests.put,
+            request.route_url('agent', agent_id=moving_player),
+            data={'id': moving_player}
+        ).add_done_callback(lambda fut: fut.result())
         if board.has_king():
             table_game.one_won = False
             table_game.two_won = False
