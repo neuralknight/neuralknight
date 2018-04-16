@@ -60,12 +60,23 @@ class Board:
         """
         Output the emoji view of board.
         """
+        if self.active_uuid:
+            def piece_to_index(piece):
+                return piece
+        else:
+            def piece_to_index(piece):
+                return (piece & 0xE) | (0 if piece & 1 else 1)
+
         return '\n'.join(map(
             lambda posY, row: ''.join(map(
                 lambda posX, piece: EMOJI[
-                    piece if piece else 14 + ((posY + posX) % 2)],
+                    piece_to_index(piece)
+                    if piece else
+                    14 + ((posY + posX) % 2)],
                 count(), row)),
-            count(), self.board))
+            count(),
+            self.board if self.active_uuid else reversed(
+                [reversed(row) for row in self.board])))
 
     def active_player(self):
         """
