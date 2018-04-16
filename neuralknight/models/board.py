@@ -2,6 +2,7 @@
 Chess state handling model.
 """
 
+from copy import deepcopy
 from itertools import chain, count, starmap
 from functools import partial
 
@@ -22,7 +23,10 @@ class Board:
         """
         Set up board.
         """
-        self.board = board or INITIAL_BOARD
+        if board:
+            self.board = board or INITIAL_BOARD
+        else:
+            self.board = [row[:] for row in INITIAL_BOARD]
         self.active_player = active_player
 
     def __bool__(self):
@@ -53,9 +57,15 @@ class Board:
         """
         Output the emoji view of board.
         """
-        return '\n'.join(''.join(EMOJI[p] for p in row) for row in self.board)
+        return '\n'.join(map(
+            lambda posY, row: ''.join(map(
+                lambda posX, piece: EMOJI[
+                    piece if piece else 14 + ((posY + posX) % 2)],
+                count(), row)),
+            count(), self.board))
 
-    def is_on_board(self, posX, posY, move):
+    @staticmethod
+    def is_on_board(posX, posY, move):
         """
         Validate a move against board bounds.
         """
@@ -86,14 +96,18 @@ class Board:
         """
         Get final validation function for piece.
         """
-        return (
-            None,
-            partial(self.validate_move, posX, posY),
-            partial(self.validate_ending, posX, posY),
-            partial(self.validate_ending, posX, posY),
-            None,
-            partial(self.validate_move, posX, posY),
-            partial(self.validate_move, posX, posY))[piece // 2]
+        def validate_true(*args):
+            return True
+
+        return partial((
+            validate_true,  # No piece
+            self.validate_move,  # Bishop
+            self.validate_ending,  # King
+            self.validate_ending,  # Knight
+            validate_true,  # Pawn
+            self.validate_move,  # Queen
+            self.validate_move  # Rook
+            )[piece // 2], posX, posY)
 
     def moves_for_pawn(self, piece, posX, posY):
         """
@@ -117,7 +131,7 @@ class Board:
                 self.inactive_piece(self.board[posY + 1][posX + 1])):
             yield (1, 1)
         if piece & 0x10:
-            pass  # en passant
+            yield ()  # en passant
 
     def moves_for_piece(self, piece, posX, posY):
         """
@@ -146,7 +160,7 @@ class Board:
         Get all future board states.
         """
         def mutate_board(move):
-            new_state = [row[:] for row in self.board]
+            new_state = deepcopy(self.board)
             new_state[posY][posX] = 0
             new_state[posY + move[1]][posX + move[0]] = piece
             return Board(new_state, 0 if self.active_player else 1)
@@ -208,6 +222,9 @@ class Board:
             count(),
             self.board, board))))
         if len(mutation) != 2:
+            print(self)
+            print(board)
+            print(mutation)
             raise RuntimeError
         if mutation[0][3] == 0:
             old, new = mutation
@@ -256,15 +273,3 @@ class Board:
         Ensure active player king on board.
         """
         return (KING | 1) in self
-
-
-if __name__ == '__main__':
-    seen = set()
-    queue = set([Board()])
-    while queue:
-        board = queue.pop()
-        seen.add(board)
-        if not all(board.lookahead_boards(1)):
-            continue
-        for future in board.lookahead_boards(1):
-            queue.add(future)
