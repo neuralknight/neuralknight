@@ -20,10 +20,11 @@ GAMES = {}
 
 
 @games.post()
-def get_game(request):
+def post_game(request):
     """
     Create a new game and provide an id for interacting.
     """
+    # POST /issue-agent {id: active_game} -> {'id': uuid}
     active_game = str(uuid4())
     GAMES[active_game] = Board()
     return {'id': active_game}
@@ -44,8 +45,7 @@ def get_states(request):
         board = GAMES[request.matchdict['game']]
         it = CURSORS[cursor] = board.lookahead_boards(
             request.GET.get('lookahead', 1))
-    slen = request.GET.get('count', 20)
-    states = list(islice(it, slen))
+    states = list(islice(it, 20))
     if len(states) < 20:
         cursor = None
     return {
@@ -58,6 +58,7 @@ def put_state(request):
     """
     Make a move to a new state on the board.
     """
+    # PUT /agent/{id} -> {}
     game = request.matchdict['game']
     GAMES[game] = GAMES[game].update(request.PUT['state'])
     return {'end': not GAMES[request.matchdict['game']]}
