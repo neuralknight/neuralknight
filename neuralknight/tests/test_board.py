@@ -99,8 +99,12 @@ def test_moves_consumption_lookahead_2(start_board):
 
 def test_moves_pawn_init_board(pawn_capture_board):
     for state, _ in pawn_capture_board.lookahead_boards(2):
-        pass
-        # assert pawn_capture_board.update(state.board)
+        assert pawn_capture_board.update(state.board)
+
+
+def test_moves_pawn_final_board(min_pawn_board):
+    for state, _, _ in min_pawn_board.lookahead_boards(3):
+        assert min_pawn_board.update(state.board)
 
 
 def test_board_mutations_are_valid(start_board):

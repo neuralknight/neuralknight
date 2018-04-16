@@ -83,8 +83,8 @@ class Board:
         Validate clear path along move.
         """
         return (
-            self.validate_ending(posX, posY, move) and
-            all(
+            self.validate_ending(posX, posY, move)
+            and all(
                 map(
                     lambda _range:
                         not self.board
@@ -114,21 +114,21 @@ class Board:
         Get all possible moves for pawn.
         """
         if (
-                self.is_on_board(posX, posY, (0, -1)) and
-                (not self.board[posY - 1][posX])):
+                self.is_on_board(posX, posY, (0, -1))
+                and (not self.board[posY - 1][posX])):
             yield (0, -1)
         if (
-                posY == 6 and
-                (not self.board[posY - 1][posX]) and
-                (not self.board[posY - 2][posX])):
+                posY == 6
+                and (not self.board[posY - 1][posX])
+                and (not self.board[posY - 2][posX])):
             yield (0, -2)
         if (
-                self.is_on_board(posX, posY, (1, -1)) and
-                self.inactive_piece(self.board[posY - 1][posX + 1])):
+                self.is_on_board(posX, posY, (1, -1))
+                and self.inactive_piece(self.board[posY - 1][posX + 1])):
             yield (1, -1)
         if (
-                self.is_on_board(posX, posY, (1, 1)) and
-                self.inactive_piece(self.board[posY + 1][posX + 1])):
+                self.is_on_board(posX, posY, (1, 1))
+                and self.inactive_piece(self.board[posY + 1][posX + 1])):
             yield (1, 1)
         if piece & 0x10:
             yield ()  # en passant
@@ -191,9 +191,12 @@ class Board:
         """
         return chain.from_iterable(
             map(
-                lambda posY, row: map(
-                    lambda posX, piece: (piece, posX, posY),
-                    count(), filter(self.active_piece, row)),
+                lambda posY, row: filter(None, map(
+                    lambda posX, piece:
+                        (piece, posX, posY)
+                        if self.active_piece(piece) else
+                        None,
+                    count(), row)),
                 count(), self.board))
 
     def swap(self):
@@ -222,9 +225,6 @@ class Board:
             count(),
             self.board, board))))
         if len(mutation) != 2:
-            print(self)
-            print(board)
-            print(mutation)
             raise RuntimeError
         if mutation[0][3] == 0:
             old, new = mutation

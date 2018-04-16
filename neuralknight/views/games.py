@@ -45,8 +45,7 @@ def get_states(request):
         board = GAMES[request.matchdict['game']]
         it = CURSORS[cursor] = board.lookahead_boards(
             request.GET.get('lookahead', 1))
-    slen = request.GET.get('count', 20)
-    states = list(islice(it, slen))
+    states = list(islice(it, 20))
     if len(states) < 20:
         cursor = None
     return {
