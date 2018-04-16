@@ -1,12 +1,7 @@
 from .meta import Base
-from sqlalchemy.exc import DBAPIError
-from uuid import uuid4
-from sqlalchemy.orm import relationship
 from sqlalchemy import (
     Column,
-    String,
     Integer,
-    Boolean,
     Table,
     ForeignKey,
 )
