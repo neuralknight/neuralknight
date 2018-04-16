@@ -59,12 +59,12 @@ def post_game(request):
     GAMES[game_uuid] = board
     active_game = {'id': game_uuid}
     future = executor.submit(
-        requests.POST,
+        requests.post,
         request.route_url('issue_agent'), post=active_game)
     future.add_done_callback(set_player_2)
     if player1:
         executor.submit(
-            requests.PUT,
+            requests.put,
             request.route_url('agent', agent_id=player1)
         ).add_done_callback(lambda fut: fut.result())
     wait({future})
@@ -116,7 +116,7 @@ def put_state(request):
     GAMES[game_uuid] = GAMES[game_uuid].update(state)
     board = GAMES[game_uuid]
     executor.submit(
-        requests.PUT,
+        requests.put,
         request.route_url('agent'), agent_id=board.active_player()
     ).add_done_callback(lambda fut: fut.result())
     table_game = request.dbsession.query(TableGame).filter(
