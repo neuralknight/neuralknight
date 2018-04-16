@@ -4,13 +4,19 @@ from uuid import uuid4
 from ..models import agent
 from pyramid.response import Response
 import json
+from pyramid.httpexceptions import HTTPBadRequest
+
 
 agent_game_map = {}
 
 
 @view_config(route_name='issue_agent', request_method='POST', renderer='json')
 def issue_agent_view(request):
-    game_id = request.POST['id']
+    try:
+        game_id = request.POST['id']
+    except KeyError:
+        return HTTPBadRequest()
+
     agent_id = uuid4()
     agent_game_map[str(agent_id)] = game_id
 
