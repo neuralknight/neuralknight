@@ -42,7 +42,7 @@ def post_game(request):
         response = fut.result()
         board.player2 = response.json().get('id', '')
         table_game = TableGame(
-            game=active_game,
+            game=game_uuid,
             player_one=board.player1,
             player_two=board.player2,
             one_won=True,
