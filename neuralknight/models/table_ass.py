@@ -8,6 +8,7 @@ from sqlalchemy import (
     Integer,
     Boolean,
     Table,
+    ForeignKey,
 )
 
 
