@@ -1,5 +1,5 @@
 from collections import deque
-# from itertools import starmap
+from itertools import starmap
 from pytest import raises
 
 from neuralknight.models.board import KING, QUEEN
@@ -78,8 +78,8 @@ Board([\
 
 
 def test_lookahead_length(start_board):
-    assert len(next(start_board.lookahead_boards(1))) == 1
-    assert len(next(start_board.lookahead_boards(5))) == 5
+    assert set(map(len, start_board.lookahead_boards(1))) == {1}
+    assert set(map(len, start_board.lookahead_boards(3))) == {3}
 
 
 def test_more_than_one_next_move(start_board):
@@ -103,20 +103,21 @@ def test_moves_consumption_lookahead_2(start_board):
 
 
 # def test_moves_to_end(start_board):
-#     win = next(filter(None, starmap(
-#         lambda *args: None if args[-1] else args,
-#         start_board.lookahead_boards(4))))
+#     def test(*args):
+#         assert all(isinstance(board, type(start_board)) for board in args)
+#         return None if args[-1] else args
+#     win = next(filter(None, starmap(test, start_board.lookahead_boards(5))))
 #     assert not win[-1]
 
 
 def test_moves_pawn_init_board(pawn_capture_board):
     for state, _ in pawn_capture_board.lookahead_boards(2):
-        assert pawn_capture_board.update(state.board)
+        assert pawn_capture_board.update(state)
 
 
 def test_moves_pawn_final_board(min_pawn_board):
     for state, _, _ in min_pawn_board.lookahead_boards(3):
-        assert min_pawn_board.update(state.board)
+        assert min_pawn_board.update(state)
 
 
 def test_board_mutations_are_valid(start_board):
@@ -268,7 +269,7 @@ def test_valid_board_move_backwards(end_game_board):
 
 def test_board_provides_update(start_board):
     mutated_board = next(start_board.lookahead_boards(1))[0]
-    assert start_board.update(mutated_board.board).board == [
+    assert start_board.update(mutated_board).board == [
         [12, 6, 2, 4, 10, 2, 6, 12],
         [8, 8, 8, 8, 8, 8, 8, 0],
         [0, 0, 0, 0, 0, 0, 0, 8],
