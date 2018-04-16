@@ -12,7 +12,7 @@ def configuration(request):
     """
     config = setUp(settings={
         'sqlalchemy.url': environ.get(
-            'TEST_DATABASE_URL', 'postgres://localhost:5432/neuralknight')
+            'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
     })
     config.include('neuralknight.models')
     config.include('neuralknight.routes')
