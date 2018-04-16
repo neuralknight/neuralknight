@@ -17,6 +17,10 @@ from ..models import (
     )
 
 
+from ..models import TableBoard
+from ..models import TableGame
+
+
 def usage(argv):
     cmd = os.path.basename(argv[0])
     print('usage: %s <config_uri> [var=value]\n'
