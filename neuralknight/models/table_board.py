@@ -1,14 +1,10 @@
 from .meta import Base
-from sqlalchemy.exc import DBAPIError
-from uuid import uuid4
 from sqlalchemy.orm import relationship
 from .table_ass import table
 from sqlalchemy import (
     Column,
     String,
     Integer,
-    Boolean,
-    Table,
 )
 
 
