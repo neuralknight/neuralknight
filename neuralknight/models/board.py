@@ -19,15 +19,18 @@ class Board:
     Chess board state model.
     """
 
-    def __init__(self, board=None, active_player=1) -> None:
+    def __init__(self, board=None, active_player=True) -> None:
         """
         Set up board.
         """
         if board:
-            self.board = board or INITIAL_BOARD
+            self.board = board
         else:
-            self.board = [row[:] for row in INITIAL_BOARD]
-        self.active_player = active_player
+            self.board = deepcopy(INITIAL_BOARD)
+        self._active_player = active_player
+        self.active_uuid = True
+        self.player1 = None
+        self.player2 = None
 
     def __bool__(self):
         """
@@ -63,6 +66,14 @@ class Board:
                     piece if piece else 14 + ((posY + posX) % 2)],
                 count(), row)),
             count(), self.board))
+
+    def active_player(self):
+        """
+        UUID of active player.
+        """
+        if self.active_uuid:
+            return self.player1
+        return self.player2
 
     @staticmethod
     def is_on_board(posX, posY, move):
@@ -163,7 +174,7 @@ class Board:
             new_state = deepcopy(self.board)
             new_state[posY][posX] = 0
             new_state[posY + move[1]][posX + move[0]] = piece
-            return Board(new_state, 0 if self.active_player else 1)
+            return Board(new_state, not self._active_player)
 
         return map(
             mutate_board,
@@ -173,7 +184,7 @@ class Board:
         """
         Validate piece as active.
         """
-        if self.active_player:
+        if self._active_player:
             return piece & 1 and piece & 0xE
         return (not piece & 1) and piece & 0xE
 
@@ -181,7 +192,7 @@ class Board:
         """
         Validate piece as inactive.
         """
-        if self.active_player:
+        if self._active_player:
             return (not piece & 1) and piece & 0xE
         return piece & 1 and piece & 0xE
 
@@ -203,12 +214,16 @@ class Board:
         """
         Rotate active player.
         """
-        return Board(list(map(
+        board = Board(list(map(
             lambda row: list(map(
                 lambda pp:
                     pp & 0xE | (1 if self.inactive_piece(pp) else 0),
                 row))[::-1],
             self.board))[::-1])
+        board.active_uuid = not self.active_uuid
+        board.player1 = self.player1
+        board.player2 = self.player2
+        return board
 
     def update(self, board):
         """
