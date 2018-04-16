@@ -1,5 +1,6 @@
 import requests
 from uuid import uuid4
+from random import randint
 # from .board import Board
 
 # PORT = 8080
@@ -177,20 +178,20 @@ class Agent:
             7 : (knight_val, own_knight_squares),
             3 : (bishop_val, own_bishop_squares),
             13: (rook_val, own_rook_squares),
-            11: (queen_val, zero_squares),
-            5 : (king_val, opp_king_squares),
+            11: (queen_val, own_queen_squares),
+            5 : (king_val, own_king_squares),
             
             8 : (-pawn_val, opp_pawn_squares),
             6 : (-knight_val, opp_knight_squares),
             2 : (-bishop_val, opp_bishop_squares),
             12: (-rook_val, opp_rook_squares),
-            10: (-queen_val, zero_squares),
+            10: (-queen_val, opp_queen_squares),
             4 : (-king_val, opp_king_squares),
             
             0 : (0, zero_squares),
         }
 
-        best_board = boards[0]
+        best_boards = [boards[0][0]]
         best_board_score = -999999
         for board_sequence in boards:
             for board in board_sequence:
@@ -202,7 +203,12 @@ class Agent:
                         board_score += piece_values[1][row][col]
                 if board_score > best_board_score:
                     best_board_score = board_score
-                    best_board = board
+                    best_boards = [board]
+                elif board_score == best_board_score:
+                    best_boards.append(board)
+        
+        best_board = best_boards[randint(0,len(best_boards))]
+
         if self.player == 1:
        #     print(Board(best_board))
             self.player = 2
