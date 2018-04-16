@@ -1,4 +1,5 @@
 from collections import deque
+# from itertools import starmap
 from pytest import raises
 
 from neuralknight.models.board import KING, QUEEN
@@ -43,6 +44,10 @@ def test_string_represention(start_board):
 ♙♙♙♙♙♙♙♙
 ♖♘♗♔♕♗♘♖\
 '''
+
+
+def test_string_represention_swap(start_board):
+    assert str(start_board.swap()) == str(start_board)
 
 
 def test_string_represention_end(end_game_board):
@@ -95,6 +100,13 @@ def test_moves_consumption_lookahead_2(start_board):
     deque(it, maxlen=0)
     with raises(StopIteration):
         next(it)
+
+
+# def test_moves_to_end(start_board):
+#     win = next(filter(None, starmap(
+#         lambda *args: None if args[-1] else args,
+#         start_board.lookahead_boards(4))))
+#     assert not win[-1]
 
 
 def test_moves_pawn_init_board(pawn_capture_board):
