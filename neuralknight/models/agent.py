@@ -1,7 +1,10 @@
 import requests
+from uuid import uuid4
+
 
 # PORT = 8080
 API_URL = 'http://localhost:8080'
+agent_game_map = {}
 
 def evaluate_boards(boards):
     '''Determine value for each board state in array of board states
@@ -194,7 +197,7 @@ def get_boards(game_id):
 
 def put_best_board(best_board, game_id):
     '''Sends move selection to board state manager'''
-    data = {'game': best_board}
+    data = {'game': game_id, 'state': best_board}
     response = requests.put(url='{}/v1.0/games/{}'.format(API_URL, game_id), json=data)
     try:
         data = response.json()
@@ -205,9 +208,12 @@ def put_best_board(best_board, game_id):
 
 def init_game():
     '''Initialize a new game'''
-    response = requests.post('{}/v1.0/games'.format(API_URL))
+    agent_id = uuid4()
+    response = requests.post('{}/v1.0/games'.format(API_URL), data={'agent_id': agent_id})
     data = response.json()
     game_id = data['id']
+
+    agent_game_map[agent_id] = game_id
 
     return game_id
 

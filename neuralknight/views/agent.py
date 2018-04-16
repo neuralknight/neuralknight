@@ -5,9 +5,7 @@ from ..models import agent
 from pyramid.response import Response
 import json
 from pyramid.httpexceptions import HTTPBadRequest
-
-
-agent_game_map = {}
+from ..models import agent_game_map
 
 
 @view_config(route_name='issue_agent', request_method='POST', renderer='json')

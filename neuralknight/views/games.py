@@ -89,7 +89,7 @@ def put_state(request):
     Make a move to a new state on the board.
     """
     game = request.matchdict['game']
-    game = GAMES[game] = GAMES[game].update(request.matchdict['state'])
+    game = GAMES[game] = GAMES[game].update(request.json['state'])
     future = executor.submit(
         requests.PUT,
         request.route_url('agent'), agent_id=game.active_player())
