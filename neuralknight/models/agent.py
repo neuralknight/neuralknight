@@ -1,9 +1,7 @@
 import requests
-from random import randint
-from numpy import array as ndarray
 
 # PORT = 8080
-API_URL = 'http://localhost:6543'
+API_URL = 'http://localhost:8080'
 
 def evaluate_boards(boards):
     '''Determine value for each board state in array of board states
@@ -161,13 +159,6 @@ def evaluate_boards(boards):
         0 : (0, zero_squares),
     }
 
-    #test boards
-    boards = (
-        [[12, 6, 2, 10, 4, 2, 6, 12], [8, 8, 8, 8, 8, 8, 8, 8], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [9, 9, 9, 9, 9, 9, 9, 9], [13, 7, 3, 11, 5, 3, 7, 13]],
-        [[12, 6, 2, 10, 4, 2, 6, 12], [8, 8, 8, 8, 8, 8, 8, 8], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 9, 0, 0, 0, 0], [9, 9, 9, 0, 9, 9, 9, 9], [13, 7, 3, 11, 5, 3, 7, 13]],
-        [[12, 6, 2, 10, 4, 2, 6, 12], [8, 8, 8, 8, 8, 8, 8, 8], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [9, 0, 0, 0, 0, 0, 0, 0], [0, 9, 9, 9, 9, 9, 9, 9], [13, 7, 3, 11, 5, 3, 7, 13]],
-    )
-
     best_board = boards[0]
     best_board_score = -999999
     for board in boards:
@@ -196,12 +187,14 @@ def get_boards(game_id):
 
     return boards
 
+
 def put_best_board(best_board, game_id):
     data = {'best_board': best_board}
     response = requests.put(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
     data = response.json()
     
     return data['end']
+
 
 def init_game():
     '''Initialize a new game'''
@@ -211,12 +204,18 @@ def init_game():
 
     return game_id
 
+
+def play_round(game_id):
+    '''Play a game round'''
+    boards = get_boards(game_id)
+    best_board = evaluate_boards(boards)
+    return put_best_board(best_board, game_id)
+
+
 def play_game():
-    '''Play a game'''
+    '''Play a game round'''
     game_id = init_game()
     
     game_over = False
     while not game_over:
-        boards = get_boards(game_id)
-        best_board = evaluate_boards(boards)
-        game_over = put_best_board(best_board, game_id)
+        game_over = play_round(game_id)
