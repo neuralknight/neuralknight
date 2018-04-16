@@ -209,7 +209,7 @@ def put_best_board(best_board, game_id):
 def init_game():
     '''Initialize a new game'''
     agent_id = uuid4()
-    response = requests.post('{}/v1.0/games'.format(API_URL), data={'agent_id': agent_id})
+    response = requests.post('{}/v1.0/games'.format(API_URL), data={'id': agent_id})
     data = response.json()
     game_id = data['id']
 
