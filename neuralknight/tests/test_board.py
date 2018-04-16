@@ -49,6 +49,19 @@ def test_board_mutations_are_valid(start_board):
     assert -1 not in mutated_board
 
 
+def test_board_provides_update(start_board):
+    mutated_board = next(start_board.lookahead_boards(1))[0]
+    assert start_board.update(mutated_board.board).board == [
+        [12, 6, 2, 4, 10, 2, 6, 12],
+        [8, 8, 8, 8, 8, 8, 8, 0],
+        [0, 0, 0, 0, 0, 0, 0, 8],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [9, 9, 9, 9, 9, 9, 9, 9],
+        [13, 7, 3, 5, 11, 3, 7, 13]]
+
+
 def test_board_lookahead_player_is_constant(start_board):
     states = next(start_board.lookahead_boards(3))
     assert states[0].board == [
