@@ -203,9 +203,11 @@ class Agent:
                         board_score += piece_values[1][row][col]
                 if board_score > best_board_score:
                     best_board_score = board_score
-                    best_boards = [board]
+                    best_boards = [board_sequence[0]]
+                    break
                 elif board_score == best_board_score:
-                    best_boards.append(board)
+                    best_boards.append(board_sequence[0])
+                    break
         
         best_board = best_boards[randint(0,len(best_boards))]
 
