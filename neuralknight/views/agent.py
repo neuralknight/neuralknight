@@ -12,7 +12,7 @@ agent_game_map = {}
 def issue_agent_view(request):
     game_id = request.POST['id']
     agent_id = uuid4()
-    agent_game_map[agent_id] = game_id
+    agent_game_map[str(agent_id)] = game_id
 
     return Response(body=json.dumps({'agent_id': str(agent_id)}), status_code=200)
 
@@ -23,4 +23,4 @@ def agent_view(request):
     game_id = agent_game_map[agent_id]
     agent.play_round(game_id)
 
-    return Response(body=json.dumps({}),status_code=200)
+    return Response()

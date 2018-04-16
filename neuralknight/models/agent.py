@@ -161,16 +161,20 @@ def evaluate_boards(boards):
 
     best_board = boards[0]
     best_board_score = -999999
-    for board in boards:
-        board_score = 0
-        for row in range(8):
-            for col in range(8):
-                board_score += value_map[board[row][col]][0]
-                board_score += value_map[board[row][col]][1][row][col]
-        if board_score > best_board_score:
-            best_board_score = board_score
-            best_board = board
+    for board_sequence in boards:
+        for board in board_sequence:
+            board_score = 0
+            for row in range(8):
+                for col in range(8):
+                    piece_values = value_map[board[row][col]]
+                    board_score += piece_values[0]
+                    board_score += piece_values[1][row][col]
+            if board_score > best_board_score:
+                best_board_score = board_score
+                best_board = board
 
+    for row in best_board:
+        print(row)
     return best_board
 
 
@@ -179,21 +183,23 @@ def get_boards(game_id):
     response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, game_id))
     data = response.json()
     boards = data['boards']
-    while data['cursor']:
-        response = requests.get(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data={'cursor': data['cursor']})
+    while data['cursor'] is not None:
+        params = {'cursor': data['cursor']}
+        response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, game_id), params=params)
         data = response.json()
         for board in data['boards']:
             boards.append(board)
-
     return boards
 
 
 def put_best_board(best_board, game_id):
     '''Sends move selection to board state manager'''
-    data = {'best_board': best_board}
+    data = {'game': best_board}
     response = requests.put(url='{}/v1.0/games/{}'.format(API_URL, game_id), json=data)
-    data = response.json()
-    
+    try:
+        data = response.json()
+    except:
+        data = {'end':False}
     return data['end']
 
 
