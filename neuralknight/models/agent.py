@@ -189,8 +189,9 @@ def get_boards(game_id):
 
 
 def put_best_board(best_board, game_id):
+    '''Sends move selection to board state manager'''
     data = {'best_board': best_board}
-    response = requests.put(url='{}/v1.0/games/{}/states'.format(API_URL, game_id), data=data)
+    response = requests.put(url='{}/v1.0/games/{}'.format(API_URL, game_id), json=data)
     data = response.json()
     
     return data['end']
