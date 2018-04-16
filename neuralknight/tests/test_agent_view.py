@@ -1,7 +1,6 @@
 import pytest
-from ..views import agent
 from pyramid.httpexceptions import HTTPBadRequest
-
+from neuralknight.views import agent
 
 def test_issue_agent_bad_request(dummy_post_request):
     '''Test request without proper query string'''
