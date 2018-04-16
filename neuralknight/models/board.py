@@ -31,12 +31,14 @@ class Board:
         self.active_uuid = True
         self.player1 = None
         self.player2 = None
+        self.move_count = 1
+        self.moves_since_pawn = 0
 
     def __bool__(self):
         """
         Ensure active player king on board.
         """
-        return self.has_king()
+        return self.moves_since_pawn >= 50 or self.has_king()
 
     def __contains__(self, piece):
         """
@@ -240,6 +242,8 @@ class Board:
         """
         Validate and return new board state.
         """
+        if isinstance(board, Board):
+            board = board.board
         mutation = tuple(filter(None, chain.from_iterable(map(
             lambda posY, old_row, new_row: map(
                 lambda posX, old_piece, new_piece:
@@ -268,12 +272,18 @@ class Board:
         move = (new[0] - posX, new[1] - posY)
         if move not in self.valid_moves_for_piece(piece, posX, posY):
             raise RuntimeError
-        return Board(board).swap()
+        board = Board(board).swap()
+        board.move_count = self.move_count + 1
+        if piece != 9:
+            board.moves_since_pawn = self.moves_since_pawn + 1
+        return board
 
     def lookahead_boards(self, n=4) -> None:
         """
         Provide an iterable of valid moves for current board state.
         """
+        if not self:
+            return iter(((self for _ in range(n + 1)),))
         if n == 0:
             return iter(((self,),))
         if n == 1:
@@ -296,6 +306,6 @@ class Board:
 
     def has_king(self):
         """
-        Ensure active player king on board.
+        Ensure active kings on board.
         """
-        return (KING | 1) in self
+        return (KING | 1) in self and KING in self
