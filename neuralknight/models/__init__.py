@@ -6,6 +6,7 @@ import zope.sqlalchemy
 # import or define all models here to ensure they are attached to the
 # Base.metadata prior to any initialization routines
 from .board import Board  # flake8: noqa
+from .agent import Agent, AGENT_POOL  # flake8: noqa
 from .table_board import TableBoard  # flake8: noqa
 from .table_game import TableGame  # flake8: noqa
 

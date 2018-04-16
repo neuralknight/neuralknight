@@ -111,7 +111,7 @@ def put_state(request):
     """
     Make a move to a new state on the board.
     """
-    state = Board(request.matchdict['state'])
+    state = Board(request.json['state'])
     game_uuid = request.matchdict['game']
     GAMES[game_uuid] = GAMES[game_uuid].update(state)
     board = GAMES[game_uuid]
