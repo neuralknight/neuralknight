@@ -6,7 +6,7 @@ class UserAgent(BaseAgent):
 
     def __init__(self, game_id, player):
         super().__init__(game_id, player)
-        self.request('POST', '/issue-agent', {'id': game_id, 'player': 2})
+        self.request('POST', '/issue-agent', json={'id': game_id, 'player': 2})
 
     def play_round(self, move):
         proposal = self.state
