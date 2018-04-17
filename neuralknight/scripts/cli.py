@@ -65,12 +65,13 @@ class CLIAgent(Cmd):
         Make move.
         """
         args = self.parse(args)
-        move = (self.piece, args)
+        move = (tuple(reversed(self.piece)), tuple(reversed(args)))
 
-        requests.put(API_URL + f"/agent/{self.game['id']}", data=move)
+        requests.put(API_URL + f"/agent/{self.user['agent_id']}", json=move)
 
         if len(args) == 2:
-            self.print_board(str(self.board).splitlines())
+            board = [list(row) for row in str(self.board).splitlines()]
+            self.print_board(map(' '.join, board))
 
     @staticmethod
     def print_board(board):
