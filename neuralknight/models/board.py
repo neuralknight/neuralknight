@@ -11,11 +11,13 @@ from json import dumps
 from functools import partial
 from uuid import uuid4
 
-from . import BaseBoard, TableBoard, TableGame
+from .base_board import BaseBoard
 from .board_constants import (
     EMOJI, INITIAL_BOARD, unit,
     BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK,
     BISHOP_MOVES, KING_MOVES, KNIGHT_MOVES, QUEEN_MOVES, ROOK_MOVES)
+from .table_board import TableBoard
+from .table_game import TableGame
 
 __all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
 
