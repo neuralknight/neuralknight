@@ -45,5 +45,5 @@ def test_make_move(testapp):
     first_board = mockboard.board
 
     assert player1.play_round()
-    assert mockboard.board = first_board
+    assert mockboard.board == first_board
     assert player2
