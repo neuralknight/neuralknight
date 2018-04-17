@@ -1,12 +1,7 @@
-import requests
-
 from random import randint
 from uuid import uuid4
 
 from .board import Board
-
-PORT = 8080
-API_URL = 'http://localhost:{}'.format(PORT)
 
 
 class BaseAgent:
@@ -23,6 +18,9 @@ class BaseAgent:
             self.join_game()
 
         self.state = None
+
+    def request(self, *args, **kwargs):
+        assert False
 
     def close(self):
         del self.AGENT_POOL[self.agent_id]
@@ -232,21 +230,21 @@ class BaseAgent:
 
     def get_state(self):
         '''Gets current board state'''
-        response = requests.get('{}/v1.0/games/{}'.format(API_URL, self.game_id))
+        response = self.request('GET', f'/v1.0/games/{ self.game_id }')
         data = response.json()
         return data['board']
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
         data = {'state': board}
-        response = requests.put(url='{}/v1.0/games/{}'.format(API_URL, self.game_id), json=data)
+        response = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         data = response.json()
         return data['end']
 
     def init_game(self):
         '''Initialize a new game'''
         data = {'id': self.agent_id}
-        response = requests.post('{}/v1.0/games'.format(API_URL), data=data)
+        response = self.request('POST', '/v1.0/games', data=data)
         data = response.json()
         self.game_id = data['id']
 
@@ -256,5 +254,5 @@ class BaseAgent:
 
     def join_game(self):
         data = {'id': self.agent_id}
-        response = requests.post('{}/v1.0/games/{}'.format(API_URL, self.game_id), data=data)
+        response = self.request('POST', f'/v1.0/games/{ self.game_id }', data=data)
         response.json()
