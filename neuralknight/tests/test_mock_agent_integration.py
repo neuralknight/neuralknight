@@ -2,8 +2,9 @@ from ..models import BaseBoard
 
 
 class MockBoard(BaseBoard):
-    def __init__(self, testapp, _id=None):
+    def __init__(self, testapp, active_player=True, _id=None):
         self.testapp = testapp
+        self._active_player = active_player
         self.args = {}
         self.kwargs = {}
         super().__init__(_id, [[[[0 for i in range(8)] for j in range(8)]]])

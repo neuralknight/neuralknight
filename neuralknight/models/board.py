@@ -34,13 +34,10 @@ class Board(BaseBoard):
         """
         super().__init__(_id, board)
         self._active_player = active_player
-        self.active_uuid = True
         self.cursors = {}
         self.executor = ThreadPoolExecutor()
         self.move_count = 1
         self.moves_since_pawn = 0
-        self.player1 = None
-        self.player2 = None
 
     def __bool__(self):
         """
@@ -87,14 +84,6 @@ class Board(BaseBoard):
             count(),
             self.board if self.active_uuid else reversed(
                 [reversed(row) for row in self.board])))
-
-    def active_player(self):
-        """
-        UUID of active player.
-        """
-        if self.active_uuid:
-            return self.player1
-        return self.player2
 
     def add_player_v1(self, dbsession, player):
         """

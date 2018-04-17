@@ -27,6 +27,9 @@ class BaseBoard:
             self.board = board
         else:
             self.board = deepcopy(INITIAL_BOARD)
+        self.active_uuid = True
+        self.player1 = None
+        self.player2 = None
 
     def request(self, method, resource, *args, json=None, **kwargs):
         if neuralknight.testapp:
@@ -48,6 +51,15 @@ class BaseBoard:
             self.executor.submit(
                 requests.get, f'{ self.API_URL }{ resource }', data=json, **kwargs
             ).add_done_callback(self.handle_future)
+
+    def active_player(self):
+        """
+        UUID of active player.
+        """
+        if self.active_uuid:
+            return self.player1
+        return self.player2
+
 
     def close(self):
         del self.GAMES[self.id]
