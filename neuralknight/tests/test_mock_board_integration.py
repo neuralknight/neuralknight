@@ -12,7 +12,6 @@ class MockAgent(BaseAgent):
     def play_round(self, *args, **kwargs):
         self.args.append(args)
         self.kwargs.append(kwargs)
-        return next(self.moves)
 
 
 def test_home_response(testapp):

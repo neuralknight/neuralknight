@@ -1,7 +1,4 @@
-import json
-
 from pyramid.httpexceptions import HTTPBadRequest
-from pyramid.response import Response
 from pyramid.view import view_config
 
 from ..models import Agent
@@ -16,8 +13,8 @@ def issue_agent_view(request):
         return HTTPBadRequest()
     player = request.json.get('player', 1)
     if 'user' in request.json:
-        return Response(body=json.dumps({'agent_id': UserAgent(game_id, player).agent_id}))
-    return Response(body=json.dumps({'agent_id': Agent(game_id, player).agent_id}))
+        return {'agent_id': UserAgent(game_id, player).agent_id}
+    return {'agent_id': Agent(game_id, player).agent_id}
 
 
 @view_config(route_name='agent', request_method=('PUT', 'GET'), renderer='json')
@@ -33,4 +30,4 @@ def agent_view(request):
         else:
             agent.play_round()
 
-    return Response(body=json.dumps({}))
+    return {}
