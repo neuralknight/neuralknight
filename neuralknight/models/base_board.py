@@ -28,25 +28,25 @@ class BaseBoard:
         else:
             self.board = deepcopy(INITIAL_BOARD)
 
-    def request(self, method, resource, *args, data=None, json=None, **kwargs):
+    def request(self, method, resource, *args, json=None, **kwargs):
         if neuralknight.testapp:
             if method == 'POST':
-                return neuralknight.testapp.post_json(resource, data).json
+                return neuralknight.testapp.post_json(resource, json).json
             if method == 'PUT':
                 return neuralknight.testapp.put_json(resource, json).json
             if method == 'GET':
-                return neuralknight.testapp.get(resource, data).json
+                return neuralknight.testapp.get(resource, json).json
         if method == 'POST':
             self.executor.submit(
-                requests.post, f'{ self.API_URL }{ resource }', **kwargs
+                requests.post, f'{ self.API_URL }{ resource }', data=json, **kwargs
             ).add_done_callback(self.handle_future)
         if method == 'PUT':
             self.executor.submit(
-                requests.put, f'{ self.API_URL }{ resource }', **kwargs
+                requests.put, f'{ self.API_URL }{ resource }', json=json, **kwargs
             ).add_done_callback(self.handle_future)
         if method == 'GET':
             self.executor.submit(
-                requests.get, f'{ self.API_URL }{ resource }', **kwargs
+                requests.get, f'{ self.API_URL }{ resource }', data=json, **kwargs
             ).add_done_callback(self.handle_future)
 
     def close(self):
@@ -62,4 +62,4 @@ class BaseBoard:
         """
         Inform active player of game state.
         """
-        self.request('PUT', f'/agent/{ active_player or self.active_player() }', data={'end': end})
+        self.request('PUT', f'/agent/{ active_player or self.active_player() }', json={'end': end})

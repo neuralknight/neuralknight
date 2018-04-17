@@ -20,20 +20,20 @@ class BaseAgent:
         self.join_game()
         self.state = None
 
-    def request(self, method, resource, *args, data=None, json=None, **kwargs):
+    def request(self, method, resource, *args, json=None, **kwargs):
         if neuralknight.testapp:
             if method == 'POST':
-                return neuralknight.testapp.post_json(resource, data).json
+                return neuralknight.testapp.post_json(resource, json).json
             if method == 'PUT':
                 return neuralknight.testapp.put_json(resource, json).json
             if method == 'GET':
-                return neuralknight.testapp.get(resource, data).json
+                return neuralknight.testapp.get(resource, json).json
         if method == 'POST':
-            return requests.post(f'{ self.API_URL }{ resource }', **kwargs).json()
+            return requests.post(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
         if method == 'PUT':
-            return requests.put(f'{ self.API_URL }{ resource }', **kwargs).json()
+            return requests.put(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
         if method == 'GET':
-            return requests.get(f'{ self.API_URL }{ resource }', **kwargs).json()
+            return requests.get(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
 
     def close(self):
         del self.AGENT_POOL[self.agent_id]
@@ -255,7 +255,7 @@ class BaseAgent:
     def init_game(self):
         '''Initialize a new game'''
         data = {'id': self.agent_id}
-        data = self.request('POST', '/v1.0/games', data=data)
+        data = self.request('POST', '/v1.0/games', json=data)
         self.game_id = data['id']
 
         self.player = 1
@@ -263,4 +263,4 @@ class BaseAgent:
         self.AGENT_POOL[self.agent_id] = self
 
     def join_game(self):
-        self.request('POST', f'/v1.0/games/{ self.game_id }', data={'id': self.agent_id})
+        self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})
