@@ -2,7 +2,6 @@
 Chess state handling model.
 """
 
-import requests
 
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -13,16 +12,13 @@ from uuid import uuid4
 
 from .base_board import BaseBoard
 from .board_constants import (
-    EMOJI, INITIAL_BOARD, unit,
+    EMOJI, unit,
     BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK,
     BISHOP_MOVES, KING_MOVES, KNIGHT_MOVES, QUEEN_MOVES, ROOK_MOVES)
 from .table_board import TableBoard
 from .table_game import TableGame
 
 __all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
-
-PORT = 8080
-API_URL = 'http://localhost:{}'.format(PORT)
 
 
 class Board(BaseBoard):
@@ -37,11 +33,7 @@ class Board(BaseBoard):
         """
         Set up board.
         """
-        super().__init__(_id)
-        if board:
-            self.board = board
-        else:
-            self.board = deepcopy(INITIAL_BOARD)
+        super().__init__(_id, board)
         self._active_player = active_player
         self.active_uuid = True
         self.cursors = {}
@@ -125,12 +117,7 @@ class Board(BaseBoard):
         dbsession.add(table_game)
         dbsession.add(table_board)
         self.poke_player(False)
-
-    def current_state_v1(self):
-        """
-        Provide REST view of game state.
-        """
-        return {'board': self.board}
+        return {}
 
     def get_cursor(self, cursor, lookahead):
         """
@@ -144,16 +131,6 @@ class Board(BaseBoard):
         Handle a future from and async request.
         """
         future.result()
-
-    def poke_player(self, end, active_player=None):
-        """
-        Inform active player of game state.
-        """
-        self.executor.submit(
-            requests.put,
-            f'{ API_URL }/agent/{ active_player or self.active_player() }',
-            data={'end': False}
-        ).add_done_callback(self.handle_future)
 
     def slice_cursor_v1(self, cursor=None, lookahead=1):
         """
