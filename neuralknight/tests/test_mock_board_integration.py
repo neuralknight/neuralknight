@@ -22,4 +22,4 @@ def test_home_response(testapp):
 
 def test_agent_play_through(testapp):
     response = testapp.get('/v1.0/games', status='*')
-    assert response.status_code == 404
+    assert response.status_code == 200
