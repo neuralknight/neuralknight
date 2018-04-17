@@ -32,8 +32,9 @@ class MockBoard(BaseBoard):
 
 def test_make_move(testapp):
     mockboard = MockBoard()
-    player1 = Agent(mockboard.id)
+    import pdb; pdb.set_trace()
+    player1 = Agent(str(mockboard.id))
     player1.player = 2
-    player2 = Agent(mockboard.id)
+    player2 = Agent(str(mockboard.id))
 
     assert player1.play_round()
