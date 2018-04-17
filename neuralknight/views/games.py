@@ -61,7 +61,7 @@ def join_game(request):
     Add player to board.
     """
     return get_game(request).add_player_v1(
-        request.dbsession, request.matchdict['id'])
+        request.dbsession, request.matchdict['game'])
 
 
 @game_interaction.put()

@@ -24,6 +24,9 @@ class BaseBoard:
         else:
             self.board = deepcopy(INITIAL_BOARD)
 
+    def request(self, *args, **kwargs):
+        assert False
+
     def close(self):
         del self.GAMES[self.id]
 
@@ -37,4 +40,4 @@ class BaseBoard:
         """
         Inform active player of game state.
         """
-        self.request(f'/agent/{ active_player or self.active_player() }', data={'end': end})
+        self.request('PUT', f'/agent/{ active_player or self.active_player() }', data={'end': end})

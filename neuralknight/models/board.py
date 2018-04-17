@@ -120,6 +120,7 @@ class Board(BaseBoard):
         table_board.game_link.append(table_game)
         dbsession.add(table_game)
         dbsession.add(table_board)
+        import pdb; pdb.set_trace()
         self.poke_player(False)
         return {}
 
