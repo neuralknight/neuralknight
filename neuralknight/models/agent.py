@@ -12,14 +12,12 @@ class Agent(BaseAgent):
 
     def get_boards(self):
         '''Retrieves potential board states'''
-        response = self.request('GET', '/v1.0/games/{}/states'.format(self.game_id))
-        data = response.json()
+        data = self.request('GET', '/v1.0/games/{}/states'.format(self.game_id))
         boards = data['boards']
         while data['cursor'] is not None:
             params = {'cursor': data['cursor']}
-            response = self.request(
+            data = self.request(
                 'GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
-            data = response.json()
             for board in data['boards']:
                 boards.append(board)
         return boards
