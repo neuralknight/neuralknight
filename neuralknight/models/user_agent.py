@@ -3,11 +3,10 @@ from .base_agent import BaseAgent
 
 class UserAgent(BaseAgent):
     '''Human Agent'''
-    
-    def __init__(self, _id):
-        super().__init__(_id)
-        self.request('POST', f'/games/{_id}', {'id': self.agent_id}).json()
-        self.request('POST', '/issue-agent', {'id': _id}).json()
+
+    def __init__(self, game_id, player):
+        super().__init__(game_id, player)
+        self.request('POST', '/issue-agent', {'id': game_id, 'player': 2}).json()
 
     def play_round(self, move):
         proposal = self.state

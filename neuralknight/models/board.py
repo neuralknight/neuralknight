@@ -21,19 +21,16 @@ from .table_game import TableGame
 
 __all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
 
-PORT = 8080
-API_URL = 'http://localhost:{}'.format(PORT)
-
 
 class Board(BaseBoard):
     """
     Chess board state model.
     """
 
-    def __init__(
-            self,
-            board=None, active_player=True, _id=None, *,
-            player1=None, player2=None):
+    PORT = 8080
+    API_URL = 'http://localhost:{}'.format(PORT)
+
+    def __init__(self, board=None, active_player=True, _id=None):
         """
         Set up board.
         """
@@ -44,8 +41,8 @@ class Board(BaseBoard):
         self.executor = ThreadPoolExecutor()
         self.move_count = 1
         self.moves_since_pawn = 0
-        self.player1 = player1
-        self.player2 = player2
+        self.player1 = None
+        self.player2 = None
 
     def __bool__(self):
         """
@@ -101,27 +98,30 @@ class Board(BaseBoard):
             return self.player1
         return self.player2
 
-    def add_player_v1(self, dbsession, player2):
+    def add_player_v1(self, dbsession, player):
         """
         Player 2 joins game.
         """
-        self.player2 = player2
-        table_game = TableGame(
-            game=self.id,
-            player_one=self.player1,
-            player_two=self.player2,
-            one_won=True,
-            two_won=True)
-        table_board = TableBoard(
-            board_state=dumps(self.board),
-            move_num=self.move_count,
-            player=self.active_player(),
-            game=self.id)
-        table_board.game_link.append(table_game)
-        dbsession.add(table_game)
-        dbsession.add(table_board)
-        import pdb; pdb.set_trace()
-        self.poke_player(False)
+        assert player
+        if self.player1:
+            self.player2 = player
+            table_game = TableGame(
+                game=self.id,
+                player_one=self.player1,
+                player_two=self.player2,
+                one_won=True,
+                two_won=True)
+            table_board = TableBoard(
+                board_state=dumps(self.board),
+                move_num=self.move_count,
+                player=self.active_player(),
+                game=self.id)
+            table_board.game_link.append(table_game)
+            dbsession.add(table_game)
+            dbsession.add(table_board)
+            self.poke_player(False)
+            return {}
+        self.player1 = player
         return {}
 
     def get_cursor(self, cursor, lookahead):
@@ -140,15 +140,15 @@ class Board(BaseBoard):
     def request(self, method, resource, *args, **kwargs):
         if method == 'POST':
             self.executor.submit(
-                requests.post, f'{ API_URL }{ resource }', **kwargs
+                requests.post, f'{ self.API_URL }{ resource }', **kwargs
             ).add_done_callback(self.handle_future)
         if method == 'PUT':
             self.executor.submit(
-                requests.put, f'{ API_URL }{ resource }', **kwargs
+                requests.put, f'{ self.API_URL }{ resource }', **kwargs
             ).add_done_callback(self.handle_future)
         if method == 'GET':
             self.executor.submit(
-                requests.get, f'{ API_URL }{ resource }', **kwargs
+                requests.get, f'{ self.API_URL }{ resource }', **kwargs
             ).add_done_callback(self.handle_future)
 
     def slice_cursor_v1(self, cursor=None, lookahead=1):

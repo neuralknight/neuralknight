@@ -9,14 +9,12 @@ class BaseAgent:
 
     AGENT_POOL = {}
 
-    def __init__(self, game_id=None):
+    def __init__(self, game_id, player):
         self.agent_id = str(uuid4())
-        if game_id:
-            self.player = 2
-            self.game_id = game_id
-            self.AGENT_POOL[self.agent_id] = self
-            self.join_game()
-
+        self.player = player
+        self.game_id = game_id
+        self.AGENT_POOL[self.agent_id] = self
+        self.join_game()
         self.state = None
 
     def request(self, *args, **kwargs):

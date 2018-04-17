@@ -3,11 +3,11 @@ from ..models import Agent
 
 
 class MockBoard(BaseBoard):
-    def __init__(self, _id=None):
-        super().__init__(_id)
+    def __init__(self, testapp, _id=None):
+        self.testapp = testapp
         self.args = {}
         self.kwargs = {}
-        self.board = [[[[0 for i in range(8)] for j in range(8)]]]
+        super().__init__(_id, [[[[0 for i in range(8)] for j in range(8)]]])
 
     def request(self, method, resource, *args, data=None, json=None, **kwargs):
         if method == 'POST':
@@ -39,9 +39,9 @@ class MockBoard(BaseBoard):
 
 
 def test_make_move(testapp):
-    mockboard = MockBoard()
-    player1 = Agent(str(mockboard.id))
-    player1.player = 2
-    player2 = Agent(str(mockboard.id))
+    mockboard = MockBoard(testapp)
+    player1 = Agent(mockboard.id, 1)
+    player2 = Agent(mockboard.id, 2)
 
     assert player1.play_round()
+    assert player2

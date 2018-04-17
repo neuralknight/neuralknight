@@ -36,7 +36,7 @@ def post_game(request):
     """
     Create a new game and provide an id for interacting.
     """
-    return {'id': Board(player1=request.matchdict.get('id', None)).id}
+    return {'id': Board().id}
 
 
 @game_states.get()
