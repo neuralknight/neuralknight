@@ -248,7 +248,6 @@ class BaseAgent:
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
-        import pdb; pdb.set_trace()
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         return data['end']
