@@ -3,7 +3,6 @@ from os import environ
 from pyramid.testing import DummyRequest, setUp, tearDown
 from neuralknight.models.meta import Base
 from pytest import fixture
-from webtest import TestApp
 from pyramid.config import Configurator
 
 
@@ -57,20 +56,30 @@ def testapp(request):
     """
     Functional test for app to support mocking.
     """
-    def main():
-        settings = {
-            'sqlalchemy.url': environ.get(
-                'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
-        }
-        config = Configurator(settings=settings)
-        config.include('pyramid_jinja2')
-        config.include('neuralknight.routes')
-        config.include('neuralknight.models')
-        # config.include("neuralknight.security")
-        config.scan()
-        return config.make_wsgi_app()
+    from webtest import TestApp
 
-    app = main()
+    from neuralknight import main
+
+    # def main():
+    #     settings = {
+    #         'sqlalchemy.url': environ.get(
+    #             'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
+    #     }
+    #     config = Configurator(settings=settings)
+    #     config.include('cornice')
+    #     config.include('pyramid_jinja2')
+    #     config.include('neuralknight.routes')
+    #     config.include('neuralknight.models')
+    #     # config.include("neuralknight.security")
+    #     config.scan()
+    #     return config.make_wsgi_app()
+
+    settings = {
+        'sqlalchemy.url': environ.get(
+            'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
+    }
+
+    app = main({}, **settings)
 
     SessionFactory = app.registry["dbsession_factory"]
     engine = SessionFactory().bind

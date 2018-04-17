@@ -28,7 +28,7 @@ def get_games(request):
     """
     Retrieve all game ids.
     """
-    return {'ids': Board.GAMES.keys()}
+    return {'ids': list(Board.GAMES.keys())}
 
 
 @games.post()
@@ -58,7 +58,7 @@ def get_state(request):
 @game_interaction.post()
 def join_game(request):
     """
-    Provide current state on the board.
+    Add player to board.
     """
     return get_game(request).add_player_v1(
         request.dbsession, request.matchdict['id'])
