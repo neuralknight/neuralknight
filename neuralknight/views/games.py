@@ -33,14 +33,15 @@ def post_game(request):
     Create a new game and provide an id for interacting.
     """
     player1 = request.matchdict.get('id', '')
+    player2 = request.matchdict.get('opponent', '')
     game_uuid = str(uuid4())
     board = Board()
     board.player1 = player1
 
     def set_player_2(fut):
-        nonlocal board, game_uuid
+        nonlocal board, game_uuid, player2
         response = fut.result()
-        board.player2 = response.json().get('id', '')
+        board.player2 = player2 if player2 else response.json().get('id', '')
         table_game = TableGame(
             game=game_uuid,
             player_one=board.player1,
