@@ -59,6 +59,7 @@ setup(
         ],
         'console_scripts': [
             'initialize_neuralknight_db = neuralknight.scripts.initializedb:main',
+            'initialize_neuralknight_cli = neuralknight.scripts.cli:main',
         ],
     },
 )

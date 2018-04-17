@@ -1,6 +1,11 @@
 from cmd import Cmd
+import requests
 
 from ..models import Board
+from ..models import UserAgent
+
+PORT = 8080
+API_URL = 'http://localhost:{}'.format(PORT)
 
 PIECE_NAME = {
     3: 'bishop',
@@ -10,24 +15,16 @@ PIECE_NAME = {
     11: 'queen',
     13: 'rook',
 }
-BRIGHT_GREEN = '\u001b[32;1m'
+BRIGHT_GREEN = '\u001b[42;1m'
 RESET = '\u001b[0m'
 SELECTED_PIECE = f'{ BRIGHT_GREEN }{{}}{ RESET }'
-BOARD_OUTPUT_SHELL = '''
+TOP_BOARD_OUTPUT_SHELL = '''
   A B C D E F G H
- +---------------
-1|
-2|
-3|
-4|
-5|
-6|
-7|
-8|
-'''
+ +---------------'''
+BOARD_OUTPUT_SHELL = ('1|', '2|', '3|', '4|', '5|', '6|', '7|', '8|')
 
 
-class MockAgent(Cmd):
+class CLIAgent(Cmd):
     intro = '''
 '''
     prompt = '> '
@@ -37,6 +34,11 @@ class MockAgent(Cmd):
         Init player board.
         """
         self.board = Board()
+        self.piece = None
+        self.user = None
+        self.game = requests.post(API_URL + '/v1.0/games').json()
+        self.user = requests.post(API_URL + '/issue-agent', data=self.game).json()
+        self.user['user'] = 1
         super().__init__()
 
     def do_piece(self, args):
@@ -44,6 +46,7 @@ class MockAgent(Cmd):
         Select piece for move.
         """
         args = self.parse(args)
+        self.piece = args
         if len(args) == 2:
             try:
                 piece = self.board.board[args[1]][args[0]]
@@ -54,7 +57,7 @@ class MockAgent(Cmd):
             board = [list(row) for row in str(self.board).splitlines()]
             board[args[1]][args[0]] = SELECTED_PIECE.format(
                 board[args[1]][args[0]])
-            self.print_board(map(''.join, board))
+            self.print_board(map(' '.join, board))
             print(f'Selected: { PIECE_NAME[piece] }')
 
     def do_move(self, args):
@@ -62,6 +65,10 @@ class MockAgent(Cmd):
         Make move.
         """
         args = self.parse(args)
+        move = (self.piece, args)
+
+        requests.put(API_URL + f"/agent/{self.game['id']}", data=move)
+
         if len(args) == 2:
             self.print_board(str(self.board).splitlines())
 
@@ -70,17 +77,17 @@ class MockAgent(Cmd):
         """
         Print board in shell.
         """
+        print(TOP_BOARD_OUTPUT_SHELL)
         for shell, line in zip(
-                BOARD_OUTPUT_SHELL,
-                ('', '') + tuple(board)):
-            print(f'{ shell }{ " ".join(line) }')
+                BOARD_OUTPUT_SHELL, tuple(board)):
+            print(f'{ shell }{ "".join(line) }')
 
     @staticmethod
     def parse(args):
         """
         Split arguments.
         """
-        return tuple(map(int, args.split()[1:]))
+        return tuple(map(lambda x: x - 1, tuple(map(int, args.split()))))
 
     def emptyline(self):
         """
@@ -103,7 +110,7 @@ class MockAgent(Cmd):
 
 
 def main():
-    MockAgent().cmdloop()
+    CLIAgent().cmdloop()
 
 
 if __name__ == '__main__':
