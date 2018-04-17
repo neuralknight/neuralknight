@@ -61,6 +61,7 @@ def join_game(request):
     """
     Add player to board.
     """
+    import pdb; pdb.set_trace()
     try:
         user_id = request.json['id']
     except KeyError:

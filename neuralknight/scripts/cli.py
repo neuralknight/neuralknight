@@ -37,7 +37,7 @@ class CLIAgent(Cmd):
         self.piece = None
         self.user = None
         game = requests.post(API_URL + '/v1.0/games').json()
-        self.user = requests.post(API_URL + '/issue-agent', data=game).json()
+        self.user = requests.post(API_URL + '/issue-agent', json=game).json()
         self.user['user'] = 1
         super().__init__()
 
@@ -110,7 +110,10 @@ class CLIAgent(Cmd):
 
 
 def main():
-    CLIAgent().cmdloop()
+    try:
+        CLIAgent().cmdloop()
+    except KeyboardInterrupt:
+        print()
 
 
 if __name__ == '__main__':
