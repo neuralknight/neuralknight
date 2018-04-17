@@ -56,30 +56,13 @@ def testapp(request):
     """
     Functional test for app to support mocking.
     """
+    from neuralknight import main
     from webtest import TestApp
 
-    from neuralknight import main
-
-    # def main():
-    #     settings = {
-    #         'sqlalchemy.url': environ.get(
-    #             'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
-    #     }
-    #     config = Configurator(settings=settings)
-    #     config.include('cornice')
-    #     config.include('pyramid_jinja2')
-    #     config.include('neuralknight.routes')
-    #     config.include('neuralknight.models')
-    #     # config.include("neuralknight.security")
-    #     config.scan()
-    #     return config.make_wsgi_app()
-
-    settings = {
+    app = main({}, **{
         'sqlalchemy.url': environ.get(
             'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
-    }
-
-    app = main({}, **settings)
+    })
 
     SessionFactory = app.registry["dbsession_factory"]
     engine = SessionFactory().bind
