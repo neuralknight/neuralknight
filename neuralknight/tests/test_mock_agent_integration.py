@@ -1,4 +1,5 @@
 from ..models import BaseBoard
+from ..models import Agent
 
 
 class MockBoard(BaseBoard):
@@ -30,4 +31,9 @@ class MockBoard(BaseBoard):
 
 
 def test_make_move(testapp):
-    pass
+    mockboard = MockBoard()
+    player1 = Agent(mockboard.id)
+    player1.player = 2
+    player2 = Agent(mockboard.id)
+
+    assert player1.play_round()
