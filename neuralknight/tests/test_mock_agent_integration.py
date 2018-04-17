@@ -20,7 +20,11 @@ class MockBoard(BaseBoard):
     def add_player_v1(self, *args, **kwargs):
         self.args['add_player_v1'] = args
         self.kwargs['add_player_v1'] = kwargs
-        self.player2 = 1
+        player = args[1]
+        if self.player1:
+            self.player2 = player
+        else:
+            self.player1 = player
         self.poke_player(False)
         return {}
 
