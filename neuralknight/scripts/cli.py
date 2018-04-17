@@ -36,8 +36,8 @@ class CLIAgent(Cmd):
         self.board = Board()
         self.piece = None
         self.user = None
-        self.game = requests.post(API_URL + '/v1.0/games').json()
-        self.user = requests.post(API_URL + '/issue-agent', data=self.game).json()
+        game = requests.post(API_URL + '/v1.0/games').json()
+        self.user = requests.post(API_URL + '/issue-agent', data=game).json()
         self.user['user'] = 1
         super().__init__()
 
