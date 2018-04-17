@@ -60,7 +60,6 @@ class BaseBoard:
             return self.player1
         return self.player2
 
-
     def close(self):
         del self.GAMES[self.id]
 

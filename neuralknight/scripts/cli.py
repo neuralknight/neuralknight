@@ -2,7 +2,6 @@ from cmd import Cmd
 import requests
 
 from ..models import Board
-from ..models import UserAgent
 
 PORT = 8080
 API_URL = 'http://localhost:{}'.format(PORT)
