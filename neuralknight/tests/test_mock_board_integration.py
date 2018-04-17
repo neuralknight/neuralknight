@@ -6,7 +6,7 @@ class MockAgent(BaseAgent):
         self.api_url = api_url
         self.args = []
         self.kwargs = []
-        self.moves = moves
+        self.moves = iter(moves)
         super().__init__(game_id)
 
     def play_round(self, *args, **kwargs):
@@ -23,3 +23,12 @@ def test_home_response(testapp):
 def test_agent_play_through(testapp):
     response = testapp.get('/v1.0/games', status='*')
     assert response.status_code == 200
+
+
+def test_agent_play_no_moves(testapp):
+    player1 = MockAgent('', [])
+    game = testapp.post_json('/v1.0/games', {'id': player1.agent_id}, status='*').json
+    player2 = MockAgent('', [], game['id'])
+    assert game
+    assert player1
+    assert player2
