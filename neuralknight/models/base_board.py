@@ -33,7 +33,7 @@ class BaseBoard:
             if method == 'POST':
                 return neuralknight.testapp.post_json(resource, data).json
             if method == 'PUT':
-                return neuralknight.testapp.put(resource, json).json
+                return neuralknight.testapp.put_json(resource, json).json
             if method == 'GET':
                 return neuralknight.testapp.get(resource, data).json
         if method == 'POST':
