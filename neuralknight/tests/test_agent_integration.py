@@ -1,4 +1,3 @@
-'''
 from ..models import BaseBoard
 
 
@@ -31,4 +30,4 @@ class MockBoard(BaseBoard):
 
 
 def test_make_move(testapp):
-'''
+    pass
