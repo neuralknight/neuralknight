@@ -1,5 +1,4 @@
 from .base_agent import BaseAgent
-import requests
 
 
 class UserAgent(BaseAgent):
@@ -9,4 +8,4 @@ class UserAgent(BaseAgent):
         proposal = self.state
         proposal[move[1][0]][move[1][1]] = proposal[move[0][0]][move[0][1]]
         proposal[move[0][0]][move[0][1]] = 0
-        put_board(proposal)
+        self.put_board(proposal)

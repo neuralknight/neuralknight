@@ -11,7 +11,7 @@ from json import dumps
 from functools import partial
 from uuid import uuid4
 
-from . import TableBoard, TableGame
+from . import BaseBoard, TableBoard, TableGame
 from .board_constants import (
     EMOJI, INITIAL_BOARD, unit,
     BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK,
@@ -19,29 +19,14 @@ from .board_constants import (
 
 __all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
 
-API_URL = 'http://localhost:8080'
+PORT = 8080
+API_URL = 'http://localhost:{}'.format(PORT)
 
 
-class Board:
+class Board(BaseBoard):
     """
     Chess board state model.
     """
-
-    GAMES = {}
-
-    @classmethod
-    def get_game(cls, _id):
-        """
-        Provide game matching id.
-        """
-        return cls.GAMES[_id]
-
-    @classmethod
-    def new_game(cls, player1):
-        """
-        Set up board from request.
-        """
-        return {'id': cls(player1=player1, player2=None).id}
 
     def __init__(
             self,
@@ -50,11 +35,7 @@ class Board:
         """
         Set up board.
         """
-        if _id:
-            self.id = _id
-        else:
-            self.id = str(uuid4())
-        self.GAMES[self.id] = self
+        super().__init__(_id)
         if board:
             self.board = board
         else:
@@ -401,6 +382,7 @@ class Board:
             table_game.two_won = False
         else:
             table_game.one_won = False
+        self.close()
         return {'end': True}
 
     def lookahead_boards(self, n=4) -> None:
