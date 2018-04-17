@@ -2,10 +2,16 @@
 Chess state handling model.
 """
 
-from copy import deepcopy
-from itertools import chain, count, starmap
-from functools import partial
+import requests
 
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
+from itertools import chain, count, islice, starmap
+from json import dumps
+from functools import partial
+from uuid import uuid4
+
+from . import TableBoard, TableGame
 from .board_constants import (
     EMOJI, INITIAL_BOARD, unit,
     BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK,
@@ -13,32 +19,60 @@ from .board_constants import (
 
 __all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
 
+API_URL = 'http://localhost:8080'
+
 
 class Board:
     """
     Chess board state model.
     """
 
-    def __init__(self, board=None, active_player=True) -> None:
+    GAMES = {}
+
+    @classmethod
+    def get_game(cls, _id):
+        """
+        Provide game matching id.
+        """
+        return cls.GAMES[_id]
+
+    @classmethod
+    def new_game(cls, player1):
+        """
+        Set up board from request.
+        """
+        return {'id': cls(player1=player1, player2=None).id}
+
+    def __init__(
+            self,
+            board=None, active_player=True, _id=None, *,
+            player1=None, player2=None):
         """
         Set up board.
         """
+        if _id:
+            self.id = _id
+        else:
+            self.id = str(uuid4())
+        self.GAMES[self.id] = self
         if board:
             self.board = board
         else:
             self.board = deepcopy(INITIAL_BOARD)
         self._active_player = active_player
         self.active_uuid = True
-        self.player1 = None
-        self.player2 = None
+        self.cursors = {}
+        self.executor = ThreadPoolExecutor()
         self.move_count = 1
         self.moves_since_pawn = 0
+        self.player1 = player1
+        self.player2 = player2
 
     def __bool__(self):
         """
         Ensure active player king on board.
         """
-        return self.moves_since_pawn >= 50 or self.has_king()
+        return self.moves_since_pawn >= 50 or self.has_kings()
 
     def __contains__(self, piece):
         """
@@ -87,6 +121,69 @@ class Board:
         if self.active_uuid:
             return self.player1
         return self.player2
+
+    def add_player_v1(self, dbsession, player2):
+        """
+        Player 2 joins game.
+        """
+        self.player2 = player2
+        table_game = TableGame(
+            game=self.id,
+            player_one=self.player1,
+            player_two=self.player2,
+            one_won=True,
+            two_won=True)
+        table_board = TableBoard(
+            board_state=dumps(self.board),
+            move_num=self.move_count,
+            player=self.active_player(),
+            game=self.id)
+        table_board.game_link.append(table_game)
+        dbsession.add(table_game)
+        dbsession.add(table_board)
+        self.poke_player(False)
+
+    def current_state_v1(self):
+        """
+        Provide REST view of game state.
+        """
+        return {'board': self.board}
+
+    def get_cursor(self, cursor, lookahead):
+        """
+        Retrieve iterable for cursor.
+        """
+        cursor = cursor or str(uuid4())
+        return self.cursors.pop(cursor, self.lookahead_boards(lookahead))
+
+    def handle_future(self, future):
+        """
+        Handle a future from and async request.
+        """
+        future.result()
+
+    def poke_player(self, end, active_player=None):
+        """
+        Inform active player of game state.
+        """
+        self.executor.submit(
+            requests.put,
+            f'{ API_URL }/agent/{ active_player or self.active_player() }',
+            data={'end': False}
+        ).add_done_callback(self.handle_future)
+
+    def slice_cursor_v1(self, cursor=None, lookahead=1):
+        """
+        Retrieve REST cursor slice.
+        """
+        it = self.get_cursor(cursor, lookahead)
+        slen = 300 // lookahead
+        boards = tuple([b.board for b in btup] for btup in islice(it, slen))
+        if len(boards) < slen:
+            return {'cursor': None, 'boards': boards}
+        cursor = str(uuid4())
+        self.cursors[cursor] = it
+        return {'cursor': cursor, 'boards': boards}
 
     @staticmethod
     def is_on_board(posX, posY, move):
@@ -272,11 +369,39 @@ class Board:
         move = (new[0] - posX, new[1] - posY)
         if move not in self.valid_moves_for_piece(piece, posX, posY):
             raise RuntimeError
-        board = Board(board).swap()
+        board = Board(board, _id=self.id).swap()
         board.move_count = self.move_count + 1
         if piece != 9:
             board.moves_since_pawn = self.moves_since_pawn + 1
         return board
+
+    def update_state_v1(self, dbsession, state):
+        """
+        Make a move to a new state on the board.
+        """
+        moving_player = self.active_player()
+        board = self.update(state)
+        table_game = dbsession.query(TableGame).filter(
+            TableGame.game == board.id).first()
+        table_board = TableBoard(
+            board_state=dumps(board.board),
+            move_num=board.move_count,
+            player=board.active_player(),
+            game=board.id)
+        table_board.game_link.append(table_game)
+        dbsession.add(table_board)
+        if board:
+            self.poke_player(False)
+            return {'end': False}
+        self.poke_player(True, moving_player)
+        if board.has_kings():
+            table_game.one_won = False
+            table_game.two_won = False
+        elif moving_player == table_game.player_one:
+            table_game.two_won = False
+        else:
+            table_game.one_won = False
+        return {'end': True}
 
     def lookahead_boards(self, n=4) -> None:
         """
@@ -304,7 +429,7 @@ class Board:
                         self.lookahead_boards_for_piece,
                         self.active_pieces()))))
 
-    def has_king(self):
+    def has_kings(self):
         """
         Ensure active kings on board.
         """
