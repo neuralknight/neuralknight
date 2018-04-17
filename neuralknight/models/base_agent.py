@@ -1,7 +1,7 @@
 import requests
 from uuid import uuid4
 from random import randint
-#from board import Board
+from .board import Board
 
 # PORT = 8080
 API_URL = 'http://localhost:8080'
@@ -15,6 +15,7 @@ class BaseAgent:
         if game_id:
             self.player = 2
             self.game_id = game_id
+            join_game()
 
         self.agent_id = str(uuid4())
         self.state = None
@@ -213,10 +214,10 @@ class BaseAgent:
         best_board = best_boards[randint(0,len(best_boards))]
 
         if self.player == 1:
-            #print(Board(best_board))
+            print(Board(best_board))
             self.player = 2
         else:
-            #print(Board(best_board).swap())
+            print(Board(best_board).swap())
             self.player = 1
 
         return best_board
@@ -234,14 +235,17 @@ class BaseAgent:
         data = response.json()
         return data['end']
 
-    def init_game(self,opponent=None):
+    def init_game(self):
         '''Initialize a new game'''
-        data = {'id': self.agent_id }
-        if opponent is not None:
-            data['opponent'] = opponent
+        data = {'id': self.agent_id}
         response = requests.post('{}/v1.0/games'.format(API_URL), data=data)
         data = response.json()
         self.game_id = data['id']
+
         self.player = 1
         self.state = self.get_state()
-        AGENT_POOL[self.agent_id] = game_id
+        AGENT_POOL[self.agent_id] = self.game_id
+
+    def join_game(self):
+        data = {'id': self.agent_id}
+        response = requests.post('{}/v1.0/games/{}'.format(API_URL, self.game_id), data=data)
