@@ -1,22 +1,23 @@
 from .base_agent import BaseAgent
-import requests
-
-API_URL = 'http://localhost:8080'
 
 
 class Agent(BaseAgent):
     '''Computer Agent'''
 
+    PORT = 8080
+    API_URL = 'http://localhost:{}'.format(PORT)
+
+    def __init__(self, game_id, player):
+        super().__init__(game_id, player)
+
     def get_boards(self):
         '''Retrieves potential board states'''
-        response = requests.get('{}/v1.0/games/{}/states'.format(API_URL, self.game_id))
-        data = response.json()
+        data = self.request('GET', '/v1.0/games/{}/states'.format(self.game_id))
         boards = data['boards']
         while data['cursor'] is not None:
             params = {'cursor': data['cursor']}
-            response = requests.get(
-                '{}/v1.0/games/{}/states'.format(API_URL, self.game_id), params=params)
-            data = response.json()
+            data = self.request(
+                'GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
             for board in data['boards']:
                 boards.append(board)
         return boards

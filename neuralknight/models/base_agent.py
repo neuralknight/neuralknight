@@ -4,9 +4,7 @@ from random import randint
 from uuid import uuid4
 
 from .board import Board
-
-PORT = 8080
-API_URL = 'http://localhost:{}'.format(PORT)
+import neuralknight
 
 
 class BaseAgent:
@@ -14,15 +12,28 @@ class BaseAgent:
 
     AGENT_POOL = {}
 
-    def __init__(self, game_id=None):
+    def __init__(self, game_id, player):
         self.agent_id = str(uuid4())
-        if game_id:
-            self.player = 2
-            self.game_id = game_id
-            self.AGENT_POOL[self.agent_id] = self
-            self.join_game()
-
+        self.player = player
+        self.game_id = game_id
+        self.AGENT_POOL[self.agent_id] = self
+        self.join_game()
         self.state = None
+
+    def request(self, method, resource, *args, json=None, **kwargs):
+        if neuralknight.testapp:
+            if method == 'POST':
+                return neuralknight.testapp.post_json(resource, json).json
+            if method == 'PUT':
+                return neuralknight.testapp.put_json(resource, json).json
+            if method == 'GET':
+                return neuralknight.testapp.get(resource, json).json
+        if method == 'POST':
+            return requests.post(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
+        if method == 'PUT':
+            return requests.put(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
+        if method == 'GET':
+            return requests.get(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
 
     def close(self):
         del self.AGENT_POOL[self.agent_id]
@@ -90,24 +101,24 @@ class BaseAgent:
              [0,  0,  0,  5,  5,  0,  0,  0],
         ]
         own_queen_squares = [
-            [-20,-10,-10, -5, -5,-10,-10,-20]
-            [-10,  0,  0,  0,  0,  0,  0,-10]
-            [-10,  0,  5,  5,  5,  5,  0,-10]
-            [-5,  0,  5,  5,  5,  5,  0, -5]
-            [0,  0,  5,  5,  5,  5,  0, -5]
-            [-10,  5,  5,  5,  5,  5,  0,-10]
-            [-10,  0,  5,  0,  0,  0,  0,-10]
-            [-20,-10,-10, -5, -5,-10,-10,-20]
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [-5,  0,  5,  5,  5,  5,  0, -5],
+            [0,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  5,  0,  0,  0,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20],
         ]
         own_king_squares = [
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-20,-30,-30,-40,-40,-30,-30,-20]
-            [-10,-20,-20,-20,-20,-20,-20,-10]
-            [20, 20,  0,  0,  0,  0, 20, 20]
-            [20, 30, 10,  0,  0, 10, 30, 20]
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [20, 20,  0,  0,  0,  0, 20, 20],
+            [20, 30, 10,  0,  0, 10, 30, 20],
         ]
 
         # Opp piece squares
@@ -219,7 +230,7 @@ class BaseAgent:
                     best_boards.append(board_sequence[0])
                     break
 
-        best_board = best_boards[randint(0, len(best_boards))]
+        best_board = best_boards[randint(0, len(best_boards) - 1)]
 
         if self.player == 1:
             print(Board(best_board))
@@ -232,22 +243,19 @@ class BaseAgent:
 
     def get_state(self):
         '''Gets current board state'''
-        response = requests.get('{}/v1.0/games/{}'.format(API_URL, self.game_id))
-        data = response.json()
+        data = self.request('GET', f'/v1.0/games/{ self.game_id }')
         return data['board']
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
         data = {'state': board}
-        response = requests.put(url='{}/v1.0/games/{}'.format(API_URL, self.game_id), json=data)
-        data = response.json()
+        data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         return data['end']
 
     def init_game(self):
         '''Initialize a new game'''
         data = {'id': self.agent_id}
-        response = requests.post('{}/v1.0/games'.format(API_URL), data=data)
-        data = response.json()
+        data = self.request('POST', '/v1.0/games', json=data)
         self.game_id = data['id']
 
         self.player = 1
@@ -255,6 +263,4 @@ class BaseAgent:
         self.AGENT_POOL[self.agent_id] = self
 
     def join_game(self):
-        data = {'id': self.agent_id}
-        response = requests.post('{}/v1.0/games/{}'.format(API_URL, self.game_id), data=data)
-        response.json()
+        self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})

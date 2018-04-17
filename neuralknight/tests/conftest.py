@@ -3,7 +3,6 @@ from os import environ
 from pyramid.testing import DummyRequest, setUp, tearDown
 from neuralknight.models.meta import Base
 from pytest import fixture
-from pyramid.config import Configurator
 
 
 @fixture
@@ -48,7 +47,7 @@ def dummy_post_request(db_session):
     """
     Create a dummy POST request with a dbsession.
     """
-    return DummyRequest(dbsession=db_session, post={})
+    return DummyRequest(dbsession=db_session, post={}, json={})
 
 
 @fixture(scope="session")
@@ -56,10 +55,10 @@ def testapp(request):
     """
     Functional test for app to support mocking.
     """
-    from neuralknight import main
+    import neuralknight
     from webtest import TestApp
 
-    app = main({}, **{
+    app = neuralknight.main({}, **{
         'sqlalchemy.url': environ.get(
             'TEST_DATABASE_URL', 'postgres://localhost:5432/testing_neuralknight')
     })
@@ -67,7 +66,8 @@ def testapp(request):
     SessionFactory = app.registry["dbsession_factory"]
     engine = SessionFactory().bind
     Base.metadata.create_all(bind=engine)
-    yield TestApp(app)
+    neuralknight.testapp = TestApp(app)
+    yield neuralknight.testapp
     Base.metadata.drop_all(bind=engine)
 
 

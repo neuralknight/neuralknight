@@ -36,8 +36,8 @@ class CLIAgent(Cmd):
         self.board = Board()
         self.piece = None
         self.user = None
-        self.game = requests.post(API_URL + '/v1.0/games').json()
-        self.user = requests.post(API_URL + '/issue-agent', data=self.game).json()
+        game = requests.post(API_URL + '/v1.0/games').json()
+        self.user = requests.post(API_URL + '/issue-agent', json=game).json()
         self.user['user'] = 1
         super().__init__()
 
@@ -65,12 +65,13 @@ class CLIAgent(Cmd):
         Make move.
         """
         args = self.parse(args)
-        move = (self.piece, args)
+        move = (tuple(reversed(self.piece)), tuple(reversed(args)))
 
-        requests.put(API_URL + f"/agent/{self.game['id']}", data=move)
+        requests.put(API_URL + f"/agent/{self.user['agent_id']}", json=move)
 
         if len(args) == 2:
-            self.print_board(str(self.board).splitlines())
+            board = [list(row) for row in str(self.board).splitlines()]
+            self.print_board(map(' '.join, board))
 
     @staticmethod
     def print_board(board):
@@ -110,7 +111,10 @@ class CLIAgent(Cmd):
 
 
 def main():
-    CLIAgent().cmdloop()
+    try:
+        CLIAgent().cmdloop()
+    except KeyboardInterrupt:
+        print()
 
 
 if __name__ == '__main__':

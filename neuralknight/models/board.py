@@ -2,7 +2,6 @@
 Chess state handling model.
 """
 
-
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from itertools import chain, count, islice, starmap
@@ -26,22 +25,19 @@ class Board(BaseBoard):
     Chess board state model.
     """
 
-    def __init__(
-            self,
-            board=None, active_player=True, _id=None, *,
-            player1=None, player2=None):
+    PORT = 8080
+    API_URL = 'http://localhost:{}'.format(PORT)
+
+    def __init__(self, board=None, active_player=True, _id=None):
         """
         Set up board.
         """
         super().__init__(_id, board)
         self._active_player = active_player
-        self.active_uuid = True
         self.cursors = {}
         self.executor = ThreadPoolExecutor()
         self.move_count = 1
         self.moves_since_pawn = 0
-        self.player1 = player1
-        self.player2 = player2
 
     def __bool__(self):
         """
@@ -89,34 +85,30 @@ class Board(BaseBoard):
             self.board if self.active_uuid else reversed(
                 [reversed(row) for row in self.board])))
 
-    def active_player(self):
-        """
-        UUID of active player.
-        """
-        if self.active_uuid:
-            return self.player1
-        return self.player2
-
-    def add_player_v1(self, dbsession, player2):
+    def add_player_v1(self, dbsession, player):
         """
         Player 2 joins game.
         """
-        self.player2 = player2
-        table_game = TableGame(
-            game=self.id,
-            player_one=self.player1,
-            player_two=self.player2,
-            one_won=True,
-            two_won=True)
-        table_board = TableBoard(
-            board_state=dumps(self.board),
-            move_num=self.move_count,
-            player=self.active_player(),
-            game=self.id)
-        table_board.game_link.append(table_game)
-        dbsession.add(table_game)
-        dbsession.add(table_board)
-        self.poke_player(False)
+        assert player
+        if self.player1:
+            self.player2 = player
+            table_game = TableGame(
+                game=self.id,
+                player_one=self.player1,
+                player_two=self.player2,
+                one_won=True,
+                two_won=True)
+            table_board = TableBoard(
+                board_state=dumps(self.board),
+                move_num=self.move_count,
+                player=self.active_player(),
+                game=self.id)
+            table_board.game_link.append(table_game)
+            dbsession.add(table_game)
+            dbsession.add(table_board)
+            self.poke_player(False)
+            return {}
+        self.player1 = player
         return {}
 
     def get_cursor(self, cursor, lookahead):
@@ -130,7 +122,7 @@ class Board(BaseBoard):
         """
         Handle a future from and async request.
         """
-        future.result()
+        future.result().json()
 
     def slice_cursor_v1(self, cursor=None, lookahead=1):
         """

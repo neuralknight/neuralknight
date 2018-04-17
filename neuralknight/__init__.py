@@ -1,6 +1,8 @@
 from os import environ
 from pyramid.config import Configurator
 
+testapp = None
+
 
 def main(global_config, **settings):
     """

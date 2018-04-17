@@ -1,4 +1,5 @@
 from cornice import Service
+from pyramid.httpexceptions import HTTPBadRequest
 
 from ..models import Board
 
@@ -36,7 +37,7 @@ def post_game(request):
     """
     Create a new game and provide an id for interacting.
     """
-    return {'id': Board(player1=request.matchdict.get('id', None)).id}
+    return {'id': Board().id}
 
 
 @game_states.get()
@@ -60,8 +61,11 @@ def join_game(request):
     """
     Add player to board.
     """
-    return get_game(request).add_player_v1(
-        request.dbsession, request.matchdict['id'])
+    try:
+        user_id = request.json['id']
+    except KeyError:
+        raise HTTPBadRequest
+    return get_game(request).add_player_v1(request.dbsession, user_id)
 
 
 @game_interaction.put()
