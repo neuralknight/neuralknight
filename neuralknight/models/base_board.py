@@ -62,4 +62,4 @@ class BaseBoard:
         """
         Inform active player of game state.
         """
-        self.request('PUT', f'/agent/{ active_player or self.active_player() }', data={'end': end})
+        self.request('PUT', f'/agent/{ active_player or self.active_player }', data={'end': end})
