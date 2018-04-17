@@ -1,5 +1,5 @@
 from collections import deque
-from itertools import starmap
+# from itertools import starmap
 from pytest import raises
 
 from neuralknight.models.board import KING, QUEEN

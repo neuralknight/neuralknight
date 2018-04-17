@@ -1,28 +1,35 @@
 import requests
-from uuid import uuid4
+
 from random import randint
+from uuid import uuid4
+
 from .board import Board
 
-# PORT = 8080
-API_URL = 'http://localhost:8080'
-AGENT_POOL = {}
+PORT = 8080
+API_URL = 'http://localhost:{}'.format(PORT)
 
 
 class BaseAgent:
     '''Slayer of chess'''
 
+    AGENT_POOL = {}
+
     def __init__(self, game_id=None):
+        self.agent_id = str(uuid4())
         if game_id:
             self.player = 2
             self.game_id = game_id
-            join_game()
+            self.AGENT_POOL[self.agent_id] = self
+            self.join_game()
 
-        self.agent_id = str(uuid4())
         self.state = None
+
+    def close(self):
+        del self.AGENT_POOL[self.agent_id]
 
     def evaluate_boards(self, boards):
         '''Determine value for each board state in array of board states
-        
+
         Inputs:
             boards: Array of board states
 
@@ -39,6 +46,7 @@ class BaseAgent:
         queen_val = 9000
         king_val = 20000
 
+        # pylama:ignore=E201,E203,E231
         # Piece squares - from http://www.chessbin.com/post/Piece-Square-Table
         # Own piece squares
         own_pawn_squares = [
@@ -101,8 +109,8 @@ class BaseAgent:
             [20, 20,  0,  0,  0,  0, 20, 20]
             [20, 30, 10,  0,  0, 10, 30, 20]
         ]
-        
-        #Opp piece squares
+
+        # Opp piece squares
         opp_pawn_squares = [
             [ 0,  0,  0,  0,  0,  0,  0,  0],
             [-5,-10,-10, 20, 20,-10,-10, -5],
@@ -113,7 +121,7 @@ class BaseAgent:
             [-50,-50,-50,-50,-50,-50,-50,-50],
             [ 0,  0,  0,  0,  0,  0,  0,  0],
         ]
-        opp_knight_squares = [        
+        opp_knight_squares = [
             [ 50, 40, 20, 30, 30, 20, 40, 50],
             [ 40, 20,  0, -5, -5,  0, 20, 40],
             [ 30, -5,-10,-15,-15,-10, -5, 30],
@@ -162,7 +170,7 @@ class BaseAgent:
             [ 30, 40, 40, 50, 50, 40, 40, 30],
             [ 30, 40, 40, 50, 50, 40, 40, 30],
             [ 30, 40, 40, 50, 50, 40, 40, 30],
-        ]    
+        ]
         zero_squares = [
              [0,  0,  0,  0,  0,  0,  0,  0],
              [0,  0,  0,  0,  0,  0,  0,  0],
@@ -182,14 +190,14 @@ class BaseAgent:
             13: (rook_val, own_rook_squares),
             11: (queen_val, own_queen_squares),
             5 : (king_val, own_king_squares),
-            
+
             8 : (-pawn_val, opp_pawn_squares),
             6 : (-knight_val, opp_knight_squares),
             2 : (-bishop_val, opp_bishop_squares),
             12: (-rook_val, opp_rook_squares),
             10: (-queen_val, opp_queen_squares),
             4 : (-king_val, opp_king_squares),
-            
+
             0 : (0, zero_squares),
         }
 
@@ -210,8 +218,8 @@ class BaseAgent:
                 elif board_score == best_board_score:
                     best_boards.append(board_sequence[0])
                     break
-        
-        best_board = best_boards[randint(0,len(best_boards))]
+
+        best_board = best_boards[randint(0, len(best_boards))]
 
         if self.player == 1:
             print(Board(best_board))
@@ -244,8 +252,9 @@ class BaseAgent:
 
         self.player = 1
         self.state = self.get_state()
-        AGENT_POOL[self.agent_id] = self.game_id
+        self.AGENT_POOL[self.agent_id] = self
 
     def join_game(self):
         data = {'id': self.agent_id}
         response = requests.post('{}/v1.0/games/{}'.format(API_URL, self.game_id), data=data)
+        response.json()
