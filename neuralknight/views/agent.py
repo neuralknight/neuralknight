@@ -33,4 +33,4 @@ def agent_view(request):
         else:
             agent.play_round()
 
-    return Response()
+    return Response(body=json.dumps({}))
