@@ -40,8 +40,10 @@ class MockBoard(BaseBoard):
 
 def test_make_move(testapp):
     mockboard = MockBoard()
-    player1 = Agent(str(mockboard.id))
+    player1 = Agent(mockboard.id)
     player1.player = 2
-    player2 = Agent(str(mockboard.id))
-
-    assert player1.play_round()
+    player2 = Agent(mockboard.id)
+    first_board = mockboard.board
+    end = player1.play_round()
+    assert mockboard.board = first_board
+    assert end
