@@ -1,7 +1,10 @@
+import requests
+
 from random import randint
 from uuid import uuid4
 
 from .board import Board
+import neuralknight
 
 
 class BaseAgent:
@@ -17,8 +20,20 @@ class BaseAgent:
         self.join_game()
         self.state = None
 
-    def request(self, *args, **kwargs):
-        assert False
+    def request(self, method, resource, *args, data=None, json=None, **kwargs):
+        if neuralknight.testapp:
+            if method == 'POST':
+                return neuralknight.testapp.post_json(resource, data).json
+            if method == 'PUT':
+                return neuralknight.testapp.put(resource, json).json
+            if method == 'GET':
+                return neuralknight.testapp.get(resource, data).json
+        if method == 'POST':
+            return requests.post(f'{ self.API_URL }{ resource }', **kwargs).json()
+        if method == 'PUT':
+            return requests.put(f'{ self.API_URL }{ resource }', **kwargs).json()
+        if method == 'GET':
+            return requests.get(f'{ self.API_URL }{ resource }', **kwargs).json()
 
     def close(self):
         del self.AGENT_POOL[self.agent_id]
@@ -228,22 +243,19 @@ class BaseAgent:
 
     def get_state(self):
         '''Gets current board state'''
-        response = self.request('GET', f'/v1.0/games/{ self.game_id }')
-        data = response.json()
+        data = self.request('GET', f'/v1.0/games/{ self.game_id }')
         return data['board']
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
         data = {'state': board}
-        response = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        data = response.json()
+        data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         return data['end']
 
     def init_game(self):
         '''Initialize a new game'''
         data = {'id': self.agent_id}
-        response = self.request('POST', '/v1.0/games', data=data)
-        data = response.json()
+        data = self.request('POST', '/v1.0/games', data=data)
         self.game_id = data['id']
 
         self.player = 1
@@ -251,6 +263,4 @@ class BaseAgent:
         self.AGENT_POOL[self.agent_id] = self
 
     def join_game(self):
-        data = {'id': self.agent_id}
-        response = self.request('POST', f'/v1.0/games/{ self.game_id }', data=data)
-        response.json()
+        self.request('POST', f'/v1.0/games/{ self.game_id }', data={'id': self.agent_id})

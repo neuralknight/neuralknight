@@ -9,14 +9,6 @@ class MockAgent(BaseAgent):
         self.moves = iter(moves)
         super().__init__(game_id, player)
 
-    def request(self, method, resource, *args, data=None, json=None, **kwargs):
-        if method == 'POST':
-            return self.testapp.post_json(resource, data, status='*')
-        if method == 'PUT':
-            return self.testapp.put(resource, json, status='*')
-        if method == 'GET':
-            return self.testapp.get(resource, data, status='*')
-
     def play_round(self, *args, **kwargs):
         self.args.append(args)
         self.kwargs.append(kwargs)
@@ -24,17 +16,17 @@ class MockAgent(BaseAgent):
 
 
 def test_home_response(testapp):
-    response = testapp.get('/', status='*')
+    response = testapp.get('/')
     assert response.status_code == 200
 
 
 def test_agent_play_through(testapp):
-    response = testapp.get('/v1.0/games', status='*')
+    response = testapp.get('/v1.0/games')
     assert response.status_code == 200
 
 
 def test_agent_play_no_moves(testapp):
-    game = testapp.post_json('/v1.0/games', status='*').json
+    game = testapp.post_json('/v1.0/games').json
     player1 = MockAgent(testapp, [], game['id'], 1)
     player2 = MockAgent(testapp, [], game['id'], 2)
     assert game

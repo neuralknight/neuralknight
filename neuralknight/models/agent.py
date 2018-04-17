@@ -1,5 +1,4 @@
 from .base_agent import BaseAgent
-import requests
 
 
 class Agent(BaseAgent):
@@ -10,14 +9,6 @@ class Agent(BaseAgent):
 
     def __init__(self, game_id, player):
         super().__init__(game_id, player)
-
-    def request(self, method, resource, *args, **kwargs):
-        if method == 'POST':
-            return requests.post(f'{ self.API_URL }{ resource }', **kwargs)
-        if method == 'PUT':
-            return requests.put(f'{ self.API_URL }{ resource }', **kwargs)
-        if method == 'GET':
-            return requests.get(f'{ self.API_URL }{ resource }', **kwargs)
 
     def get_boards(self):
         '''Retrieves potential board states'''

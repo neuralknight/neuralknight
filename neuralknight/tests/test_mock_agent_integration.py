@@ -1,5 +1,4 @@
 from ..models import BaseBoard
-from ..models import Agent
 
 
 class MockBoard(BaseBoard):
@@ -8,14 +7,6 @@ class MockBoard(BaseBoard):
         self.args = {}
         self.kwargs = {}
         super().__init__(_id, [[[[0 for i in range(8)] for j in range(8)]]])
-
-    def request(self, method, resource, *args, data=None, json=None, **kwargs):
-        if method == 'POST':
-            return self.testapp.post_json(resource, data, status='*')
-        if method == 'PUT':
-            return self.testapp.put(resource, json, status='*')
-        if method == 'GET':
-            return self.testapp.get(resource, data, status='*')
 
     def slice_cursor_v1(self, *args, **kwargs):
         self.args['slice_cursor_v1'] = args
@@ -40,10 +31,8 @@ class MockBoard(BaseBoard):
 
 def test_make_move(testapp):
     mockboard = MockBoard(testapp)
-    player1 = Agent(mockboard.id, 1)
-    player2 = Agent(mockboard.id, 2)
-    first_board = mockboard.board
+    player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
+    player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
 
-    assert player1.play_round()
-    assert mockboard.board == first_board
+    assert player1
     assert player2
