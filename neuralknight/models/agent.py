@@ -1,11 +1,20 @@
 from .base_agent import BaseAgent
 import requests
 
-API_URL = 'http://localhost:8080'
+PORT = 8080
+API_URL = 'http://localhost:{}'.format(PORT)
 
 
 class Agent(BaseAgent):
     '''Computer Agent'''
+
+    def request(self, method, resource, *args, **kwargs):
+        if method == 'POST':
+            return requests.post(f'{ API_URL }{ resource }', **kwargs)
+        if method == 'PUT':
+            return requests.put(f'{ API_URL }{ resource }', **kwargs)
+        if method == 'GET':
+            return requests.get(f'{ API_URL }{ resource }', **kwargs)
 
     def get_boards(self):
         '''Retrieves potential board states'''
