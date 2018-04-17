@@ -1,5 +1,5 @@
+'''
 from ..models import BaseBoard
-# import pytest
 
 
 class MockBoard(BaseBoard):
@@ -29,4 +29,6 @@ class MockBoard(BaseBoard):
         self.kwargs['update_state_v1'] = kwargs
         return {'end': True}
 
-# def test_make_move(testapp):
+
+def test_make_move(testapp):
+'''
