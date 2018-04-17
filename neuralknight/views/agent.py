@@ -14,9 +14,10 @@ def issue_agent_view(request):
         game_id = request.POST['id']
     except KeyError:
         return HTTPBadRequest()
+    player = request.POST.get('player', 1)
     if 'user' in request.POST:
-        return Response(body=json.dumps({'agent_id': UserAgent(game_id).agent_id}), status_code=200)
-    return Response(body=json.dumps({'agent_id': Agent(game_id).agent_id}), status_code=200)
+        return Response(body=json.dumps({'agent_id': UserAgent(game_id, player).agent_id}))
+    return Response(body=json.dumps({'agent_id': Agent(game_id, player).agent_id}))
 
 
 @view_config(route_name='agent', request_method=('PUT', 'GET'), renderer='json')

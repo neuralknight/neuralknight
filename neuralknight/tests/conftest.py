@@ -3,7 +3,6 @@ from os import environ
 from pyramid.testing import DummyRequest, setUp, tearDown
 from neuralknight.models.meta import Base
 from pytest import fixture
-from pyramid.config import Configurator
 
 
 @fixture

@@ -2,12 +2,12 @@ from neuralknight.models.base_agent import BaseAgent
 
 
 class MockAgent(BaseAgent):
-    def __init__(self, testapp, moves, game_id=None):
+    def __init__(self, testapp, moves, game_id, player):
         self.testapp = testapp
         self.args = []
         self.kwargs = []
         self.moves = iter(moves)
-        super().__init__(game_id)
+        super().__init__(game_id, player)
 
     def request(self, method, resource, *args, data=None, json=None, **kwargs):
         if method == 'POST':
@@ -34,10 +34,9 @@ def test_agent_play_through(testapp):
 
 
 def test_agent_play_no_moves(testapp):
-    player1 = MockAgent(testapp, [])
-    game = testapp.post_json('/v1.0/games', {'id': player1.agent_id}, status='*').json
-    player1.game_id = game['id']
-    player2 = MockAgent(testapp, [], game['id'])
+    game = testapp.post_json('/v1.0/games', status='*').json
+    player1 = MockAgent(testapp, [], game['id'], 1)
+    player2 = MockAgent(testapp, [], game['id'], 2)
     assert game
     assert player1
     assert player2
