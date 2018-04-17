@@ -29,9 +29,9 @@ class BaseAgent:
             if method == 'GET':
                 return neuralknight.testapp.get(resource, json).json
         if method == 'POST':
-            return requests.post(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
+            return requests.post(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
         if method == 'PUT':
-            return requests.put(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
+            return requests.put(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
         if method == 'GET':
             return requests.get(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
 
