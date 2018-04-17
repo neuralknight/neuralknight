@@ -33,7 +33,7 @@ class Board(BaseBoard):
         """
         Set up board.
         """
-        super().__init__(_id)
+        super().__init__(_id, board)
         self._active_player = active_player
         self.active_uuid = True
         self.cursors = {}
