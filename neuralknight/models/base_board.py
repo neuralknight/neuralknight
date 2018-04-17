@@ -1,6 +1,10 @@
+import requests
+
 from uuid import uuid4
 from copy import deepcopy
+
 from .board_constants import INITIAL_BOARD
+import neuralknight
 
 
 class BaseBoard:
@@ -24,8 +28,26 @@ class BaseBoard:
         else:
             self.board = deepcopy(INITIAL_BOARD)
 
-    def request(self, *args, **kwargs):
-        assert False
+    def request(self, method, resource, *args, data=None, json=None, **kwargs):
+        if neuralknight.testapp:
+            if method == 'POST':
+                return neuralknight.testapp.post_json(resource, data).json
+            if method == 'PUT':
+                return neuralknight.testapp.put(resource, json).json
+            if method == 'GET':
+                return neuralknight.testapp.get(resource, data).json
+        if method == 'POST':
+            self.executor.submit(
+                requests.post, f'{ self.API_URL }{ resource }', **kwargs
+            ).add_done_callback(self.handle_future)
+        if method == 'PUT':
+            self.executor.submit(
+                requests.put, f'{ self.API_URL }{ resource }', **kwargs
+            ).add_done_callback(self.handle_future)
+        if method == 'GET':
+            self.executor.submit(
+                requests.get, f'{ self.API_URL }{ resource }', **kwargs
+            ).add_done_callback(self.handle_future)
 
     def close(self):
         del self.GAMES[self.id]

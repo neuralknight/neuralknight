@@ -1,5 +1,4 @@
 from ..models import BaseBoard
-from ..models import Agent
 
 
 class MockBoard(BaseBoard):
@@ -8,14 +7,6 @@ class MockBoard(BaseBoard):
         self.args = {}
         self.kwargs = {}
         super().__init__(_id, [[[[0 for i in range(8)] for j in range(8)]]])
-
-    def request(self, method, resource, *args, data=None, json=None, **kwargs):
-        if method == 'POST':
-            return self.testapp.post_json(resource, data).json
-        if method == 'PUT':
-            return self.testapp.put(resource, json).json
-        if method == 'GET':
-            return self.testapp.get(resource, data).json
 
     def slice_cursor_v1(self, *args, **kwargs):
         self.args['slice_cursor_v1'] = args

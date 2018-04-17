@@ -1,7 +1,10 @@
+import requests
+
 from random import randint
 from uuid import uuid4
 
 from .board import Board
+import neuralknight
 
 
 class BaseAgent:
@@ -17,8 +20,20 @@ class BaseAgent:
         self.join_game()
         self.state = None
 
-    def request(self, *args, **kwargs):
-        assert False
+    def request(self, method, resource, *args, data=None, json=None, **kwargs):
+        if neuralknight.testapp:
+            if method == 'POST':
+                return neuralknight.testapp.post_json(resource, data).json
+            if method == 'PUT':
+                return neuralknight.testapp.put(resource, json).json
+            if method == 'GET':
+                return neuralknight.testapp.get(resource, data).json
+        if method == 'POST':
+            return requests.post(f'{ self.API_URL }{ resource }', **kwargs).json()
+        if method == 'PUT':
+            return requests.put(f'{ self.API_URL }{ resource }', **kwargs).json()
+        if method == 'GET':
+            return requests.get(f'{ self.API_URL }{ resource }', **kwargs).json()
 
     def close(self):
         del self.AGENT_POOL[self.agent_id]

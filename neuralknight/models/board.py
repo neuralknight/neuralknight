@@ -2,8 +2,6 @@
 Chess state handling model.
 """
 
-import requests
-
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from itertools import chain, count, islice, starmap
@@ -136,20 +134,6 @@ class Board(BaseBoard):
         Handle a future from and async request.
         """
         future.result().json()
-
-    def request(self, method, resource, *args, **kwargs):
-        if method == 'POST':
-            self.executor.submit(
-                requests.post, f'{ self.API_URL }{ resource }', **kwargs
-            ).add_done_callback(self.handle_future)
-        if method == 'PUT':
-            self.executor.submit(
-                requests.put, f'{ self.API_URL }{ resource }', **kwargs
-            ).add_done_callback(self.handle_future)
-        if method == 'GET':
-            self.executor.submit(
-                requests.get, f'{ self.API_URL }{ resource }', **kwargs
-            ).add_done_callback(self.handle_future)
 
     def slice_cursor_v1(self, cursor=None, lookahead=1):
         """
