@@ -13,11 +13,11 @@ class Agent(BaseAgent):
 
     def request(self, method, resource, *args, **kwargs):
         if method == 'POST':
-            return requests.post(f'{ self.API_URL }{ resource }', **kwargs)
+            return requests.post(f'{ self.API_URL }{ resource }', **kwargs).json()
         if method == 'PUT':
-            return requests.put(f'{ self.API_URL }{ resource }', **kwargs)
+            return requests.put(f'{ self.API_URL }{ resource }', **kwargs).json()
         if method == 'GET':
-            return requests.get(f'{ self.API_URL }{ resource }', **kwargs)
+            return requests.get(f'{ self.API_URL }{ resource }', **kwargs).json()
 
     def get_boards(self):
         '''Retrieves potential board states'''

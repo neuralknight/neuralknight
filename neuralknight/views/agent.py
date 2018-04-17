@@ -11,11 +11,11 @@ from ..models import UserAgent
 @view_config(route_name='issue_agent', request_method='POST', renderer='json')
 def issue_agent_view(request):
     try:
-        game_id = request.POST['id']
+        game_id = request.json['id']
     except KeyError:
         return HTTPBadRequest()
-    player = request.POST.get('player', 1)
-    if 'user' in request.POST:
+    player = request.json.get('player', 1)
+    if 'user' in request.json:
         return Response(body=json.dumps({'agent_id': UserAgent(game_id, player).agent_id}))
     return Response(body=json.dumps({'agent_id': Agent(game_id, player).agent_id}))
 

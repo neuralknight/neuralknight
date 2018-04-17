@@ -228,22 +228,19 @@ class BaseAgent:
 
     def get_state(self):
         '''Gets current board state'''
-        response = self.request('GET', f'/v1.0/games/{ self.game_id }')
-        data = response.json()
+        data = self.request('GET', f'/v1.0/games/{ self.game_id }')
         return data['board']
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
         data = {'state': board}
-        response = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        data = response.json()
+        data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         return data['end']
 
     def init_game(self):
         '''Initialize a new game'''
         data = {'id': self.agent_id}
-        response = self.request('POST', '/v1.0/games', data=data)
-        data = response.json()
+        data = self.request('POST', '/v1.0/games', data=data)
         self.game_id = data['id']
 
         self.player = 1
@@ -251,6 +248,4 @@ class BaseAgent:
         self.AGENT_POOL[self.agent_id] = self
 
     def join_game(self):
-        data = {'id': self.agent_id}
-        response = self.request('POST', f'/v1.0/games/{ self.game_id }', data=data)
-        response.json()
+        self.request('POST', f'/v1.0/games/{ self.game_id }', data={'id': self.agent_id})

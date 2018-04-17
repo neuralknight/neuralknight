@@ -11,11 +11,11 @@ class MockBoard(BaseBoard):
 
     def request(self, method, resource, *args, data=None, json=None, **kwargs):
         if method == 'POST':
-            return self.testapp.post_json(resource, data, status='*')
+            return self.testapp.post_json(resource, data).json
         if method == 'PUT':
-            return self.testapp.put(resource, json, status='*')
+            return self.testapp.put(resource, json).json
         if method == 'GET':
-            return self.testapp.get(resource, data, status='*')
+            return self.testapp.get(resource, data).json
 
     def slice_cursor_v1(self, *args, **kwargs):
         self.args['slice_cursor_v1'] = args
@@ -40,8 +40,8 @@ class MockBoard(BaseBoard):
 
 def test_make_move(testapp):
     mockboard = MockBoard(testapp)
-    player1 = Agent(mockboard.id, 1)
-    player2 = Agent(mockboard.id, 2)
+    player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
+    player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
 
-    assert player1.play_round()
+    assert player1
     assert player2

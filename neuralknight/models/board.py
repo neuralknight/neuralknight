@@ -135,7 +135,7 @@ class Board(BaseBoard):
         """
         Handle a future from and async request.
         """
-        future.result()
+        future.result().json()
 
     def request(self, method, resource, *args, **kwargs):
         if method == 'POST':
