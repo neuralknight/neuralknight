@@ -2,7 +2,6 @@
 Chess state handling model.
 """
 
-import requests
 
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -20,9 +19,6 @@ from .table_board import TableBoard
 from .table_game import TableGame
 
 __all__ = ['Board', 'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK']
-
-PORT = 8080
-API_URL = 'http://localhost:{}'.format(PORT)
 
 
 class Board(BaseBoard):

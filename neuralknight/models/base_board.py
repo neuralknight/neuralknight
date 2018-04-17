@@ -1,6 +1,11 @@
 from uuid import uuid4
 from copy import deepcopy
 from .board_constants import INITIAL_BOARD
+import requests
+
+
+PORT = 8080
+API_URL = 'http://localhost:{}'.format(PORT)
 
 
 class BaseBoard:

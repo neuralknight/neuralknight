@@ -1,5 +1,6 @@
 from ..models import BaseBoard
-import pytest
+# import pytest
+
 
 class MockBoard(BaseBoard):
     def __init__(self, _id=None):
@@ -9,24 +10,23 @@ class MockBoard(BaseBoard):
         self.board = [[[[0 for i in range(8)] for j in range(8)]]]
 
     def slice_cursor_v1(self, *args, **kwargs):
-        self.args['slice_cursor_v1'] = *args
-        self.kwargs['slice_cursor_v1'] = **kwargs
+        self.args['slice_cursor_v1'] = args
+        self.kwargs['slice_cursor_v1'] = kwargs
         return {
             'cursor': None,
             'boards': self.board
         }
 
     def add_player_v1(self, *args, **kwargs):
-        self.args['add_player_v1'] = *args
-        self.kwargs['add_player_v1'] = **kwargs
+        self.args['add_player_v1'] = args
+        self.kwargs['add_player_v1'] = kwargs
         self.player2 = 1
         self.poke_player(False)
         return {}
 
     def update_state_v1(self, *args, **kwargs):
-        self.args['update_state_v1'] = *args
-        self.kwargs['update_state_v1'] = **kwargs
+        self.args['update_state_v1'] = args
+        self.kwargs['update_state_v1'] = kwargs
         return {'end': True}
 
 # def test_make_move(testapp):
-    
