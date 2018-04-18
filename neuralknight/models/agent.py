@@ -29,4 +29,5 @@ class Agent(BaseAgent):
         '''Play a game'''
         game_over = False
         while not game_over:
-            game_over = self.play_round(self.game_id)
+            game_over = self.play_round()
+        return game_over
