@@ -269,7 +269,7 @@ class BaseAgent:
         '''Sends move selection to board state manager'''
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        self.game_over = data['end']
+        self.game_over = data.get('end', False)
         if self.game_over:
             return self.close()
         return {}
