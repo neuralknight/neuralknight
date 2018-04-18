@@ -19,7 +19,7 @@ SELECTED_PIECE = f'{ BRIGHT_GREEN }{{}}{ RESET }'
 TOP_BOARD_OUTPUT_SHELL = '''
   A B C D E F G H
  +---------------'''
-BOARD_OUTPUT_SHELL = ('1|', '2|', '3|', '4|', '5|', '6|', '7|', '8|')
+BOARD_OUTPUT_SHELL = ('8|', '7|', '6|', '5|', '4|', '3|', '2|', '1|')
 
 
 def get_info(api_url, game_id):
@@ -156,7 +156,7 @@ class CLIAgent(Cmd):
         if len(args) != 2:
             return args
         try:
-            args[1] = int(args[1]) - 1
+            args[1] = 8 - int(args[1])
             if not (0 <= args[1] < 8):
                 print('out of range')
                 raise ValueError
