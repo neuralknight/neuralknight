@@ -6,6 +6,10 @@ from .board_model import BoardModel
 import neuralknight
 
 
+class NoBoard(Exception):
+    pass
+
+
 class BaseBoard:
     GAMES = {}
     PORT = 8080
@@ -16,7 +20,9 @@ class BaseBoard:
         """
         Provide game matching id.
         """
-        return cls.GAMES[_id]
+        if _id in cls.GAMES:
+            return cls.GAMES[_id]
+        raise NoBoard
 
     def __init__(self, board, _id=None, active_player=True):
         if _id:
