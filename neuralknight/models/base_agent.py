@@ -3,7 +3,6 @@ import requests
 from random import randint
 from uuid import uuid4
 
-from .board_model import BoardModel
 import neuralknight
 
 
@@ -232,23 +231,7 @@ class BaseAgent:
                     best_boards.append(board_sequence[0])
                     break
 
-        best_board = best_boards[randint(0, len(best_boards) - 1)]
-
-        if self.player == 1:
-            print(BoardModel(best_board))
-            self.player = 2
-        else:
-            print(BoardModel(best_board).swap())
-            self.player = 1
-
-        return best_board
-
-    def get_state(self):
-        '''Gets current board state'''
-        if self.game_over:
-            return {'end': True}
-        data = self.request('GET', f'/v1.0/games/{ self.game_id }')
-        return data['board']
+        return best_boards[randint(0, len(best_boards) - 1)]
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''

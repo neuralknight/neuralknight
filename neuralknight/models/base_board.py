@@ -68,7 +68,7 @@ class BaseBoard:
         """
         Provide REST view of game state.
         """
-        return {'board': self.board}
+        return {'state': self.board}
 
     def poke_player(self, end, active_player=None):
         """

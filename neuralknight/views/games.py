@@ -15,6 +15,10 @@ game_interaction = Service(
     name='game_interaction',
     path='/v1.0/games/{game}',
     description='Game interaction')
+game_info = Service(
+    name='game_info',
+    path='/v1.0/games/{game}/info',
+    description='Game info')
 
 
 def get_game(request):
@@ -74,3 +78,11 @@ def put_state(request):
     Make a move to a new state on the board.
     """
     return get_game(request).update_state_v1(request.dbsession, **request.json)
+
+
+@game_info.get()
+def get_info(request):
+    """
+    Provide current state on the board.
+    """
+    return {'print': str(get_game(request))}
