@@ -7,13 +7,12 @@ class MockBoard(BaseBoard):
         self.args = {}
         self.kwargs = {}
         self.cursor = cursor
-        super().__init__(BoardModel([[[[0 for i in range(8)] for j in range(8)]]]))
+        super().__init__([[0 for i in range(8)] for j in range(8)])
 
     def slice_cursor_v1(self, *args, **kwargs):
         self.args['slice_cursor_v1'] = args
         self.kwargs['slice_cursor_v1'] = kwargs
-        # import pdb; pdb.set_trace()
-        return self.board.slice_cursor_v1(self.cursor, lookahead)
+        return self._board.slice_cursor_v1(self.cursor)
         return {
             'cursor': self.cursor,
             'boards': self.board
@@ -44,6 +43,7 @@ def test_player_connection(testapp):
     assert player1
     assert player2
 
+# this needs to change - need to check multi-gets
 def test_get_boards(testapp):
     mockboard = MockBoard(testapp, 1)
     player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
