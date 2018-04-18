@@ -229,13 +229,13 @@ class BaseAgent:
                     board_score += piece_values[1][row][col]
             if board_score > best_board_score and which_look:
                 best_board_score = board_score
-                best_boards = leaf
+                best_boards = board_sequence[0]
             elif board_score < worst_board_score and not which_look:
                 worst_board_score = board_score
-                best_boards = leaf
+                best_boards = board_sequence[0]
             elif (board_score == best_board_score and which_look) or\
                 (board_score == worst_board_score and not which_look):
-                best_boards.append(leaf)
+                best_boards.append(board_sequence[0])
 
         best_board = best_boards[randint(0, len(best_boards) - 1)]
 
