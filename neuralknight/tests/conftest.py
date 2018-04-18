@@ -1,8 +1,9 @@
-from neuralknight.models import Board
 from os import environ
 from pyramid.testing import DummyRequest, setUp, tearDown
-from neuralknight.models.meta import Base
 from pytest import fixture
+
+from ..models.board import Board
+from ..models.meta import Base
 
 
 @fixture

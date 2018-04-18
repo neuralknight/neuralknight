@@ -2,12 +2,11 @@ from ..models import BaseBoard
 
 
 class MockBoard(BaseBoard):
-    def __init__(self, testapp, active_player=True, _id=None):
+    def __init__(self, testapp):
         self.testapp = testapp
-        self._active_player = active_player
         self.args = {}
         self.kwargs = {}
-        super().__init__(_id, [[[[0 for i in range(8)] for j in range(8)]]])
+        super().__init__([[[[0 for i in range(8)] for j in range(8)]]])
 
     def slice_cursor_v1(self, *args, **kwargs):
         self.args['slice_cursor_v1'] = args

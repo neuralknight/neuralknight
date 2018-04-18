@@ -3,7 +3,7 @@ import requests
 from random import randint
 from uuid import uuid4
 
-from .board import Board
+from .board_model import BoardModel
 import neuralknight
 
 
@@ -233,10 +233,10 @@ class BaseAgent:
         best_board = best_boards[randint(0, len(best_boards) - 1)]
 
         if self.player == 1:
-            print(Board(best_board))
+            print(BoardModel(best_board))
             self.player = 2
         else:
-            print(Board(best_board).swap())
+            print(BoardModel(best_board).swap())
             self.player = 1
 
         return best_board

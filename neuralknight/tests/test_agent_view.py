@@ -1,5 +1,6 @@
-from neuralknight.views.agent import issue_agent_view
 from pyramid.httpexceptions import HTTPBadRequest
+
+from ..views.agent import issue_agent_view
 
 
 def test_issue_agent_bad_request(dummy_post_request):
