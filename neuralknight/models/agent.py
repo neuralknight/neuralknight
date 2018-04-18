@@ -19,9 +19,21 @@ class Agent(BaseAgent):
 
     def play_round(self):
         '''Play a game round'''
-        boards = self.get_boards()
-        best_board = self.evaluate_boards(boards)
-        return self.put_board(best_board)
+        cursor = 'first'
+        board_score = 0
+        best_boards = []
+        while cursor:
+            board_options = self.get_boards(cursor)
+            boards = board_options['boards']
+            cursor = board_options['cursor']
+            evaluation = self.evaluate_boards(boards)
+            if evaluation['board_score'] > board_score:
+                best_boards = [evaluation['best_board']]
+            elif evaluation['board_score'] == board_score:
+                if evaluation['best_board'] not in best_boards:
+                    best_boards.append(evaluation['best_board'])
+
+        return self.put_board(best_boards[randint(0,len(best_boards)-1)])
 
     def play_game(self):
         '''Play a game'''

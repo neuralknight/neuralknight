@@ -231,6 +231,7 @@ class BaseAgent:
                     piece_values = value_map[leaf[row][col]]
                     board_score += piece_values[0]
                     board_score += piece_values[1][row][col]
+
             if board_sequence[0] == root:
                 leaf_sum += board_score
                 leaf_count += 1
@@ -238,7 +239,7 @@ class BaseAgent:
                 leaf_average = leaf_sum / leaf_count
                 leaf_sum = board_score
                 leaf_count = 1
-
+                import pdb; pdb.set_trace()
                 if leaf_average > best_average:
                     best_average = leaf_average
                     best_boards = [root]
