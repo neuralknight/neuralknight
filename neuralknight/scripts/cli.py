@@ -40,37 +40,44 @@ class CLIAgent(Cmd):
         self.user['user'] = 1
         super().__init__()
 
-    def do_piece(self, args):
+    def do_piece(self, arg_str):
         """
         Select piece for move.
         """
-        args = self.parse(args)
+        args = self.parse(arg_str)
+        if len(args) != 2:
+            return self.print_invalid('piece ' + arg_str)
         self.piece = args
-        if len(args) == 2:
-            try:
-                piece = self.board.board[args[1]][args[0]]
-            except IndexError:
-                return
-            if not (piece and (piece & 1)):
-                return
-            board = [list(row) for row in str(self.board).splitlines()]
-            board[args[1]][args[0]] = SELECTED_PIECE.format(
-                board[args[1]][args[0]])
-            self.print_board(map(' '.join, board))
-            print(f'Selected: { PIECE_NAME[piece] }')
+        try:
+            piece = self.board.board[args[1]][args[0]]
+        except IndexError:
+            return self.print_invalid('piece ' + arg_str)
+        if not (piece and (piece & 1)):
+            return self.print_invalid('piece ' + arg_str)
+        board = [list(row) for row in str(self.board).splitlines()]
+        board[args[1]][args[0]] = SELECTED_PIECE.format(
+            board[args[1]][args[0]])
+        self.print_board(map(' '.join, board))
+        print(f'Selected: { PIECE_NAME[piece] }')
 
-    def do_move(self, args):
+    def do_move(self, arg_str):
         """
         Make move.
         """
-        args = self.parse(args)
+        args = self.parse(arg_str)
+        if len(args) != 2:
+            return self.print_invalid('move ' + arg_str)
+
         move = (tuple(reversed(self.piece)), tuple(reversed(args)))
 
         requests.put(API_URL + f"/agent/{self.user['agent_id']}", json=move)
 
-        if len(args) == 2:
-            board = [list(row) for row in str(self.board).splitlines()]
-            self.print_board(map(' '.join, board))
+        board = [list(row) for row in str(self.board).splitlines()]
+        self.print_board(map(' '.join, board))
+
+    def print_invalid(self, args):
+        self.print_board(' '.join(row) for row in str(self.board).splitlines())
+        print('invalid command:', args)
 
     @staticmethod
     def print_board(board):
@@ -87,7 +94,26 @@ class CLIAgent(Cmd):
         """
         Split arguments.
         """
-        return tuple(map(lambda x: x - 1, tuple(map(int, args.split()))))
+        args = args.split()
+        if len(args) != 2:
+            return args
+        try:
+            args[1] = int(args[1]) - 1
+            if not (0 <= args[1] < 8):
+                print('out of range')
+                raise ValueError
+        except ValueError:
+            print('not int', args[1])
+            return ()
+        try:
+            args[0] = ord(args[0]) - ord('a')
+            if not (0 <= args[1] < 8):
+                print('out of range')
+                raise ValueError
+        except ValueError:
+            print('not char', args[0])
+            return ()
+        return args
 
     def emptyline(self):
         """
