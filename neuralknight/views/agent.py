@@ -23,7 +23,7 @@ def agent_view(request):
     agent = Agent.AGENT_POOL[agent_id]
 
     if request.method == 'GET':
-        assert isinstance(agent, UserAgent)
+        return {'state': agent.get_state()}
     else:
         if isinstance(agent, UserAgent):
             agent.play_round(request.matchdict['move'])
