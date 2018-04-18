@@ -2,7 +2,6 @@
 Chess state handling model.
 """
 
-from copy import deepcopy
 from itertools import chain, count, islice, starmap
 from functools import partial
 from uuid import uuid4
