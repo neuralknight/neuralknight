@@ -102,7 +102,10 @@ class Board(BaseBoard):
         """
         Validate and return new board state.
         """
-        return Board(self._board.update(state), self.id)
+        board = Board(self._board.update(state), self.id)
+        board.player1 = self.player1
+        board.player2 = self.player2
+        return board
 
     def update_state_v1(self, dbsession, state):
         """
@@ -110,22 +113,21 @@ class Board(BaseBoard):
         """
         moving_player = self.active_player()
         board = self.update(state)
-        board.player1 = self.player1
-        board.player2 = self.player2
         table_game = dbsession.query(TableGame).filter(
             TableGame.game == board.id).first()
         table_board = TableBoard(
             board_state=dumps(board.board),
-            move_num=board.move_count,
+            move_num=board._board.move_count,
             player=board.active_player(),
             game=board.id)
-        table_board.game_link.append(table_game)
+        if table_game:  # TODO(grandquista)
+            table_board.game_link.append(table_game)
         dbsession.add(table_board)
         if board:
             self.poke_player(False)
             return {'end': False}
         self.poke_player(True, moving_player)
-        if board.has_kings():
+        if board._board.has_kings():
             table_game.one_won = False
             table_game.two_won = False
         elif moving_player == table_game.player_one:
