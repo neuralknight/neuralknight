@@ -16,6 +16,7 @@ def issue_agent_view(request):
         return {'agent_id': UserAgent(game_id, player).agent_id}
     return {'agent_id': Agent(game_id, player).agent_id}
 
+
 @view_config(route_name='issue_agent_lookahead', request_method='POST', renderer='json')
 def issue_agent_lookahead_view(request):
     try:
@@ -27,6 +28,7 @@ def issue_agent_lookahead_view(request):
     if 'user' in request.json:
         return {'agent_id': UserAgent(game_id, player).agent_id}
     return {'agent_id': Agent(game_id, player, lookahead).agent_id}
+
 
 @view_config(route_name='agent', request_method=('PUT', 'GET'), renderer='json')
 def agent_view(request):
