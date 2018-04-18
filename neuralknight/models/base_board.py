@@ -18,7 +18,7 @@ class BaseBoard:
         """
         return cls.GAMES[_id]
 
-    def __init__(self, board, _id=None):
+    def __init__(self, board, _id=None, active_player=True):
         if _id:
             self.id = _id
         else:
@@ -29,8 +29,27 @@ class BaseBoard:
         else:
             self._board = BoardModel(board)
         self.board = self._board.board
+        self._active_player = active_player
         self.player1 = None
         self.player2 = None
+
+    def __bool__(self):
+        """
+        Ensure active player king on board.
+        """
+        return bool(self._board)
+
+    def __contains__(self, piece):
+        """
+        Ensure piece on board.
+        """
+        return piece in self._board
+
+    def __iter__(self):
+        """
+        Provide next boards at one lookahead.
+        """
+        return self._board.lookahead_boards(1)
 
     def request(self, method, resource, *args, json=None, **kwargs):
         if neuralknight.testapp:
@@ -57,7 +76,7 @@ class BaseBoard:
         """
         UUID of active player.
         """
-        if self._board.active_player:
+        if self._active_player:
             return self.player1
         return self.player2
 
@@ -70,8 +89,26 @@ class BaseBoard:
         """
         return {'state': self.board}
 
+    def handle_future(self, future):
+        """
+        Handle a future from and async request.
+        """
+        future.result().json()
+
+    def lookahead_boards(self, n=4):
+        return self._board.lookahead_boards(n)
+
     def poke_player(self, end, active_player=None):
         """
         Inform active player of game state.
         """
         self.request('PUT', f'/agent/{ active_player or self.active_player() }', json={'end': end})
+
+    def update(self, state):
+        """
+        Validate and return new board state.
+        """
+        board = type(self)(self._board.update(state), self.id, not self._active_player)
+        board.player1 = self.player1
+        board.player2 = self.player2
+        return board
