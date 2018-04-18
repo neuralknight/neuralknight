@@ -233,6 +233,7 @@ class BoardModel:
             raise RuntimeError
         move = (new[0] - posX, new[1] - posY)
         if move not in self.valid_moves_for_piece(piece, posX, posY):
+            print(move, piece, posX, posY)
             raise RuntimeError
         self.move_count += 1
         if piece != 9:

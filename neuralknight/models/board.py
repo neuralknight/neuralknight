@@ -6,11 +6,11 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import count
 from json import dumps
 
-from .base_board import BaseBoard
+from .base_board import BaseBoard, NoBoard
 from .table_board import TableBoard
 from .table_game import TableGame
 
-__all__ = ['Board']
+__all__ = ['Board', 'NoBoard']
 
 
 class Board(BaseBoard):
