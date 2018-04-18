@@ -17,9 +17,9 @@ class Agent(BaseAgent):
         board_options = self.get_boards()
         evaluation = self.evaluate_boards(board_options['boards'])
         board_score = evaluation['board_score']
-        best_boards = [evaulation['best_board']]
+        best_boards = [evaluation['best_board']]
         while board_options['cursor']:
-            board_options = self.get_boards(cursor)
+            board_options = self.get_boards(board_options['cursor'])
             evaluation = self.evaluate_boards(board_options['boards'])
             if evaluation['board_score'] > board_score:
                 best_boards = [evaluation['best_board']]

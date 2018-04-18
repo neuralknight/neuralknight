@@ -213,9 +213,8 @@ class BaseAgent:
 
             0 : (0, zero_squares),
         }
-        
-        best_boards = [boards[0][-1]]
-        best_board_score = -999999
+
+        best_boards = []
         root = boards[0][0]
         leaf_sum = 0
         leaf_count = 0
@@ -239,20 +238,31 @@ class BaseAgent:
                 leaf_average = leaf_sum / leaf_count
                 leaf_sum = board_score
                 leaf_count = 1
-                import pdb; pdb.set_trace()
                 if leaf_average > best_average:
                     best_average = leaf_average
                     best_boards = [root]
                 elif leaf_average == best_average:
                     best_boards.append(root)
 
-        return best_boards[randint(0, len(best_boards) - 1)]
+                root = board_sequence[0]
+        if not best_boards:
+            return {
+                'best_board': root,
+                'board_score': best_average
+            }
+
+        return {
+            'best_board': best_boards[randint(0, len(best_boards) - 1)],
+            'board_score': best_average
+        }
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
+        # import pdb; pdb.set_trace()
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        self.game_over = data['end']
+        if 'end' in data:
+            self.game_over = data['end']
 
     def join_game(self):
         self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})
