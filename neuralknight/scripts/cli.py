@@ -1,5 +1,8 @@
-from cmd import Cmd
 import requests
+
+from cmd import Cmd
+from concurrent.futures import TimeoutError, ThreadPoolExecutor
+from threading import Timer
 
 from ..models.board_model import BoardModel
 
@@ -33,6 +36,8 @@ class CLIAgent(Cmd):
         Init player board.
         """
         self.board = BoardModel()
+        self.executor = ThreadPoolExecutor()
+        self.future = None
         self.piece = None
         self.user = None
         game = requests.post(API_URL + '/v1.0/games').json()
@@ -40,10 +45,34 @@ class CLIAgent(Cmd):
         self.user['user'] = 1
         super().__init__()
 
+    @staticmethod
+    def wait(time):
+        timer = Timer(time, lambda: None)
+        timer.join()
+
+    def poll_move_response(self):
+        self.wait(1)
+        response = requests.get(API_URL + f'/agent/{ self.user["agent_id"] }')
+        board = BoardModel(response.json()['state'])
+        self.board = board
+        self.print_board(self.format_board(self.board))
+        while self.board.board == board.board:
+            self.wait(1)
+            response = requests.get(API_URL + f'/agent/{ self.user["agent_id"] }')
+            board = BoardModel(response.json()['state'])
+        self.board = board
+
     def do_piece(self, arg_str):
         """
         Select piece for move.
         """
+        if self.future:
+            try:
+                self.future.result(0)
+            except TimeoutError:
+                print('not your turn yet')
+                return
+            self.future = None
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
@@ -64,19 +93,25 @@ class CLIAgent(Cmd):
         """
         Make move.
         """
+        if not self.piece:
+            return self.print_invalid('move ' + arg_str)
+
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('move ' + arg_str)
 
         move = (tuple(reversed(self.piece)), tuple(reversed(args)))
+        self.piece = None
 
         requests.put(API_URL + f"/agent/{self.user['agent_id']}", json=move)
+        self.future = self.executor.submit(self.poll_move_response)
 
-        board = [list(row) for row in str(self.board).splitlines()]
-        self.print_board(map(' '.join, board))
+    @staticmethod
+    def format_board(board):
+        return map(' '.join, str(board).splitlines())
 
     def print_invalid(self, args):
-        self.print_board(' '.join(row) for row in str(self.board).splitlines())
+        self.print_board(self.format_board(self.board))
         print('invalid command:', args)
 
     @staticmethod
