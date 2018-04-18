@@ -43,15 +43,9 @@ def print_board(board):
 
 def update_board(api_url, game_id, in_board):
     board = in_board
-<<<<<<< Updated upstream
     while in_board == board:
-        sleep(60)
-        response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
-=======
-    while in_board.board == board.board:
         sleep(10)
-        response = requests.get(f'{ API_URL }/agent/{ user }')
->>>>>>> Stashed changes
+        response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
         state = response.json()['state']
         if state == {'end': True}:
             return print('game over')
