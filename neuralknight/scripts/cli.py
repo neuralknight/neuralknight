@@ -47,7 +47,7 @@ def poll_move_response(user):
     global BOARD
     board = BOARD
     while BOARD.board == board.board:
-        sleep(1)
+        sleep(60)
         response = requests.get(f'{ API_URL }/agent/{ user }')
         board = BoardModel(response.json()['state'])
     BOARD = board
