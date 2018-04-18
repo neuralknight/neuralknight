@@ -43,14 +43,18 @@ def print_board(board):
         print(f'{ shell }{ "".join(line) }')
 
 
-def poll_move_response(user):
-    global BOARD
-    board = BOARD
-    while BOARD.board == board.board:
+def update_board(user, in_board):
+    board = in_board
+    while in_board.board == board.board:
         sleep(60)
         response = requests.get(f'{ API_URL }/agent/{ user }')
         board = BoardModel(response.json()['state'])
-    BOARD = board
+    return board
+
+
+def poll_move_response(user):
+    global BOARD
+    BOARD = update_board(user, BOARD)
     print_board(format_board(BOARD))
 
 
@@ -116,10 +120,8 @@ class CLIAgent(Cmd):
 
         requests.put(f'{ API_URL }/agent/{ self.user }', json=move)
         sleep(1)
-        response = requests.get(f'{ API_URL }/agent/{ self.user }')
-        board = BoardModel(response.json()['state'])
-        BOARD = board
-        print_board(format_board(BOARD))
+        BOARD = update_board(self.user, BOARD)
+        print_board(format_board(BOARD.swap()))
         self.process = Process(target=poll_move_response, args=(self.user,))
         self.process.start()
 
