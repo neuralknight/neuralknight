@@ -4,9 +4,6 @@ from .base_agent import BaseAgent
 class Agent(BaseAgent):
     '''Computer Agent'''
 
-    PORT = 8080
-    API_URL = 'http://localhost:{}'.format(PORT)
-
     def __init__(self, game_id, player):
         super().__init__(game_id, player)
 

@@ -1,11 +1,7 @@
 import os
 import sys
 
-from pyramid.paster import (
-    get_appsettings,
-    setup_logging,
-    )
-
+from pyramid.paster import get_appsettings, setup_logging
 from pyramid.scripts.common import parse_vars
 
 from ..models.meta import Base

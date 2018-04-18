@@ -1,13 +1,13 @@
 import requests
 
 from cmd import Cmd
-from concurrent.futures import TimeoutError, ThreadPoolExecutor
+from concurrent.futures import TimeoutError, ProcessPoolExecutor
 from threading import Timer
 
 from ..models.board_model import BoardModel
 
 PORT = 8080
-API_URL = 'http://localhost:{}'.format(PORT)
+API_URL = f'http://localhost:{ PORT }'
 
 PIECE_NAME = {
     3: 'bishop',
@@ -25,6 +25,10 @@ TOP_BOARD_OUTPUT_SHELL = '''
  +---------------'''
 BOARD_OUTPUT_SHELL = ('1|', '2|', '3|', '4|', '5|', '6|', '7|', '8|')
 
+EXECUTOR = ProcessPoolExecutor()
+FUTURE = None
+USER = None
+
 
 class CLIAgent(Cmd):
     intro = '''
@@ -36,13 +40,7 @@ class CLIAgent(Cmd):
         Init player board.
         """
         self.board = BoardModel()
-        self.executor = ThreadPoolExecutor()
-        self.future = None
         self.piece = None
-        self.user = None
-        game = requests.post(API_URL + '/v1.0/games').json()
-        self.user = requests.post(API_URL + '/issue-agent', json=game).json()
-        self.user['user'] = 1
         super().__init__()
 
     @staticmethod
@@ -51,28 +49,31 @@ class CLIAgent(Cmd):
         timer.join()
 
     def poll_move_response(self):
+        global USER
         self.wait(1)
-        response = requests.get(API_URL + f'/agent/{ self.user["agent_id"] }')
+        response = requests.get(f'{ API_URL }/agent/{ USER }')
         board = BoardModel(response.json()['state'])
         self.board = board
         self.print_board(self.format_board(self.board))
         while self.board.board == board.board:
             self.wait(1)
-            response = requests.get(API_URL + f'/agent/{ self.user["agent_id"] }')
+            response = requests.get(f'{ API_URL }/agent/{ USER }')
             board = BoardModel(response.json()['state'])
         self.board = board
+        self.print_board(self.format_board(self.board))
 
     def do_piece(self, arg_str):
         """
         Select piece for move.
         """
-        if self.future:
+        global FUTURE
+        if FUTURE:
             try:
-                self.future.result(0)
+                FUTURE.result(0)
             except TimeoutError:
                 print('not your turn yet')
                 return
-            self.future = None
+            FUTURE = None
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
@@ -93,6 +94,7 @@ class CLIAgent(Cmd):
         """
         Make move.
         """
+        global FUTURE
         if not self.piece:
             return self.print_invalid('move ' + arg_str)
 
@@ -103,8 +105,8 @@ class CLIAgent(Cmd):
         move = (tuple(reversed(self.piece)), tuple(reversed(args)))
         self.piece = None
 
-        requests.put(API_URL + f"/agent/{self.user['agent_id']}", json=move)
-        self.future = self.executor.submit(self.poll_move_response)
+        requests.put(f'{ API_URL }/agent/{ USER }', json=move)
+        FUTURE = EXECUTOR.submit(self.poll_move_response)
 
     @staticmethod
     def format_board(board):
@@ -171,14 +173,11 @@ class CLIAgent(Cmd):
 
 
 def main():
+    global API_URL, USER
     try:
+        game = requests.post(f'{ API_URL }/v1.0/games').json()
+        game['user'] = 1
+        USER = requests.post(f'{ API_URL }/issue-agent', json=game).json()['agent_id']
         CLIAgent().cmdloop()
-    except KeyboardInterrupt:
-        print()
-
-
-if __name__ == '__main__':
-    try:
-        main()
     except KeyboardInterrupt:
         print()

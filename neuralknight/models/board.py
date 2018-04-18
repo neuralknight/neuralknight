@@ -17,9 +17,6 @@ class Board(BaseBoard):
     Chess board interaction model.
     """
 
-    PORT = 8080
-    API_URL = 'http://localhost:{}'.format(PORT)
-
     def __init__(self, board=None, _id=None):
         """
         Set up board.

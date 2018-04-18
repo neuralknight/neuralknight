@@ -11,6 +11,8 @@ class BaseAgent:
     '''Slayer of chess'''
 
     AGENT_POOL = {}
+    PORT = 8080
+    API_URL = 'http://localhost:{}'.format(PORT)
 
     def __init__(self, game_id, player):
         self.agent_id = str(uuid4())
