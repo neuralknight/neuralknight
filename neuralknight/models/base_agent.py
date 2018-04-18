@@ -3,7 +3,6 @@ import requests
 from random import randint
 from uuid import uuid4
 
-from .board_model import BoardModel
 import neuralknight
 
 
@@ -14,9 +13,10 @@ class BaseAgent:
     PORT = 8080
     API_URL = 'http://localhost:{}'.format(PORT)
 
-    def __init__(self, game_id, player):
+    def __init__(self, game_id, player, lookahead=1):
         self.agent_id = str(uuid4())
         self.player = player
+        self.lookahead = lookahead
         self.game_id = game_id
         self.AGENT_POOL[self.agent_id] = self
         self.join_game()
@@ -212,33 +212,31 @@ class BaseAgent:
 
             0 : (0, zero_squares),
         }
-
-        best_boards = [boards[0][0]]
+        
+        which_look = len(boards[0]) + 2 % 2 # Is the lookahead max self or opp?
+        best_boards = [boards[0][-1]]
         best_board_score = -999999
+        worst_board_score = 999999
+        
         for board_sequence in boards:
-            for board in board_sequence:
-                board_score = 0
-                for row in range(8):
-                    for col in range(8):
-                        piece_values = value_map[board[row][col]]
-                        board_score += piece_values[0]
-                        board_score += piece_values[1][row][col]
-                if board_score > best_board_score:
-                    best_board_score = board_score
-                    best_boards = [board_sequence[0]]
-                    break
-                elif board_score == best_board_score:
-                    best_boards.append(board_sequence[0])
-                    break
+            board_score = 0
+            leaf = board_sequence[-1]
+            for row in range(8):
+                for col in range(8):
+                    piece_values = value_map[leaf[row][col]]
+                    board_score += piece_values[0]
+                    board_score += piece_values[1][row][col]
+            if board_score > best_board_score and which_look:
+                best_board_score = board_score
+                best_boards = leaf
+            elif board_score < worst_board_score and not which_look:
+                worst_board_score = board_score
+                best_boards = leaf
+            elif (board_score == best_board_score and which_look) or\
+                (board_score == worst_board_score and not which_look):
+                best_boards.append(leaf)
 
         best_board = best_boards[randint(0, len(best_boards) - 1)]
-
-        if self.player == 1:
-            print(BoardModel(best_board))
-            self.player = 2
-        else:
-            print(BoardModel(best_board).swap())
-            self.player = 1
 
         return best_board
 
