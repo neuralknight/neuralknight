@@ -93,7 +93,7 @@ class Board(BaseBoard):
         """
         Retrieve REST cursor slice.
         """
-        return self.board.slice_cursor_v1(cursor, lookahead)
+        return self._board.slice_cursor_v1(cursor, lookahead)
 
     def update(self, state):
         """
@@ -121,9 +121,9 @@ class Board(BaseBoard):
             table_board.game_link.append(table_game)
         dbsession.add(table_board)
         if board:
-            self.poke_player(False)
+            board.poke_player(False)
             return {'end': False}
-        self.poke_player(True, moving_player)
+        board.poke_player(True, moving_player)
         if board._board.has_kings():
             table_game.one_won = False
             table_game.two_won = False
@@ -131,5 +131,5 @@ class Board(BaseBoard):
             table_game.two_won = False
         else:
             table_game.one_won = False
-        self.close()
+        board.close()
         return {'end': True}

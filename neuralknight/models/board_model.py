@@ -73,7 +73,7 @@ class BoardModel:
         cursor = cursor or str(uuid4())
         return self.cursors.pop(cursor, self.lookahead_boards(lookahead))
 
-    def slice_cursor_v1(self, cursor=None, lookahead=1):
+    def slice_cursor_v1(self, cursor, lookahead):
         """
         Retrieve REST cursor slice.
         """
@@ -248,8 +248,6 @@ class BoardModel:
             count(),
             self.board, board.board))))
         if len(mutation) != 2:
-            # import pdb; pdb.set_trace()
-
             raise RuntimeError
         if mutation[0][3] == 0:
             old, new = mutation
