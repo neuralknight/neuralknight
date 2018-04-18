@@ -248,8 +248,6 @@ class BoardModel:
             count(),
             self.board, board.board))))
         if len(mutation) != 2:
-            # import pdb; pdb.set_trace()
-
             raise RuntimeError
         if mutation[0][3] == 0:
             old, new = mutation
