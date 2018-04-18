@@ -1,9 +1,8 @@
 import requests
 
 from uuid import uuid4
-from copy import deepcopy
 
-from .board_constants import INITIAL_BOARD
+from .board_model import BoardModel
 import neuralknight
 
 
@@ -17,17 +16,17 @@ class BaseBoard:
         """
         return cls.GAMES[_id]
 
-    def __init__(self, _id, board=None):
+    def __init__(self, board, _id=None):
         if _id:
             self.id = _id
         else:
             self.id = str(uuid4())
         self.GAMES[self.id] = self
-        if board:
-            self.board = board
+        if isinstance(board, BoardModel):
+            self._board = board
         else:
-            self.board = deepcopy(INITIAL_BOARD)
-        self.active_uuid = True
+            self._board = BoardModel(board)
+        self.board = self._board.board
         self.player1 = None
         self.player2 = None
 
@@ -56,10 +55,9 @@ class BaseBoard:
         """
         UUID of active player.
         """
-        if self.active_uuid:
+        if self._board.active_player:
             return self.player1
         return self.player2
-
 
     def close(self):
         del self.GAMES[self.id]

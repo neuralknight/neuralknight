@@ -1,8 +1,7 @@
 from cmd import Cmd
 import requests
 
-from ..models import Board
-from ..models import UserAgent
+from ..models.board_model import BoardModel
 
 PORT = 8080
 API_URL = 'http://localhost:{}'.format(PORT)
@@ -33,7 +32,7 @@ class CLIAgent(Cmd):
         """
         Init player board.
         """
-        self.board = Board()
+        self.board = BoardModel()
         self.piece = None
         self.user = None
         game = requests.post(API_URL + '/v1.0/games').json()

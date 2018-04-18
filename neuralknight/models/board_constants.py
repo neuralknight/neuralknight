@@ -1,12 +1,8 @@
 __all__ = [
-    'EMOJI', 'INITIAL_BOARD',
+    'INITIAL_BOARD',
     'BISHOP', 'KING', 'KNIGHT', 'PAWN', 'QUEEN', 'ROOK',
     'BISHOP_MOVES', 'KING_MOVES', 'KNIGHT_MOVES', 'QUEEN_MOVES', 'ROOK_MOVES',
     'unit']
-
-EMOJI = [
-  '⌛', '‼',
-  '♝', '♗', '♛', '♕', '♞', '♘', '♟', '♙', '♚', '♔', '♜', '♖', '▪', '▫']
 
 BISHOP = 0B10
 KING = 0B100
