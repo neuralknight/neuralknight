@@ -3,6 +3,7 @@ Chess state handling model.
 """
 
 from concurrent.futures import ThreadPoolExecutor
+from itertools import count
 from json import dumps
 
 from .base_board import BaseBoard
@@ -17,30 +18,16 @@ class Board(BaseBoard):
     Chess board interaction model.
     """
 
-    def __init__(self, board=None, _id=None):
+    EMOJI = [
+      '⌛', '‼',
+      '♝', '♗', '♛', '♕', '♞', '♘', '♟', '♙', '♚', '♔', '♜', '♖', '▪', '▫']
+
+    def __init__(self, board=None, _id=None, active_player=True):
         """
         Set up board.
         """
-        super().__init__(board, _id)
+        super().__init__(board, _id, active_player)
         self.executor = ThreadPoolExecutor()
-
-    def __bool__(self):
-        """
-        Ensure active player king on board.
-        """
-        return bool(self._board)
-
-    def __contains__(self, piece):
-        """
-        Ensure piece on board.
-        """
-        return piece in self._board
-
-    def __iter__(self):
-        """
-        Provide next boards at one lookahead.
-        """
-        return self._board.lookahead_boards(1)
 
     def __repr__(self):
         """
@@ -52,7 +39,23 @@ class Board(BaseBoard):
         """
         Output the emoji view of board.
         """
-        return str(self._board)
+        if self._active_player:
+            def piece_to_index(piece):
+                return piece
+        else:
+            def piece_to_index(piece):
+                return (piece & 0xE) | (0 if piece & 1 else 1)
+
+        return '\n'.join(map(
+            lambda posY, row: ''.join(map(
+                lambda posX, piece: self.EMOJI[
+                    piece_to_index(piece)
+                    if piece else
+                    14 + ((posY + posX) % 2)],
+                count(), row)),
+            count(),
+            self.board if self._active_player else reversed(
+                [reversed(row) for row in self.board])))
 
     def add_player_v1(self, dbsession, player):
         """
@@ -80,29 +83,11 @@ class Board(BaseBoard):
         self.player1 = player
         return {}
 
-    def handle_future(self, future):
-        """
-        Handle a future from and async request.
-        """
-        future.result().json()
-
-    def lookahead_boards(self, n=4):
-        return self._board.lookahead_boards(n)
-
     def slice_cursor_v1(self, cursor=None, lookahead=1):
         """
         Retrieve REST cursor slice.
         """
         return self._board.slice_cursor_v1(cursor, lookahead)
-
-    def update(self, state):
-        """
-        Validate and return new board state.
-        """
-        board = Board(self._board.update(state), self.id)
-        board.player1 = self.player1
-        board.player2 = self.player2
-        return board
 
     def update_state_v1(self, dbsession, state):
         """
