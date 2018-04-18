@@ -13,6 +13,13 @@ class BaseAgent:
     PORT = 8080
     API_URL = 'http://localhost:{}'.format(PORT)
 
+    @classmethod
+    def get_agent(cls, _id):
+        """
+        Provide game matching id.
+        """
+        return cls.AGENT_POOL[_id]
+
     def __init__(self, game_id, player, lookahead=1):
         self.agent_id = str(uuid4())
         self.player = player
@@ -39,6 +46,7 @@ class BaseAgent:
 
     def close(self):
         del self.AGENT_POOL[self.agent_id]
+        return {}
 
     def evaluate_boards(self, boards):
         '''Determine value for each board state in array of board states
@@ -213,7 +221,7 @@ class BaseAgent:
 
             0 : (0, zero_squares),
         }
-        
+
         best_boards = []
         root = boards[0][0]
         leaf_sum = 0
@@ -259,11 +267,12 @@ class BaseAgent:
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
-        # import pdb; pdb.set_trace()
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        if 'end' in data:
-            self.game_over = data['end']
+        self.game_over = data['end']
+        if self.game_over:
+            return self.close()
+        return {}
 
     def join_game(self):
         self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})

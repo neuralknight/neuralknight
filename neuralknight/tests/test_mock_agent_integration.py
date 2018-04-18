@@ -49,7 +49,7 @@ def test_player_connection(testapp):
 #    player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
 #    player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
 #    assert BaseAgent.AGENT_POOL[player1['agent_id']].get_boards()
-    
+
 
 #def test_choose_valid_move(testapp):
 #    '''Assert agent chooses valid move and game ends'''
