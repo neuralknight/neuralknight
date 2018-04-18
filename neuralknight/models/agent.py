@@ -6,10 +6,11 @@ class Agent(BaseAgent):
 
     def get_boards(self):
         '''Retrieves potential board states'''
+        params = {'lookahead': self.lookahead}
         data = self.request('GET', '/v1.0/games/{}/states'.format(self.game_id))
         boards = data['boards']
         while data['cursor'] is not None:
-            params = {'cursor': data['cursor']}
+            params = {'cursor': data['cursor'], 'lookahead': self.lookahead}
             data = self.request(
                 'GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
             for board in data['boards']:
@@ -26,4 +27,5 @@ class Agent(BaseAgent):
         '''Play a game'''
         game_over = False
         while not game_over:
-            game_over = self.play_round(self.game_id)
+            game_over = self.play_round()
+        return game_over
