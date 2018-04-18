@@ -36,14 +36,14 @@ def test_iterates_future_boards(start_board):
 
 def test_string_represention(start_board):
     assert str(start_board) == '''\
-♜♞♝♚♛♝♞♜
+♜♞♝♛♚♝♞♜
 ♟♟♟♟♟♟♟♟
 ▪▫▪▫▪▫▪▫
 ▫▪▫▪▫▪▫▪
 ▪▫▪▫▪▫▪▫
 ▫▪▫▪▫▪▫▪
 ♙♙♙♙♙♙♙♙
-♖♘♗♔♕♗♘♖\
+♖♘♗♕♔♗♘♖\
 '''
 
 
@@ -58,9 +58,9 @@ def test_string_represention_end(end_game_board):
 ▪▫▪▫▪▫▪▫
 ▫▪▫▪▫▪▫▪
 ▪▫▪▫▪▫▪▫
-▫▪▫♛▫▪▫▪
-▪▫▪▫▪▫♔▫
-▫▪▫♕▫▪▫▪
+▫▪▫♚▫▪▫▪
+▪▫▪▫▪▫♕▫
+▫▪▫♔▫▪▫▪
 ▪▫▪▫▪▫▪▫
 ▫▪▫▪▫▪▫▪\
 '''
