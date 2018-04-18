@@ -20,7 +20,6 @@ class BaseAgent:
         self.game_id = game_id
         self.AGENT_POOL[self.agent_id] = self
         self.join_game()
-        self.state = None
 
     def request(self, method, resource, *args, json=None, **kwargs):
         if neuralknight.testapp:
@@ -253,16 +252,6 @@ class BaseAgent:
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         return data['end']
-
-    def init_game(self):
-        '''Initialize a new game'''
-        data = {'id': self.agent_id}
-        data = self.request('POST', '/v1.0/games', json=data)
-        self.game_id = data['id']
-
-        self.player = 1
-        self.state = self.get_state()
-        self.AGENT_POOL[self.agent_id] = self
 
     def join_game(self):
         self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})

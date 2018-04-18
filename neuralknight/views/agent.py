@@ -26,8 +26,7 @@ def agent_view(request):
         return {'state': agent.get_state()}
     else:
         if isinstance(agent, UserAgent):
-            if 'move' in request.matchdict:
-                agent.play_round(request.matchdict['move'])
+            agent.play_round(request.json['move'])
         else:
             agent.play_round()
     return {}
