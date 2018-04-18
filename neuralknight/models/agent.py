@@ -13,7 +13,7 @@ class Agent(BaseAgent):
 
     def play_round(self):
         '''Play a game round'''
-        cursor = True
+        cursor = 'first'
         board_score = 0
         best_boards = []
         while cursor:
