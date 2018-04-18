@@ -4,9 +4,6 @@ from .base_agent import BaseAgent
 class Agent(BaseAgent):
     '''Computer Agent'''
 
-    def __init__(self, game_id, player):
-        super().__init__(game_id, player)
-
     def get_boards(self):
         '''Retrieves potential board states'''
         data = self.request('GET', '/v1.0/games/{}/states'.format(self.game_id))

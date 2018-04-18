@@ -18,16 +18,11 @@ class BoardModel:
     Chess board model.
     """
 
-    EMOJI = [
-      '⌛', '‼',
-      '♝', '♗', '♛', '♕', '♞', '♘', '♟', '♙', '♚', '♔', '♜', '♖', '▪', '▫']
-
     def __init__(self, board=None, active_player=True):
         """
         Set up board.
         """
         self.board = tuple(map(tuple, board or INITIAL_BOARD))
-        self.active_player = active_player
         self.cursors = {}
         self.move_count = 1
         self.moves_since_pawn = 0
@@ -44,28 +39,6 @@ class BoardModel:
         """
         return any(map(lambda row: piece in row, self.board))
 
-    def __str__(self):
-        """
-        Output the emoji view of board.
-        """
-        if self.active_player:
-            def piece_to_index(piece):
-                return piece
-        else:
-            def piece_to_index(piece):
-                return (piece & 0xE) | (0 if piece & 1 else 1)
-
-        return '\n'.join(map(
-            lambda posY, row: ''.join(map(
-                lambda posX, piece: self.EMOJI[
-                    piece_to_index(piece)
-                    if piece else
-                    14 + ((posY + posX) % 2)],
-                count(), row)),
-            count(),
-            self.board if self.active_player else reversed(
-                [reversed(row) for row in self.board])))
-
     def get_cursor(self, cursor, lookahead):
         """
         Retrieve iterable for cursor.
@@ -73,7 +46,7 @@ class BoardModel:
         cursor = cursor or str(uuid4())
         return self.cursors.pop(cursor, self.lookahead_boards(lookahead))
 
-    def slice_cursor_v1(self, cursor=None, lookahead=1):
+    def slice_cursor_v1(self, cursor, lookahead):
         """
         Retrieve REST cursor slice.
         """
@@ -185,7 +158,7 @@ class BoardModel:
             new_state = list(map(list, self.board))
             new_state[posY][posX] = 0
             new_state[posY + move[1]][posX + move[0]] = piece
-            return BoardModel(new_state, not self.active_player)
+            return BoardModel(new_state).swap()
 
         return map(
             mutate_board,
@@ -195,17 +168,13 @@ class BoardModel:
         """
         Validate piece as active.
         """
-        if self.active_player:
-            return piece & 1 and piece & 0xE
-        return (not piece & 1) and piece & 0xE
+        return piece & 1 and piece & 0xE
 
     def inactive_piece(self, piece):
         """
         Validate piece as inactive.
         """
-        if self.active_player:
-            return (not piece & 1) and piece & 0xE
-        return piece & 1 and piece & 0xE
+        return (not piece & 1) and piece & 0xE
 
     def active_pieces(self):
         """
@@ -230,13 +199,13 @@ class BoardModel:
                 lambda pp:
                     pp & 0xE | (1 if self.inactive_piece(pp) else 0),
                 row))[::-1],
-            self.board))[::-1], not self.active_player)
+            self.board))[::-1])
 
     def update(self, state):
         """
         Validate and return new board state.
         """
-        board = BoardModel(state, self.active_player)
+        board = BoardModel(state)
         mutation = tuple(filter(None, chain.from_iterable(map(
             lambda posY, old_row, new_row: map(
                 lambda posX, old_piece, new_piece:
@@ -248,8 +217,6 @@ class BoardModel:
             count(),
             self.board, board.board))))
         if len(mutation) != 2:
-            # import pdb; pdb.set_trace()
-
             raise RuntimeError
         if mutation[0][3] == 0:
             old, new = mutation
@@ -272,27 +239,19 @@ class BoardModel:
             self.moves_since_pawn += 1
         return board.swap()
 
-    def lookahead_boards(self, n):
+    def lookahead_boards(self, n, active=False):
         """
         Provide an iterable of valid moves for current board state.
         """
         if not self:
-            return iter(((self for _ in range(n + 1)),))
+            return iter((((self if active else self.swap()) for _ in range(n)),))
         if n == 0:
-            return iter(((self,),))
-        if n == 1:
-            return chain.from_iterable(
-                map(
-                    lambda board: board.lookahead_boards(n - 1),
-                    chain.from_iterable(
-                        starmap(
-                            self.lookahead_boards_for_piece,
-                            self.active_pieces()))))
+            return iter(((),))
         return chain.from_iterable(
             map(
                 lambda board: map(
-                    lambda n: (board,) + n,
-                    board.lookahead_boards(n - 1)),
+                    lambda n: (board if active else board.swap(),) + tuple(n),
+                    board.lookahead_boards(n - 1, not active)),
                 chain.from_iterable(
                     starmap(
                         self.lookahead_boards_for_piece,

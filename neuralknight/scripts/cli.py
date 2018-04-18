@@ -5,11 +5,6 @@ from cmd import Cmd
 from multiprocessing import Process
 from time import sleep
 
-from ..models.board_model import BoardModel
-
-PORT = 8080
-API_URL = f'http://localhost:{ PORT }'
-
 PIECE_NAME = {
     3: 'bishop',
     5: 'king',
@@ -26,11 +21,14 @@ TOP_BOARD_OUTPUT_SHELL = '''
  +---------------'''
 BOARD_OUTPUT_SHELL = ('1|', '2|', '3|', '4|', '5|', '6|', '7|', '8|')
 
-BOARD = BoardModel()
+
+def get_info(api_url, game_id):
+    response = requests.get(f'{ api_url }/v1.0/games/{ game_id }/info')
+    return response.json()['print']
 
 
 def format_board(board):
-    return map(' '.join, str(board).splitlines())
+    return map(' '.join, board.splitlines())
 
 
 def print_board(board):
@@ -43,36 +41,49 @@ def print_board(board):
         print(f'{ shell }{ "".join(line) }')
 
 
-def poll_move_response(user):
-    global BOARD
-    board = BOARD
-    while BOARD.board == board.board:
-        sleep(1)
-        response = requests.get(f'{ API_URL }/agent/{ user }')
-        board = BoardModel(response.json()['state'])
-    BOARD = board
-    print_board(format_board(BOARD))
+def update_board(api_url, game_id, in_board):
+    board = in_board
+    while in_board == board:
+        sleep(60)
+        response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
+        state = response.json()['state']
+        if state == {'end': True}:
+            return print('game over')
+        board = state
+    return board
+
+
+def poll_move_response(api_url, game_id, board):
+    try:
+        board = update_board(api_url, game_id, board)
+        if board:
+            print_board(format_board(get_info(api_url, game_id)))
+    except KeyboardInterrupt:
+        print()
 
 
 class CLIAgent(Cmd):
     prompt = '> '
 
-    def __init__(self):
+    def __init__(self, api_url):
         """
         Init player board.
         """
+        self.api_url = api_url
+        self.board = None
         self.future = None
         self.piece = None
-        game = requests.post(f'{ API_URL }/v1.0/games').json()
+        game = requests.post(f'{ self.api_url }/v1.0/games').json()
         game['user'] = 1
-        self.user = requests.post(f'{ API_URL }/issue-agent', json=game).json()['agent_id']
+        self.game_id = game['id']
+        self.user = requests.post(f'{ self.api_url }/issue-agent', json=game).json()['agent_id']
         super().__init__()
+        print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
         """
         Select piece for move.
         """
-        global BOARD
         if self.future:
             if not self.future.started():
                 print('not your turn yet')
@@ -83,17 +94,22 @@ class CLIAgent(Cmd):
                 print('not your turn yet')
                 return
             self.future = None
+            self.board = update_board(self.api_url, self.game_id, self.board)
+            if not self.board:
+                sys.exit(0)
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
         self.piece = args
+        response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
+        board = response.json()['state']
         try:
-            piece = BOARD.board[args[1]][args[0]]
+            piece = board[args[1]][args[0]]
         except IndexError:
             return self.print_invalid('piece ' + arg_str)
         if not (piece and (piece & 1)):
             return self.print_invalid('piece ' + arg_str)
-        board = [list(row) for row in str(BOARD).splitlines()]
+        board = [list(row) for row in get_info(self.api_url, self.game_id).splitlines()]
         board[args[1]][args[0]] = SELECTED_PIECE.format(
             board[args[1]][args[0]])
         print_board(map(' '.join, board))
@@ -103,7 +119,6 @@ class CLIAgent(Cmd):
         """
         Make move.
         """
-        global BOARD
         if not self.piece:
             return self.print_invalid('move ' + arg_str)
 
@@ -114,17 +129,19 @@ class CLIAgent(Cmd):
         move = {'move': (tuple(reversed(self.piece)), tuple(reversed(args)))}
         self.piece = None
 
-        requests.put(f'{ API_URL }/agent/{ self.user }', json=move)
+        requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
         sleep(1)
-        response = requests.get(f'{ API_URL }/agent/{ self.user }')
-        board = BoardModel(response.json()['state'])
-        BOARD = board
-        print_board(format_board(BOARD))
-        self.process = Process(target=poll_move_response, args=(self.user,))
+        self.board = update_board(self.api_url, self.game_id, self.board)
+        if self.board:
+            print_board(format_board(get_info(self.api_url, self.game_id)))
+        else:
+            sys.exit(0)
+        self.process = Process(
+            target=poll_move_response, args=(self.api_url, self.game_id, self.board))
         self.process.start()
 
     def print_invalid(self, args):
-        print_board(format_board(BOARD))
+        print_board(format_board(get_info(self.api_url, self.game_id)))
         print('invalid command:', args)
 
     @staticmethod
@@ -174,11 +191,11 @@ class CLIAgent(Cmd):
 
 
 def main(argv=sys.argv):
-    global API_URL
     try:
+        port = 8080
+        api_url = f'http://localhost:{ port }'
         if len(argv) > 1:
-            API_URL = argv[1]
-        print_board(format_board(BOARD))
-        CLIAgent().cmdloop()
+            api_url = argv[1]
+        CLIAgent(api_url).cmdloop()
     except KeyboardInterrupt:
         print()

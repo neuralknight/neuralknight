@@ -26,7 +26,7 @@ def agent_view(request):
         return {'state': agent.get_state()}
     else:
         if isinstance(agent, UserAgent):
-            agent.play_round(request.json['move'])
+            agent.play_round(request.json.get('move', None))
         else:
             agent.play_round()
     return {}
