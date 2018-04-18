@@ -48,14 +48,18 @@ def update_board(user, in_board):
     while in_board.board == board.board:
         sleep(60)
         response = requests.get(f'{ API_URL }/agent/{ user }')
-        board = BoardModel(response.json()['state'])
+        state = response.json()['state']
+        if state == {'end': True}:
+            return print('game over')
+        board = BoardModel(state)
     return board
 
 
 def poll_move_response(user):
     global BOARD
     BOARD = update_board(user, BOARD)
-    print_board(format_board(BOARD))
+    if BOARD:
+        print_board(format_board(BOARD))
 
 
 class CLIAgent(Cmd):
@@ -87,6 +91,8 @@ class CLIAgent(Cmd):
                 print('not your turn yet')
                 return
             self.future = None
+            if not BOARD:
+                sys.exit(0)
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
@@ -121,7 +127,10 @@ class CLIAgent(Cmd):
         requests.put(f'{ API_URL }/agent/{ self.user }', json=move)
         sleep(1)
         BOARD = update_board(self.user, BOARD)
-        print_board(format_board(BOARD.swap()))
+        if BOARD:
+            print_board(format_board(BOARD.swap()))
+        else:
+            sys.exit(0)
         self.process = Process(target=poll_move_response, args=(self.user,))
         self.process.start()
 

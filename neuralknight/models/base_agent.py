@@ -18,6 +18,7 @@ class BaseAgent:
         self.agent_id = str(uuid4())
         self.player = player
         self.game_id = game_id
+        self.game_over = False
         self.AGENT_POOL[self.agent_id] = self
         self.join_game()
 
@@ -244,6 +245,8 @@ class BaseAgent:
 
     def get_state(self):
         '''Gets current board state'''
+        if self.game_over:
+            return {'end': True}
         data = self.request('GET', f'/v1.0/games/{ self.game_id }')
         return data['board']
 
@@ -251,7 +254,7 @@ class BaseAgent:
         '''Sends move selection to board state manager'''
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        return data['end']
+        self.game_over = data['end']
 
     def join_game(self):
         self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})
