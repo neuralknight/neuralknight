@@ -31,13 +31,17 @@ def issue_agent_lookahead_view(request):
 @view_config(route_name='agent', request_method=('PUT', 'GET'), renderer='json')
 def agent_view(request):
     agent_id = request.matchdict['agent_id']
-    agent = Agent.AGENT_POOL[agent_id]
+    try:
+        agent = Agent.get_agent(agent_id)
+    except KeyError:
+        if request.method == 'GET':
+            return {'state': [[0 for _ in range(8)] for _ in range(8)]}
+        return {}
 
     if request.method == 'GET':
         return {'state': agent.get_state()}
-    else:
-        if isinstance(agent, UserAgent):
-            agent.play_round(request.json.get('move', None))
-        else:
-            agent.play_round()
-    return {}
+    if request.json.get('end', False):
+        return agent.close()
+    if isinstance(agent, UserAgent):
+        return agent.play_round(request.json.get('move', None))
+    return agent.play_round()

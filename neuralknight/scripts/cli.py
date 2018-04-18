@@ -44,7 +44,7 @@ def print_board(board):
 def update_board(api_url, game_id, in_board):
     board = in_board
     while in_board == board:
-        sleep(10)
+        sleep(1)
         response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
         state = response.json()['state']
         if state == {'end': True}:
@@ -77,7 +77,9 @@ class CLIAgent(Cmd):
         game['user'] = 1
         self.game_id = game['id']
         self.user = requests.post(f'{ self.api_url }/issue-agent', json=game).json()['agent_id']
-        requests.post(f'{ self.api_url }/issue-agent-lookahead', json={'id': self.game_id, 'player': 2, 'lookahead': 2})
+        requests.post(
+            f'{ self.api_url }/issue-agent-lookahead',
+            json={'id': self.game_id, 'player': 2, 'lookahead': 2})
         super().__init__()
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
@@ -181,14 +183,6 @@ class CLIAgent(Cmd):
         Sanitize data.
         """
         return line.strip().lower()
-
-    def play_round(self, *args):
-        """
-        User round play.
-        """
-        assert args
-        move = (1, 1)
-        return {[move]}
 
 
 def main(argv=sys.argv):
