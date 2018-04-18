@@ -8,6 +8,8 @@ import neuralknight
 
 class BaseBoard:
     GAMES = {}
+    PORT = 8080
+    API_URL = 'http://localhost:{}'.format(PORT)
 
     @classmethod
     def get_game(cls, _id):
