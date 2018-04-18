@@ -214,30 +214,43 @@ class BaseAgent:
             0 : (0, zero_squares),
         }
         
-        which_look = len(boards[0]) + 2 % 2 # Is the lookahead max self or opp?
         best_boards = [boards[0][-1]]
-        best_board_score = -999999
-        worst_board_score = 999999
-        
+        root = boards[0][0]
+        leaf_sum = 0
+        leaf_count = 0
+        leaf_average = 0
+        best_average = 0
+
         for board_sequence in boards:
             board_score = 0
             leaf = board_sequence[-1]
+
             for row in range(8):
                 for col in range(8):
                     piece_values = value_map[leaf[row][col]]
                     board_score += piece_values[0]
                     board_score += piece_values[1][row][col]
-            if board_score > best_board_score and which_look:
-                best_board_score = board_score
-                best_boards = board_sequence[0]
-            elif board_score < worst_board_score and not which_look:
-                worst_board_score = board_score
-                best_boards = board_sequence[0]
-            elif (board_score == best_board_score and which_look) or\
-                (board_score == worst_board_score and not which_look):
-                best_boards.append(board_sequence[0])
+            if board_sequence[0] == root:
+                leaf_sum += board_score
+                leaf_count += 1
+            else:
+                leaf_average = leaf_sum / leaf_count
+                leaf_sum = board_score
+                leaf_count = 1
 
-        return best_boards[randint(0, len(best_boards) - 1)]
+                if leaf_average > best_average:
+                    best_average = leaf_average
+                    best_boards = [root]
+                elif leaf_average == best_average:
+                    if root not in best_boards:
+                        best_boards.append(root)
+
+                root = board_sequence[0]
+
+        return {
+            'best_board': best_boards[randint(0, len(best_boards) - 1)],
+            'board_score': best_average
+        }
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
