@@ -31,7 +31,7 @@ class BaseAgent:
         if method == 'POST':
             return requests.post(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
         if method == 'PUT':
-            return requests.put(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
+            return requests.put(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
         if method == 'GET':
             return requests.get(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
 
@@ -101,24 +101,24 @@ class BaseAgent:
              [0,  0,  0,  5,  5,  0,  0,  0],
         ]
         own_queen_squares = [
-            [-20,-10,-10, -5, -5,-10,-10,-20]
-            [-10,  0,  0,  0,  0,  0,  0,-10]
-            [-10,  0,  5,  5,  5,  5,  0,-10]
-            [-5,  0,  5,  5,  5,  5,  0, -5]
-            [0,  0,  5,  5,  5,  5,  0, -5]
-            [-10,  5,  5,  5,  5,  5,  0,-10]
-            [-10,  0,  5,  0,  0,  0,  0,-10]
-            [-20,-10,-10, -5, -5,-10,-10,-20]
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [-5,  0,  5,  5,  5,  5,  0, -5],
+            [0,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  5,  0,  0,  0,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20],
         ]
         own_king_squares = [
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-30,-40,-40,-50,-50,-40,-40,-30]
-            [-20,-30,-30,-40,-40,-30,-30,-20]
-            [-10,-20,-20,-20,-20,-20,-20,-10]
-            [20, 20,  0,  0,  0,  0, 20, 20]
-            [20, 30, 10,  0,  0, 10, 30, 20]
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [20, 20,  0,  0,  0,  0, 20, 20],
+            [20, 30, 10,  0,  0, 10, 30, 20],
         ]
 
         # Opp piece squares
@@ -230,7 +230,7 @@ class BaseAgent:
                     best_boards.append(board_sequence[0])
                     break
 
-        best_board = best_boards[randint(0, len(best_boards))]
+        best_board = best_boards[randint(0, len(best_boards) - 1)]
 
         if self.player == 1:
             print(Board(best_board))
