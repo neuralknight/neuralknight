@@ -250,7 +250,8 @@ class BaseAgent:
                     best_average = leaf_average
                     best_boards = [root]
                 elif leaf_average == best_average:
-                    best_boards.append(root)
+                    if root not in best_boards:
+                        best_boards.append(root)
 
                 root = board_sequence[0]
         if not best_boards:
@@ -266,9 +267,10 @@ class BaseAgent:
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
+        # import pdb; pdb.set_trace()
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        self.game_over = data['end']
+        self.game_over = data.get('end', False)
         if self.game_over:
             return self.close()
         return {}

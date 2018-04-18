@@ -1,6 +1,7 @@
 from random import randint
 
 from .base_agent import BaseAgent
+from random import randint
 
 
 class Agent(BaseAgent):
