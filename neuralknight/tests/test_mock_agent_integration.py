@@ -1,4 +1,4 @@
-from ..models import BaseBoard, BaseAgent, BoardModel
+from ..models import BaseBoard, BaseAgent
 
 
 class MockBoard(BaseBoard):
