@@ -73,7 +73,7 @@ class BoardModel:
         cursor = cursor or str(uuid4())
         return self.cursors.pop(cursor, self.lookahead_boards(lookahead))
 
-    def slice_cursor_v1(self, cursor=None, lookahead=1):
+    def slice_cursor_v1(self, cursor, lookahead):
         """
         Retrieve REST cursor slice.
         """
