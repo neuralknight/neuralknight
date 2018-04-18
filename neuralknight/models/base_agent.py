@@ -13,9 +13,10 @@ class BaseAgent:
     PORT = 8080
     API_URL = 'http://localhost:{}'.format(PORT)
 
-    def __init__(self, game_id, player):
+    def __init__(self, game_id, player, lookahead=1):
         self.agent_id = str(uuid4())
         self.player = player
+        self.lookahead = lookahead
         self.game_id = game_id
         self.game_over = False
         self.AGENT_POOL[self.agent_id] = self
@@ -212,32 +213,57 @@ class BaseAgent:
 
             0 : (0, zero_squares),
         }
+        
+        best_boards = []
+        root = boards[0][0]
+        leaf_sum = 0
+        leaf_count = 0
+        leaf_average = 0
+        best_average = 0
 
-        best_boards = [boards[0][0]]
-        best_board_score = -999999
         for board_sequence in boards:
-            for board in board_sequence:
-                board_score = 0
-                for row in range(8):
-                    for col in range(8):
-                        piece_values = value_map[board[row][col]]
-                        board_score += piece_values[0]
-                        board_score += piece_values[1][row][col]
-                if board_score > best_board_score:
-                    best_board_score = board_score
-                    best_boards = [board_sequence[0]]
-                    break
-                elif board_score == best_board_score:
-                    best_boards.append(board_sequence[0])
-                    break
+            board_score = 0
+            leaf = board_sequence[-1]
 
-        return best_boards[randint(0, len(best_boards) - 1)]
+            for row in range(8):
+                for col in range(8):
+                    piece_values = value_map[leaf[row][col]]
+                    board_score += piece_values[0]
+                    board_score += piece_values[1][row][col]
+
+            if board_sequence[0] == root:
+                leaf_sum += board_score
+                leaf_count += 1
+            else:
+                leaf_average = leaf_sum / leaf_count
+                leaf_sum = board_score
+                leaf_count = 1
+                if leaf_average > best_average:
+                    best_average = leaf_average
+                    best_boards = [root]
+                elif leaf_average == best_average:
+                    if root not in best_boards:
+                        best_boards.append(root)
+
+                root = board_sequence[0]
+        if not best_boards:
+            return {
+                'best_board': root,
+                'board_score': best_average
+            }
+
+        return {
+            'best_board': best_boards[randint(0, len(best_boards) - 1)],
+            'board_score': best_average
+        }
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
+        # import pdb; pdb.set_trace()
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        self.game_over = data['end']
+        if 'end' in data:
+            self.game_over = data['end']
 
     def join_game(self):
         self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})

@@ -9,6 +9,7 @@ import zope.sqlalchemy
 from .agent import Agent  # flake8: noqa
 from .base_agent import BaseAgent  # flake8: noqa
 from .base_board import BaseBoard  # flake8: noqa
+from .board_model import BoardModel # flake8: noqa
 from .board import Board  # flake8: noqa
 from .table_board import TableBoard  # flake8: noqa
 from .table_game import TableGame  # flake8: noqa
