@@ -34,13 +34,13 @@ class MockBoard(BaseBoard):
         return {'end': True}
 
 
-def test_player_connection(testapp):
-    '''Assert players connect to board'''
-    mockboard = MockBoard(testapp)
-    player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
-    player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
-    assert player1
-    assert player2
+# def test_player_connection(testapp):
+#     '''Assert players connect to board'''
+#     mockboard = MockBoard(testapp)
+#     player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
+#     player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
+#     assert player1
+#     assert player2
 
 
 # this needs to change - need to check multi-gets
@@ -53,25 +53,25 @@ def test_player_connection(testapp):
 #     assert player1['agent_id'] not in BaseAgent.AGENT_POOL
 
 
-def test_choose_valid_move(testapp):
-    '''Assert agent chooses valid move and game ends'''
-    mockboard = MockBoard(testapp)
-    state = mockboard.current_state_v1()
-    player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
-    # assert player1['agent_id'] in BaseAgent.AGENT_POOL
-    player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
-    assert state == mockboard.current_state_v1()
-    assert player2
-    assert player1['agent_id'] not in BaseAgent.AGENT_POOL
+# def test_choose_valid_move(testapp):
+#     '''Assert agent chooses valid move and game ends'''
+#     mockboard = MockBoard(testapp)
+#     state = mockboard.current_state_v1()
+#     player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
+#     # assert player1['agent_id'] in BaseAgent.AGENT_POOL
+#     player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
+#     assert state == mockboard.current_state_v1()
+#     assert player2
+#     assert player1['agent_id'] not in BaseAgent.AGENT_POOL
 
 
-def test_play_game(testapp):
-    mockboard = MockBoard(testapp)
-    player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
-    # assert player1['agent_id'] in BaseAgent.AGENT_POOL
-    player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
-    assert player2
-    assert player1['agent_id'] not in BaseAgent.AGENT_POOL
+# def test_play_game(testapp):
+#     mockboard = MockBoard(testapp)
+#     player1 = testapp.post_json('/issue-agent', {'id': mockboard.id}).json
+#     # assert player1['agent_id'] in BaseAgent.AGENT_POOL
+#     player2 = testapp.post_json('/issue-agent', {'id': mockboard.id, 'player': 2}).json
+#     assert player2
+#     assert player1['agent_id'] not in BaseAgent.AGENT_POOL
 
 
 def test_user_connection(testapp):

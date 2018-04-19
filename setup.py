@@ -60,6 +60,7 @@ setup(
         'console_scripts': [
             'initialize_neuralknight_db = neuralknight.scripts.initializedb:main',
             'initialize_neuralknight_cli = neuralknight.scripts.cli:main',
+            'neuralknight_profile = neuralknight.scripts.bench:main',
         ],
     },
 )

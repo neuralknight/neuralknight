@@ -1,7 +1,7 @@
 import requests
 from itertools import chain, count, groupby, starmap
 from functools import lru_cache, partial
-from operator import itemgetter
+from operator import itemgetter, methodcaller
 from random import randint
 from statistics import harmonic_mean
 from uuid import uuid4
@@ -31,7 +31,7 @@ def get_score(leaf, posY, posX, piece, **value_map):
 
 
 def check_sequence(sequence, **value_map):
-    leaf = tuple(map(tuple, sequence[-1]))
+    leaf = sequence[-1]
     return sum(chain.from_iterable(map(
         lambda posY, row: map(
             lambda posX, piece: get_score(leaf, posY, posX, piece, **value_map),
@@ -426,7 +426,7 @@ class BaseAgent:
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
-        data = {'state': board}
+        data = {'state': tuple(map(methodcaller('hex'), board))}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         self.game_over = data.get('end', False)
         if self.game_over:

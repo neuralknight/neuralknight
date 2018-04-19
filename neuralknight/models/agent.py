@@ -27,12 +27,15 @@ class Agent(BaseAgent):
         while cursor:
             board_options = self.get_boards(cursor)
             cursor = board_options['cursor']
-            yield board_options['boards']
+            yield tuple(map(
+                lambda boards: tuple(map(
+                    lambda board: tuple(map(bytes.fromhex, board)),
+                    boards)),
+                board_options['boards']))
 
     def play_round(self):
         '''Play a game round'''
         with ProcessPoolExecutor(4) as executor:
-            print('starting thoughts', executor)
             # best_boards = [(root_value, root), ...]
             best_boards = executor.map(
                 call,
@@ -45,7 +48,6 @@ class Agent(BaseAgent):
             _, best_boards = next(best_boards)
             # best_boards = [root, ...]
             best_boards = list(map(next, map(itemgetter(1), groupby(chain.from_iterable(map(itemgetter(1), best_boards))))))
-            print(best_boards)
             return self.put_board(sample(best_boards, 1)[0])
 
     def play_game(self):
