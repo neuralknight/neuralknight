@@ -2,6 +2,7 @@ from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.view import view_config
 
 from ..models import Agent
+from ..models import NewAgent
 from ..models import UserAgent
 
 
@@ -15,6 +16,18 @@ def issue_agent_view(request):
     if 'user' in request.json:
         return {'agent_id': UserAgent(game_id, player).agent_id}
     return {'agent_id': Agent(game_id, player).agent_id}
+
+
+@view_config(route_name='issue_agent_new', request_method='POST', renderer='json')
+def issue_agent_view_new(request):
+    try:
+        game_id = request.json['id']
+    except KeyError:
+        return HTTPBadRequest()
+    player = request.json.get('player', 1)
+    if 'user' in request.json:
+        return {'agent_id': UserAgent(game_id, player).agent_id}
+    return {'agent_id': NewAgent(game_id, player).agent_id}
 
 
 @view_config(route_name='issue_agent_lookahead', request_method='POST', renderer='json')
