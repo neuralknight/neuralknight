@@ -51,10 +51,9 @@ class BaseAgent:
     AGENT_POOL = {}
     if os.environ.get('API_URL', ''):
         PORT = os.environ['PORT']
-        API_URL = os.environ['API_URL'] + ':' + PORT
     else:
         PORT = 8080
-        API_URL = 'http://localhost:{}'.format(PORT)
+    API_URL = 'http://localhost:{}'.format(PORT)
 
     @classmethod
     def get_agent(cls, _id):
