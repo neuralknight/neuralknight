@@ -1,6 +1,5 @@
 attrs==17.4.0
-beautifulsoup4==4.6.0
-certifi==2018.1.18
+certifi==2018.4.16
 chardet==3.0.4
 cornice==3.4.0
 coverage==4.5.1
@@ -10,6 +9,7 @@ Jinja2==2.10
 Mako==1.0.7
 MarkupSafe==1.0
 more-itertools==4.1.0
+neuralknight==0.1.0a1
 PasteDeploy==1.5.2
 plaster==1.0
 plaster-pastedeploy==0.5
@@ -36,7 +36,6 @@ urllib3==1.22
 venusian==1.1.0
 waitress==1.1.0
 WebOb==1.8.1
-WebTest==2.0.29
 zope.deprecation==4.3.0
-zope.interface==4.4.3
+zope.interface==4.5.0
 zope.sqlalchemy==1.0
