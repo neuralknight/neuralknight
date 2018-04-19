@@ -109,13 +109,13 @@ def _moves_for_pawn(board, piece, posX, posY):
             and (not board[posY - 2][posX])):
         yield (0, -2)
     if (
+            is_on_board(posX, posY, (-1, -1))
+            and inactive_piece(board[posY - 1][posX - 1])):
+        yield (-1, -1)
+    if (
             is_on_board(posX, posY, (1, -1))
             and inactive_piece(board[posY - 1][posX + 1])):
         yield (1, -1)
-    if (
-            is_on_board(posX, posY, (1, 1))
-            and inactive_piece(board[posY + 1][posX + 1])):
-        yield (1, 1)
     if piece & 0x10:
         yield ()  # en passant
 

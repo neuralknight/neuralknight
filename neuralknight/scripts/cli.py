@@ -113,6 +113,7 @@ class CLIAgent(Cmd):
 
         response = requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
         if response.status_code != 200:
+            print_board(format_board(get_info(self.api_url, self.game_id)))
             return print('Invalid move.')
         if response.json() == {'end': True}:
             print_board(format_board(get_info(self.api_url, self.game_id)))

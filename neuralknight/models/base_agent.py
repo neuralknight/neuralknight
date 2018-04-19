@@ -41,7 +41,7 @@ def check_sequence(sequence, **value_map):
 
 def sequence_grouper(root, sequences, **value_map):
     root_value = harmonic_mean(map(partial(check_sequence, **value_map), sequences))
-    return (round(root_value, 2), root)
+    return (round(root_value, -1) // 100, root)
 
 
 class BaseAgent:
@@ -422,7 +422,7 @@ class BaseAgent:
         # best_boards = [root, ...]
         best_boards = tuple(map(itemgetter(1), best_boards))
 
-        return (best_average, best_boards[randint(0, len(best_boards) - 1)])
+        return (best_average, best_boards)
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
