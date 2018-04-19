@@ -49,7 +49,7 @@ class BaseAgent:
     '''Slayer of chess'''
 
     AGENT_POOL = {}
-    if os.environ.get('API_URL', ''):
+    if os.environ.get('PORT', ''):
         PORT = os.environ['PORT']
     else:
         PORT = 8080

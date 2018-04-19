@@ -117,7 +117,13 @@ class CLIAgent(Cmd):
         move = {'move': (tuple(reversed(self.piece)), tuple(reversed(args)))}
         self.piece = None
 
-        response = requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
+        response = requests.put(
+            f'{ self.api_url }/agent/{ self.user }',
+            json=move,
+            headers={
+                'content-type': 'application/json',
+            }
+        )
         if response.json() == {'end': True}:
             print_board(format_board(get_info(self.api_url, self.game_id)))
             return print('you won')
