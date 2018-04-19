@@ -5,26 +5,42 @@
 **Version**: 0.1.0
 
 ## Overview
-This is a chess-playing AI
+An occasionally suicidal shell-based chess game.
 
 ## Getting Started
-- `python3 -m venv env`
-- `pip install -e ".[testing]"`
-- `initialize_neuralknight_db development.ini`
-- `pytest`
-- `pserve development.ini`
+
+### Requirements
+- Python 3.5 or greater
+- pip package manager
+
+### Installation
+Installation is as simple as installing from pip:
+`pip install neuralknight`
+
+#### Running the app
+To launch neuralknight, type the following into a shell:
+`neuralknight https://neuralknight.herokuapp.com`
+
+Should you wish to run a purely local instance:
+
+- Ensure postgres is installed
+
+- Create a postgres database named *neuralknight*
+
+From inside the package directory:
+
+- Initialize the database with `initialize_neuralknight_db`
+
+- Launch the local server with
+`pserve production.ini`
+- In another shell, run the client with `neuralknight`
 
 ## Architecture
-This app is written using Python 3.6, following all best practices and industry standards.
-
-### Stack
-- Python 3.6
-- Pyramid
-- Postgress
-- Heroku
+This app is written using Python 3.6, Pyramid, and Postgres, with Heroku as a deployment platform
 
 ## API
-There is no API at this time.
+See our API docs [here](https://www.github.com/dsnowb/neuralknight/API.md)
 
 ## Change Log
-05 April 2018 - Repo Created
+- 05 April 2018 - Repo Created
+- 19 April 2018 - 0.1.0 release

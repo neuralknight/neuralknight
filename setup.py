@@ -33,25 +33,37 @@ tests_require = [
 
 setup(
     name='neuralknight',
-    version='0.0',
-    description='neuralknight',
+    version='0.1.0a1',
+    description='A Chess-playing AI',
     long_description=README + '\n\n' + CHANGES,
+    author='David Snowberger, Shannon Tully, and Adam Grandquist',
+    author_email='david.snowberger@fartherout.org',
+    url='https://www.github.com/dsnowb/neuralknight',
+    licence='MIT',
     classifiers=[
-        'Programming Language :: Python',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Topic :: Games/Entertainment :: Board Games',
+        'Programming Language :: Python :: 3',
+        'Operating System :: OS Independent',
+        'Natural Language :: English',
+        'License :: Freely Distributable',
         'Framework :: Pyramid',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
+        'Environment :: Console',
     ],
-    author='',
-    author_email='',
-    url='',
-    keywords='web pyramid pylons',
+    keywords='chess entertainment game ai',
+    project_urls={
+        'Source': 'https://www.github.com/dsnowb/neuralknight',
+        'Tracker': 'https://www.github.com/dsnowb/neuralknight/issues',
+        'Remote API': 'https://neuralknight.heroku.com',
+    },
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     extras_require={
         'testing': tests_require,
     },
+    python_requires='>=3.5',
     install_requires=requires,
     entry_points={
         'paste.app_factory': [
@@ -59,7 +71,7 @@ setup(
         ],
         'console_scripts': [
             'initialize_neuralknight_db = neuralknight.scripts.initializedb:main',
-            'initialize_neuralknight_cli = neuralknight.scripts.cli:main',
+            'neuralknight = neuralknight.scripts.cli:main',
         ],
     },
 )
