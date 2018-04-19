@@ -1,3 +1,5 @@
+from random import randint
+
 from .base_agent import BaseAgent
 from random import randint
 
@@ -27,7 +29,7 @@ class Agent(BaseAgent):
             elif evaluation['board_score'] == board_score:
                 if evaluation['best_board'] not in best_boards:
                     best_boards.append(evaluation['best_board'])
-        return self.put_board(best_boards[randint(0,len(best_boards)-1)])
+        return self.put_board(best_boards[randint(0, len(best_boards)-1)])
 
     def play_game(self):
         '''Play a game'''

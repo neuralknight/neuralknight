@@ -1,7 +1,7 @@
 from cornice import Service
 from pyramid.httpexceptions import HTTPBadRequest
 
-from ..models import Board
+from ..models.board import Board, NoBoard
 
 games = Service(
     name='games',
@@ -21,11 +21,32 @@ game_info = Service(
     description='Game info')
 
 
+class BlankBoard:
+    def __str__(self):
+        return '\n' * 8
+
+    def add_player_v1(self, *args, **kwargs):
+        return {}
+
+    def current_state_v1(self, *args, **kwargs):
+        return {'state': [[0 for _ in range(8)] for _ in range(8)]}
+
+    def slice_cursor_v1(self, *args, **kwargs):
+        return {'cursor': None, 'boards': []}
+
+    def update_state_v1(self, *args, **kwargs):
+        return {'end': True}
+
+
 def get_game(request):
     """
     Retrieve board for request.
     """
-    return Board.get_game(request.matchdict['game'])
+    try:
+        return Board.get_game(request.matchdict['game'])
+    except NoBoard:
+        pass
+    return BlankBoard()
 
 
 @games.get()
