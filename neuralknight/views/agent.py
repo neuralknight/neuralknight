@@ -49,9 +49,7 @@ def agent_view(request):
     try:
         agent = Agent.get_agent(agent_id)
     except KeyError:
-        if request.method == 'GET':
-            return {'state': {'end': True}}
-        return {}
+        return {'end': True, 'state': {'end': True}}
 
     if request.method == 'GET':
         return {'state': agent.get_state()}
@@ -59,4 +57,5 @@ def agent_view(request):
         return agent.close()
     if isinstance(agent, UserAgent):
         return agent.play_round(request.json.get('move', None))
+    import pdb; pdb.set_trace()
     return agent.play_round()

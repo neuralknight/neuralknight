@@ -3,7 +3,7 @@ from functools import partial
 from itertools import chain, count, groupby, repeat, starmap
 from operator import itemgetter, methodcaller
 from random import sample
-from statistics import harmonic_mean
+# from statistics import harmonic_mean
 
 from .base_agent import BaseAgent
 
@@ -39,7 +39,7 @@ class NewAgent(BaseAgent):
             count(), leaf)))
 
     def sequence_grouper(self, root, sequences, **value_map):
-        root_value = harmonic_mean(map(partial(self.check_sequence, **value_map), sequences))
+        root_value = min(map(partial(self.check_sequence, **value_map), sequences))
         return (round(root_value, -1) // 100, root)
 
     def call(self, _call, *args, **kwargs):
