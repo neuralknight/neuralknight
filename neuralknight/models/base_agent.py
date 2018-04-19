@@ -25,7 +25,7 @@ def get_score(leaf, posY, posX, piece, **value_map):
             12: 'OPP_ROOK',
             10: 'OPP_QUEEN',
             4: 'OPP_KING',
-    }.get(piece, 'EMPTY_SPACE')
+    }.get(piece & 0xf, 'EMPTY_SPACE')
     piece_values = value_map[piece]
     return piece_values[0] + piece_values[1][posY][posX]
 
