@@ -2,7 +2,7 @@ import requests
 
 from uuid import uuid4
 
-from .board_model import BoardModel
+from .board_model import BoardModel, CursorDelegate
 import neuralknight
 
 
@@ -35,6 +35,7 @@ class BaseBoard:
         else:
             self._board = BoardModel(board)
         self.board = self._board.board
+        self.cursor_delegate = CursorDelegate()
         self._active_player = active_player
         self.player1 = None
         self.player2 = None

@@ -87,7 +87,7 @@ class Board(BaseBoard):
         """
         Retrieve REST cursor slice.
         """
-        return self._board.slice_cursor_v1(cursor, int(lookahead))
+        return self.cursor_delegate.slice_cursor_v1(self._board, cursor, int(lookahead))
 
     def update_state_v1(self, dbsession, state):
         """

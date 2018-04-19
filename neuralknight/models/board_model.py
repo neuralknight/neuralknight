@@ -10,7 +10,32 @@ from .board_constants import (
     INITIAL_BOARD, KING, unit,
     BISHOP_MOVES, KING_MOVES, KNIGHT_MOVES, QUEEN_MOVES, ROOK_MOVES)
 
-__all__ = ['BoardModel']
+__all__ = ['BoardModel', 'CursorDelegate']
+
+
+class CursorDelegate:
+    def __init__(self):
+        self.cursors = {}
+
+    def get_cursor(self, board, cursor, lookahead):
+        """
+        Retrieve iterable for cursor.
+        """
+        cursor = cursor or str(uuid4())
+        return self.cursors.pop(cursor, board.lookahead_boards(lookahead))
+
+    def slice_cursor_v1(self, board, cursor, lookahead):
+        """
+        Retrieve REST cursor slice.
+        """
+        it = self.get_cursor(board, cursor, lookahead)
+        slen = 300 // lookahead
+        boards = tuple([b.board for b in btup] for btup in islice(it, slen))
+        if len(boards) < slen:
+            return {'cursor': None, 'boards': boards}
+        cursor = str(uuid4())
+        self.cursors[cursor] = it
+        return {'cursor': cursor, 'boards': boards}
 
 
 class BoardModel:
@@ -23,7 +48,6 @@ class BoardModel:
         Set up board.
         """
         self.board = tuple(map(tuple, board or INITIAL_BOARD))
-        self.cursors = {}
         self.move_count = 1
         self.moves_since_pawn = 0
 
@@ -38,26 +62,6 @@ class BoardModel:
         Ensure piece on board.
         """
         return any(map(lambda row: piece in row, self.board))
-
-    def get_cursor(self, cursor, lookahead):
-        """
-        Retrieve iterable for cursor.
-        """
-        cursor = cursor or str(uuid4())
-        return self.cursors.pop(cursor, self.lookahead_boards(lookahead))
-
-    def slice_cursor_v1(self, cursor, lookahead):
-        """
-        Retrieve REST cursor slice.
-        """
-        it = self.get_cursor(cursor, lookahead)
-        slen = 300 // lookahead
-        boards = tuple([b.board for b in btup] for btup in islice(it, slen))
-        if len(boards) < slen:
-            return {'cursor': None, 'boards': boards}
-        cursor = str(uuid4())
-        self.cursors[cursor] = it
-        return {'cursor': cursor, 'boards': boards}
 
     @staticmethod
     def is_on_board(posX, posY, move):
