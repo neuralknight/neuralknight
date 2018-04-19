@@ -37,7 +37,7 @@ def agent_view(request):
         agent = Agent.get_agent(agent_id)
     except KeyError:
         if request.method == 'GET':
-            return {'state': [[0 for _ in range(8)] for _ in range(8)]}
+            return {'state': {'end': True}}
         return {}
 
     if request.method == 'GET':

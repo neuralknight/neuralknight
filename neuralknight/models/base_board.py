@@ -88,7 +88,8 @@ class BaseBoard:
         return self.player2
 
     def close(self):
-        self.GAMES.pop(self.id)
+        self.GAMES.pop(self.id, None)
+        return {}
 
     def current_state_v1(self):
         """
@@ -101,6 +102,9 @@ class BaseBoard:
         Handle a future from and async request.
         """
         future.result().json()
+
+    def prune_lookahead_boards(self, n=4):
+        return self._board.prune_lookahead_boards(n)
 
     def lookahead_boards(self, n=4):
         return self._board.lookahead_boards(n)
@@ -116,7 +120,7 @@ class BaseBoard:
         Validate and return new board state.
         """
         board = type(self)(
-            self._board.update(tuple(map(tuple, state))), self.id, not self._active_player)
+            self._board.update(tuple(map(bytes.fromhex, state))), self.id, not self._active_player)
         board.player1 = self.player1
         board.player2 = self.player2
         return board

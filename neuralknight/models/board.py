@@ -71,7 +71,7 @@ class Board(BaseBoard):
                 one_won=True,
                 two_won=True)
             table_board = TableBoard(
-                board_state=dumps(self.board),
+                board_state=dumps(tuple(map(tuple, self.board))),
                 move_num=self._board.move_count,
                 player=self.active_player(),
                 game=self.id)
@@ -83,11 +83,11 @@ class Board(BaseBoard):
         self.player1 = player
         return {}
 
-    def slice_cursor_v1(self, cursor=None, lookahead=1):
+    def slice_cursor_v1(self, cursor=None, lookahead=1, complete=False):
         """
         Retrieve REST cursor slice.
         """
-        return self.cursor_delegate.slice_cursor_v1(self._board, cursor, int(lookahead))
+        return self.cursor_delegate.slice_cursor_v1(self._board, cursor, int(lookahead), complete)
 
     def update_state_v1(self, dbsession, state):
         """
@@ -98,7 +98,7 @@ class Board(BaseBoard):
         table_game = dbsession.query(TableGame).filter(
             TableGame.game == board.id).first()
         table_board = TableBoard(
-            board_state=dumps(board.board),
+            board_state=dumps(tuple(map(tuple, board.board))),
             move_num=board._board.move_count,
             player=board.active_player(),
             game=board.id)

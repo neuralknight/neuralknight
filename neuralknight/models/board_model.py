@@ -2,8 +2,9 @@
 Chess state handling model.
 """
 
-from itertools import chain, count, islice, starmap
+from itertools import chain, count, groupby, islice, starmap
 from functools import partial, lru_cache
+from operator import itemgetter
 from uuid import uuid4
 
 from .board_constants import (
@@ -17,24 +18,35 @@ class CursorDelegate:
     def __init__(self):
         self.cursors = {}
 
-    def get_cursor(self, board, cursor, lookahead):
+    def get_cursor(self, board, cursor, lookahead, complete):
         """
         Retrieve iterable for cursor.
         """
-        cursor = cursor or str(uuid4())
-        return self.cursors.pop(cursor, board.lookahead_boards(lookahead))
+        if cursor in self.cursors:
+            return self.cursors.pop(cursor)
+        if complete:
+            it = board.lookahead_boards(lookahead)
+        else:
+            it = board.prune_lookahead_boards(lookahead)
+        it = groupby(it, itemgetter(0))
+        return next(it)[1], it
 
-    def slice_cursor_v1(self, board, cursor, lookahead):
+    def slice_cursor_v1(self, board, cursor, lookahead, complete):
         """
         Retrieve REST cursor slice.
         """
-        it = self.get_cursor(board, cursor, lookahead)
-        slen = 300 // lookahead
+        it, cur = self.get_cursor(board, cursor, lookahead, complete)
+        slen = (900 // lookahead) if complete else 450
         boards = tuple(islice(it, slen))
         if len(boards) < slen:
-            return {'cursor': None, 'boards': boards}
+            if complete:
+                return {'cursor': None, 'boards': boards}
+            try:
+                it = next(cur)[1]
+            except StopIteration:
+                return {'cursor': None, 'boards': boards}
         cursor = str(uuid4())
-        self.cursors[cursor] = it
+        self.cursors[cursor] = (it, cur)
         return {'cursor': cursor, 'boards': boards}
 
 
@@ -109,13 +121,13 @@ def _moves_for_pawn(board, piece, posX, posY):
             and (not board[posY - 2][posX])):
         yield (0, -2)
     if (
+            is_on_board(posX, posY, (-1, -1))
+            and inactive_piece(board[posY - 1][posX - 1])):
+        yield (-1, -1)
+    if (
             is_on_board(posX, posY, (1, -1))
             and inactive_piece(board[posY - 1][posX + 1])):
         yield (1, -1)
-    if (
-            is_on_board(posX, posY, (1, 1))
-            and inactive_piece(board[posY + 1][posX + 1])):
-        yield (1, 1)
     if piece & 0x10:
         yield ()  # en passant
 
@@ -155,7 +167,7 @@ def lookahead_boards_for_piece(board, check, piece, posX, posY):
         new_state = list(map(list, board))
         new_state[posY][posX] = 0
         new_state[posY + move[1]][posX + move[0]] = piece
-        return swap(tuple(map(tuple, new_state)))
+        return swap(tuple(map(bytes, new_state)))
 
     _valid_moves_for_piece = valid_moves_for_piece(board, piece, posX, posY)
     if check:
@@ -218,11 +230,15 @@ def swap(board):
     Rotate active player.
     """
     return tuple(list(map(
-        lambda row: tuple(list(map(
+        lambda row: bytes(map(
             lambda pp:
                 pp & 0xE | (1 if inactive_piece(pp) else 0),
-            row))[::-1]),
+            row))[::-1],
         board))[::-1])
+
+
+def make_tuple(*args):
+    return args
 
 
 class BoardModel:
@@ -234,7 +250,7 @@ class BoardModel:
         """
         Set up board.
         """
-        self.board = tuple(map(tuple, board or INITIAL_BOARD))
+        self.board = board or INITIAL_BOARD
         self.move_count = 1
         self.moves_since_pawn = 0
 
@@ -254,7 +270,7 @@ class BoardModel:
         """
         Rotate active player.
         """
-        return BoardModel(swap(self.board))
+        return swap(self.board)
 
     def update(self, state):
         """
@@ -293,6 +309,68 @@ class BoardModel:
         board.moves_since_pawn = 0 if piece == 9 else (self.moves_since_pawn + 1)
         return board
 
+    def lookahead_boards_for_board(self, check):
+        return chain.from_iterable(
+            starmap(
+                partial(lookahead_boards_for_piece, self.board, check),
+                active_pieces(self.board)))
+
+    def _valid_root_lookahead_boards_end(self):
+        """
+        Provide an iterable of valid moves for current board state.
+        """
+        check = lookahead_check(self.board)
+        return all(map(
+            lambda board: (KING | 1) in BoardModel(board),
+            self.lookahead_boards_for_board(check)))
+
+    def _valid_root_lookahead_boards(self, check):
+        """
+        Provide an iterable of valid moves for current board state.
+        """
+        return filter(
+            lambda board: BoardModel(board)._valid_root_lookahead_boards_end(),
+            self.lookahead_boards_for_board(check))
+
+    def _prune_lookahead_boards(self, n, active=True):
+        """
+        Provide an iterable of valid moves for current board state.
+        """
+        check = lookahead_check(self.board)
+        if n == 1:
+            return iter((self.board if active else swap(self.board),))
+        return chain.from_iterable(map(
+            lambda board: BoardModel(board)._prune_lookahead_boards(n - 1, not active),
+            self.lookahead_boards_for_board(check)))
+
+    def prune_lookahead_boards(self, n):
+        """
+        Provide an iterable of valid moves for current board state.
+        """
+        check = lookahead_check(self.board)
+        return chain.from_iterable(
+            map(
+                lambda board: map(
+                    partial(make_tuple, swap(board)),
+                    BoardModel(board)._prune_lookahead_boards(n - 1)),
+                self._valid_root_lookahead_boards(check)))
+
+    def _lookahead_boards(self, n, active=False):
+        """
+        Provide an iterable of valid moves for current board state.
+        """
+        check = lookahead_check(self.board)
+        if not self:
+            return iter((((self.board if active else swap(self.board)) for _ in range(n)),))
+        if n == 0:
+            return iter(((),))
+        return chain.from_iterable(
+            map(
+                lambda board: map(
+                    lambda t: (board if active else swap(board),) + tuple(t),
+                    BoardModel(board)._lookahead_boards(n - 1, not active)),
+                self.lookahead_boards_for_board(check)))
+
     def lookahead_boards(self, n, active=False):
         """
         Provide an iterable of valid moves for current board state.
@@ -305,12 +383,9 @@ class BoardModel:
         return chain.from_iterable(
             map(
                 lambda board: map(
-                    lambda n: (board if active else swap(board),) + tuple(n),
-                    BoardModel(board).lookahead_boards(n - 1, not active)),
-                chain.from_iterable(
-                    starmap(
-                        partial(lookahead_boards_for_piece, self.board, check),
-                        active_pieces(self.board)))))
+                    lambda t: (board if active else swap(board),) + tuple(t),
+                    BoardModel(board)._lookahead_boards(n - 1, not active)),
+                self._valid_root_lookahead_boards(check)))
 
     def has_kings(self):
         """
