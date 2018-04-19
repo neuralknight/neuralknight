@@ -62,7 +62,7 @@ class CLIAgent(Cmd):
         self.user = requests.post(f'{ self.api_url }/issue-agent', json=game).json()['agent_id']
         requests.post(
             f'{ self.api_url }/issue-agent-lookahead',
-            json={'id': self.game_id, 'player': 2, 'lookahead': 4})
+            json={'id': self.game_id, 'player': 2, 'lookahead': 3})
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
@@ -112,6 +112,8 @@ class CLIAgent(Cmd):
         self.piece = None
 
         response = requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
+        if response.status_code != 200:
+            return print('Invalid move.')
         if response.json() == {'end': True}:
             print_board(format_board(get_info(self.api_url, self.game_id)))
             return print('you won')
