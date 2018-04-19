@@ -17,6 +17,8 @@ requires = [
     'pyramid_jinja2',
     'pyramid_retry',
     'pyramid_tm',
+    'pytest',
+    'pytest-cov',
     'requests',
     'SQLAlchemy',
     'transaction',
@@ -33,13 +35,13 @@ tests_require = [
 
 setup(
     name='neuralknight',
-    version='0.1.0a1',
+    version='0.1.0a2',
     description='A Chess-playing AI',
     long_description=README + '\n\n' + CHANGES,
     author='David Snowberger, Shannon Tully, and Adam Grandquist',
     author_email='david.snowberger@fartherout.org',
     url='https://www.github.com/dsnowb/neuralknight',
-    licence='MIT',
+    license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -52,11 +54,6 @@ setup(
         'Environment :: Console',
     ],
     keywords='chess entertainment game ai',
-    project_urls={
-        'Source': 'https://www.github.com/dsnowb/neuralknight',
-        'Tracker': 'https://www.github.com/dsnowb/neuralknight/issues',
-        'Remote API': 'https://neuralknight.heroku.com',
-    },
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,

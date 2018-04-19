@@ -8,8 +8,10 @@ h1 {
   font-size: 36px;
   font-family: 'Share Tech';
   border-bottom: 1px solid #888;
+  margin-bottom: 30px;
 }
 
 p {
   font-size: 16px;
+  margin: 15px;
 }

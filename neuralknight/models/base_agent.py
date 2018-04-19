@@ -1,3 +1,4 @@
+import os
 import requests
 from itertools import chain, count, groupby, starmap
 from functools import lru_cache, partial
@@ -48,7 +49,10 @@ class BaseAgent:
     '''Slayer of chess'''
 
     AGENT_POOL = {}
-    PORT = 8080
+    if os.environ.get('PORT', ''):
+        PORT = os.environ['PORT']
+    else:
+        PORT = 8080
     API_URL = 'http://localhost:{}'.format(PORT)
 
     @classmethod
