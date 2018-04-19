@@ -115,7 +115,8 @@ class BaseBoard:
         """
         Validate and return new board state.
         """
-        board = type(self)(self._board.update(state), self.id, not self._active_player)
+        board = type(self)(
+            self._board.update(tuple(map(tuple, state))), self.id, not self._active_player)
         board.player1 = self.player1
         board.player2 = self.player2
         return board

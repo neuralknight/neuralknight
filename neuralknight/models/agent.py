@@ -33,18 +33,18 @@ class Agent(BaseAgent):
         with ProcessPoolExecutor(4) as executor:
             print('starting thoughts', executor)
             # best_boards = [(root_value, root), ...]
-            best_boards = map(
+            best_boards = executor.map(
                 call,
                 map(partial(methodcaller, 'evaluate_boards'), self.get_boards_cursor()),
-                repeat(self))
-            best_boards = best_boards
-        # best_boards = [(root_value, [(root_value, root), ...]), ...]
-        best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
-        # _, best_boards = (root_value, [(root_value, root), ...])
-        _, best_boards = next(best_boards)
-        # best_boards = [root, ...]
-        best_boards = tuple(map(itemgetter(1), best_boards))
-        return self.put_board(best_boards[randint(0, len(best_boards)-1)])
+                repeat(self),
+                chunksize=30)
+            # best_boards = [(root_value, [(root_value, root), ...]), ...]
+            best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
+            # _, best_boards = (root_value, [(root_value, root), ...])
+            _, best_boards = next(best_boards)
+            # best_boards = [root, ...]
+            best_boards = tuple(map(itemgetter(1), best_boards))
+            return self.put_board(best_boards[randint(0, len(best_boards)-1)])
 
     def play_game(self):
         '''Play a game'''

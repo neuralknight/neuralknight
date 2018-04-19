@@ -3,7 +3,6 @@ from collections import deque
 from pytest import raises
 
 from ..models.board_constants import KING, QUEEN
-from ..models.board_model import BoardModel
 
 
 def test_board_creation_valid(start_board):
@@ -31,7 +30,7 @@ def test_first_move_available(start_board):
 
 
 def test_iterates_future_boards(start_board):
-    assert isinstance(next(iter(start_board))[0], BoardModel)
+    assert isinstance(next(iter(start_board))[0], tuple)
 
 
 def test_string_represention(start_board):
@@ -115,12 +114,12 @@ def test_moves_consumption_lookahead_2(start_board):
 
 def test_moves_pawn_init_board(pawn_capture_board):
     for state, _ in pawn_capture_board.lookahead_boards(2):
-        assert pawn_capture_board.update(state.board)
+        assert pawn_capture_board.update(state)
 
 
 def test_moves_pawn_final_board(min_pawn_board):
     for state, _, _ in min_pawn_board.lookahead_boards(3):
-        assert min_pawn_board.update(state.board)
+        assert min_pawn_board.update(state)
 
 
 def test_board_mutations_are_valid(start_board):
@@ -272,7 +271,7 @@ def test_valid_board_move_backwards(end_game_board):
 
 def test_board_provides_update(start_board):
     mutated_board = next(iter(start_board))[0]
-    assert start_board.update(mutated_board.board).board == (
+    assert start_board.update(mutated_board).board == (
         (12, 6, 2, 4, 10, 2, 6, 12),
         (8, 8, 8, 8, 8, 8, 8, 0),
         (0, 0, 0, 0, 0, 0, 0, 8),
@@ -285,7 +284,7 @@ def test_board_provides_update(start_board):
 
 def test_board_lookahead_player_is_constant(start_board):
     states = next(start_board.lookahead_boards(3))
-    assert states[0].board == (
+    assert states[0] == (
         (12, 6, 2, 10, 4, 2, 6, 12),
         (8, 8, 8, 8, 8, 8, 8, 8),
         (0, 0, 0, 0, 0, 0, 0, 0),
@@ -294,7 +293,7 @@ def test_board_lookahead_player_is_constant(start_board):
         (9, 0, 0, 0, 0, 0, 0, 0),
         (0, 9, 9, 9, 9, 9, 9, 9),
         (13, 7, 3, 11, 5, 3, 7, 13))
-    assert states[1].board == (
+    assert states[1] == (
         (12, 6, 2, 10, 4, 2, 6, 12),
         (8, 8, 8, 8, 8, 8, 8, 0),
         (0, 0, 0, 0, 0, 0, 0, 8),
@@ -303,7 +302,7 @@ def test_board_lookahead_player_is_constant(start_board):
         (9, 0, 0, 0, 0, 0, 0, 0),
         (0, 9, 9, 9, 9, 9, 9, 9),
         (13, 7, 3, 11, 5, 3, 7, 13))
-    assert states[2].board == (
+    assert states[2] == (
         (12, 6, 2, 10, 4, 2, 6, 12),
         (8, 8, 8, 8, 8, 8, 8, 0),
         (0, 0, 0, 0, 0, 0, 0, 8),
