@@ -1,0 +1,15 @@
+body {
+  width: 720px;
+  text-align: center;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 36px;
+  font-family: 'Share Tech';
+  border-bottom: 1px solid #888;
+}
+
+p {
+  font-size: 16px;
+}
