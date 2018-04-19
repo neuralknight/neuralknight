@@ -1,35 +1,50 @@
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+from itertools import groupby, repeat
+from operator import itemgetter, methodcaller
 from random import randint
 
 from .base_agent import BaseAgent
-from random import randint
+
+
+def call(_call, *args, **kwargs):
+    return _call(*args, **kwargs)
 
 
 class Agent(BaseAgent):
     '''Computer Agent'''
 
-    def get_boards(self, cursor=None):
+    def get_boards(self, cursor):
         '''Retrieves potential board states'''
         params = {'lookahead': self.lookahead}
         if cursor:
             params['cursor'] = cursor
-        data = self.request('GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
-        return {'boards': data['boards'], 'cursor': data['cursor']}
+        return self.request('GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
+
+    def get_boards_cursor(self):
+        cursor = True
+        while cursor:
+            board_options = self.get_boards(cursor)
+            cursor = board_options['cursor']
+            yield board_options['boards']
 
     def play_round(self):
         '''Play a game round'''
-        board_options = self.get_boards()
-        evaluation = self.evaluate_boards(board_options['boards'])
-        board_score = evaluation['board_score']
-        best_boards = [evaluation['best_board']]
-        while board_options['cursor']:
-            board_options = self.get_boards(board_options['cursor'])
-            evaluation = self.evaluate_boards(board_options['boards'])
-            if evaluation['board_score'] > board_score:
-                best_boards = [evaluation['best_board']]
-            elif evaluation['board_score'] == board_score:
-                if evaluation['best_board'] not in best_boards:
-                    best_boards.append(evaluation['best_board'])
-        return self.put_board(best_boards[randint(0, len(best_boards)-1)])
+        with ProcessPoolExecutor(4) as executor:
+            print('starting thoughts', executor)
+            # best_boards = [(root_value, root), ...]
+            best_boards = executor.map(
+                call,
+                map(partial(methodcaller, 'evaluate_boards'), self.get_boards_cursor()),
+                repeat(self),
+                chunksize=30)
+            # best_boards = [(root_value, [(root_value, root), ...]), ...]
+            best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
+            # _, best_boards = (root_value, [(root_value, root), ...])
+            _, best_boards = next(best_boards)
+            # best_boards = [root, ...]
+            best_boards = tuple(map(itemgetter(1), best_boards))
+            return self.put_board(best_boards[randint(0, len(best_boards)-1)])
 
     def play_game(self):
         '''Play a game'''

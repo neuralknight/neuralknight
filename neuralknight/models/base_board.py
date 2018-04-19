@@ -2,7 +2,7 @@ import requests
 
 from uuid import uuid4
 
-from .board_model import BoardModel
+from .board_model import BoardModel, CursorDelegate
 import neuralknight
 
 
@@ -35,6 +35,7 @@ class BaseBoard:
         else:
             self._board = BoardModel(board)
         self.board = self._board.board
+        self.cursor_delegate = CursorDelegate()
         self._active_player = active_player
         self.player1 = None
         self.player2 = None
@@ -87,7 +88,7 @@ class BaseBoard:
         return self.player2
 
     def close(self):
-        del self.GAMES[self.id]
+        self.GAMES.pop(self.id)
 
     def current_state_v1(self):
         """
@@ -114,7 +115,8 @@ class BaseBoard:
         """
         Validate and return new board state.
         """
-        board = type(self)(self._board.update(state), self.id, not self._active_player)
+        board = type(self)(
+            self._board.update(tuple(map(tuple, state))), self.id, not self._active_player)
         board.player1 = self.player1
         board.player2 = self.player2
         return board

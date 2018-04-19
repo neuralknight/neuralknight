@@ -2,7 +2,6 @@ import requests
 import sys
 
 from cmd import Cmd
-from multiprocessing import Process
 from time import sleep
 
 PIECE_NAME = {
@@ -13,13 +12,14 @@ PIECE_NAME = {
     11: 'queen',
     13: 'rook',
 }
+PROMPT = '> '
 BRIGHT_GREEN = '\u001b[42;1m'
 RESET = '\u001b[0m'
 SELECTED_PIECE = f'{ BRIGHT_GREEN }{{}}{ RESET }'
 TOP_BOARD_OUTPUT_SHELL = '''
   A B C D E F G H
  +---------------'''
-BOARD_OUTPUT_SHELL = ('1|', '2|', '3|', '4|', '5|', '6|', '7|', '8|')
+BOARD_OUTPUT_SHELL = ('8|', '7|', '6|', '5|', '4|', '3|', '2|', '1|')
 
 
 def get_info(api_url, game_id):
@@ -41,35 +41,18 @@ def print_board(board):
         print(f'{ shell }{ "".join(line) }')
 
 
-def update_board(api_url, game_id, in_board):
-    board = in_board
-    while in_board == board:
-        sleep(10)
-        response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
-        state = response.json()['state']
-        if state == {'end': True}:
-            return print('game over')
-        board = state
-    return board
-
-
-def poll_move_response(api_url, game_id, board):
-    try:
-        board = update_board(api_url, game_id, board)
-        if board:
-            print_board(format_board(get_info(api_url, game_id)))
-    except KeyboardInterrupt:
-        print()
-
-
 class CLIAgent(Cmd):
-    prompt = '> '
+    prompt = PROMPT
 
     def __init__(self, api_url):
         """
         Init player board.
         """
+        super().__init__()
         self.api_url = api_url
+        self.do_reset()
+
+    def do_reset(self, *args):
         self.board = None
         self.future = None
         self.piece = None
@@ -79,8 +62,7 @@ class CLIAgent(Cmd):
         self.user = requests.post(f'{ self.api_url }/issue-agent', json=game).json()['agent_id']
         requests.post(
             f'{ self.api_url }/issue-agent-lookahead',
-            json={'id': self.game_id, 'player': 2, 'lookahead': 3})
-        super().__init__()
+            json={'id': self.game_id, 'player': 2, 'lookahead': 4})
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
@@ -97,9 +79,6 @@ class CLIAgent(Cmd):
                 print('not your turn yet')
                 return
             self.future = None
-            self.board = update_board(self.api_url, self.game_id, self.board)
-            if not self.board:
-                sys.exit(0)
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
@@ -132,16 +111,25 @@ class CLIAgent(Cmd):
         move = {'move': (tuple(reversed(self.piece)), tuple(reversed(args)))}
         self.piece = None
 
-        requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
-        sleep(1)
-        self.board = update_board(self.api_url, self.game_id, self.board)
-        if self.board:
+        response = requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
+        if response.json() == {'end': True}:
             print_board(format_board(get_info(self.api_url, self.game_id)))
-        else:
-            sys.exit(0)
-        self.process = Process(
-            target=poll_move_response, args=(self.api_url, self.game_id, self.board))
-        self.process.start()
+            return print('you won')
+        response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
+        in_board = response.json()['state']
+        print_board(format_board(get_info(self.api_url, self.game_id)))
+        if in_board == {'end': True}:
+            return print('you won')
+        print('making move ...')
+        board = in_board
+        while in_board == board:
+            sleep(2)
+            response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
+            state = response.json()['state']
+            if state == {'end': True}:
+                return print('game over')
+            board = state
+        print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def print_invalid(self, args):
         print_board(format_board(get_info(self.api_url, self.game_id)))
@@ -156,7 +144,7 @@ class CLIAgent(Cmd):
         if len(args) != 2:
             return args
         try:
-            args[1] = int(args[1]) - 1
+            args[1] = 8 - int(args[1])
             if not (0 <= args[1] < 8):
                 print('out of range')
                 raise ValueError
