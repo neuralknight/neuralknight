@@ -1,10 +1,31 @@
 import requests
+from itertools import count, groupby, starmap
 from functools import lru_cache
 from random import randint
 from uuid import uuid4
 
 import neuralknight
 
+
+@lru_cache(maxsize=1024)
+def get_score(leaf, posY, posX, piece, **value_map):
+    piece = {
+            9 : 'OWN_PAWN',
+            7 : 'OWN_KNIGHT',
+            3 : 'OWN_BISHOP',
+            13: 'OWN_ROOK',
+            11: 'OWN_QUEEN',
+            5 : 'OWN_KING',
+
+            8 : 'OPP_PAWN',
+            6 : 'OPP_KNIGHT',
+            2 : 'OPP_BISHOP',
+            12: 'OPP_ROOK',
+            10: 'OPP_QUEEN',
+            4 : 'OPP_KING',
+    }.get(piece, 'EMPTY_SPACE')
+    piece_values = value_map[piece]
+    return piece_values[0] + piece_values[1][posY][posX]
 
 class BaseAgent:
     '''Slayer of chess'''
@@ -70,200 +91,184 @@ class BaseAgent:
         # pylama:ignore=E201,E203,E231
         # Piece squares - from http://www.chessbin.com/post/Piece-Square-Table
         # Own piece squares
-        own_pawn_squares = [
-            [ 0,  0,  0,  0,  0,  0,  0,  0],
-            [50, 50, 50, 50, 50, 50, 50, 50],
-            [10, 10, 20, 30, 30, 20, 10, 10],
-            [ 5,  5, 10, 25, 25, 10,  5,  5],
-            [ 0,  0,  0, 20, 20,  0,  0,  0],
-            [ 5, -5,-10,  0,  0,-10, -5,  5],
-            [ 5, 10, 10,-20,-20, 10, 10,  5],
-            [ 0,  0,  0,  0,  0,  0,  0,  0],
-        ]
-        own_knight_squares = [
-            [-50,-40,-30,-30,-30,-30,-40,-50],
-            [-40,-20,  0,  0,  0,  0,-20,-40],
-            [-30,  0, 10, 15, 15, 10,  0,-30],
-            [-30,  5, 15, 20, 20, 15,  5,-30],
-            [-30,  0, 15, 20, 20, 15,  0,-30],
-            [-30,  5, 10, 15, 15, 10,  5,-30],
-            [-40,-20,  0,  5,  5,  0,-20,-40],
-            [-50,-40,-20,-30,-30,-20,-40,-50],
-        ]
-        own_bishop_squares = [
-            [-20,-10,-10,-10,-10,-10,-10,-20],
-            [-10,  0,  0,  0,  0,  0,  0,-10],
-            [-10,  0,  5, 10, 10,  5,  0,-10],
-            [-10,  5,  5, 10, 10,  5,  5,-10],
-            [-10,  0, 10, 10, 10, 10,  0,-10],
-            [-10, 10, 10, 10, 10, 10, 10,-10],
-            [-10,  5,  0,  0,  0,  0,  5,-10],
-            [-20,-10,-40,-10,-10,-40,-10,-20],
-        ]
-        own_rook_squares = [
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [5, 10, 10, 10, 10, 10, 10,  5],
-             [-5,  0,  0,  0,  0,  0,  0,  -5],
-             [-5,  0,  0,  0,  0,  0,  0,  -5],
-             [-5,  0,  0,  0,  0,  0,  0,  -5],
-             [-5,  0,  0,  0,  0,  0,  0,  -5],
-             [-5,  0,  0,  0,  0,  0,  0,  -5],
-             [0,  0,  0,  5,  5,  0,  0,  0],
-        ]
-        own_queen_squares = [
-            [-20,-10,-10, -5, -5,-10,-10,-20],
-            [-10,  0,  0,  0,  0,  0,  0,-10],
-            [-10,  0,  5,  5,  5,  5,  0,-10],
-            [-5,  0,  5,  5,  5,  5,  0, -5],
-            [0,  0,  5,  5,  5,  5,  0, -5],
-            [-10,  5,  5,  5,  5,  5,  0,-10],
-            [-10,  0,  5,  0,  0,  0,  0,-10],
-            [-20,-10,-10, -5, -5,-10,-10,-20],
-        ]
-        own_king_squares = [
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-20,-30,-30,-40,-40,-30,-30,-20],
-            [-10,-20,-20,-20,-20,-20,-20,-10],
-            [20, 20,  0,  0,  0,  0, 20, 20],
-            [20, 30, 10,  0,  0, 10, 30, 20],
-        ]
+        own_pawn_squares = (
+            ( 0,  0,  0,  0,  0,  0,  0,  0),
+            (50, 50, 50, 50, 50, 50, 50, 50),
+            (10, 10, 20, 30, 30, 20, 10, 10),
+            ( 5,  5, 10, 25, 25, 10,  5,  5),
+            ( 0,  0,  0, 20, 20,  0,  0,  0),
+            ( 5, -5,-10,  0,  0,-10, -5,  5),
+            ( 5, 10, 10,-20,-20, 10, 10,  5),
+            ( 0,  0,  0,  0,  0,  0,  0,  0),
+        )
+        own_knight_squares = (
+            (-50,-40,-30,-30,-30,-30,-40,-50),
+            (-40,-20,  0,  0,  0,  0,-20,-40),
+            (-30,  0, 10, 15, 15, 10,  0,-30),
+            (-30,  5, 15, 20, 20, 15,  5,-30),
+            (-30,  0, 15, 20, 20, 15,  0,-30),
+            (-30,  5, 10, 15, 15, 10,  5,-30),
+            (-40,-20,  0,  5,  5,  0,-20,-40),
+            (-50,-40,-20,-30,-30,-20,-40,-50),
+        )
+        own_bishop_squares = (
+            (-20,-10,-10,-10,-10,-10,-10,-20),
+            (-10,  0,  0,  0,  0,  0,  0,-10),
+            (-10,  0,  5, 10, 10,  5,  0,-10),
+            (-10,  5,  5, 10, 10,  5,  5,-10),
+            (-10,  0, 10, 10, 10, 10,  0,-10),
+            (-10, 10, 10, 10, 10, 10, 10,-10),
+            (-10,  5,  0,  0,  0,  0,  5,-10),
+            (-20,-10,-40,-10,-10,-40,-10,-20),
+        )
+        own_rook_squares = (
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (5, 10, 10, 10, 10, 10, 10,  5),
+             (-5,  0,  0,  0,  0,  0,  0,  -5),
+             (-5,  0,  0,  0,  0,  0,  0,  -5),
+             (-5,  0,  0,  0,  0,  0,  0,  -5),
+             (-5,  0,  0,  0,  0,  0,  0,  -5),
+             (-5,  0,  0,  0,  0,  0,  0,  -5),
+             (0,  0,  0,  5,  5,  0,  0,  0),
+        )
+        own_queen_squares = (
+            (-20,-10,-10, -5, -5,-10,-10,-20),
+            (-10,  0,  0,  0,  0,  0,  0,-10),
+            (-10,  0,  5,  5,  5,  5,  0,-10),
+            (-5,  0,  5,  5,  5,  5,  0, -5),
+            (0,  0,  5,  5,  5,  5,  0, -5),
+            (-10,  5,  5,  5,  5,  5,  0,-10),
+            (-10,  0,  5,  0,  0,  0,  0,-10),
+            (-20,-10,-10, -5, -5,-10,-10,-20),
+        )
+        own_king_squares = (
+            (-30,-40,-40,-50,-50,-40,-40,-30),
+            (-30,-40,-40,-50,-50,-40,-40,-30),
+            (-30,-40,-40,-50,-50,-40,-40,-30),
+            (-30,-40,-40,-50,-50,-40,-40,-30),
+            (-20,-30,-30,-40,-40,-30,-30,-20),
+            (-10,-20,-20,-20,-20,-20,-20,-10),
+            (20, 20,  0,  0,  0,  0, 20, 20),
+            (20, 30, 10,  0,  0, 10, 30, 20),
+        )
 
         # Opp piece squares
-        opp_pawn_squares = [
-            [ 0,  0,  0,  0,  0,  0,  0,  0],
-            [-5,-10,-10, 20, 20,-10,-10, -5],
-            [-5,  5, 10,  0,  0, 10,  5, -5],
-            [ 0,  0,  0,-20,-20,  0,  0,  0],
-            [-5, -5,-10,-25,-25,-10, -5, -5],
-            [-10,-10,-20,-30,-30,-20,-10,-10],
-            [-50,-50,-50,-50,-50,-50,-50,-50],
-            [ 0,  0,  0,  0,  0,  0,  0,  0],
-        ]
-        opp_knight_squares = [
-            [ 50, 40, 20, 30, 30, 20, 40, 50],
-            [ 40, 20,  0, -5, -5,  0, 20, 40],
-            [ 30, -5,-10,-15,-15,-10, -5, 30],
-            [ 30,  0,-15,-20,-20,-15,  0, 30],
-            [ 30, -5,-15,-20,-20,-15, -5, 30],
-            [ 30,  0,-10,-15,-15,-10,  0, 30],
-            [ 40, 20,  0,  0,  0,  0, 20, 40],
-            [ 50,-40,-20,-30,-30,-20,-40, 50],
-        ]
-        opp_bishop_squares = [
-            [ 20, 10, 40, 10, 10, 40, 10, 20],
-            [ 10, -5,  0,  0,  0,  0, -5, 10],
-            [ 10,-10,-10,-10,-10,-10,-10, 10],
-            [ 10,  0,-10,-10,-10,-10,  0, 10],
-            [ 10, -5, -5,-10,-10, -5, -5, 10],
-            [ 10,  0, -5,-10,-10, -5,  0, 10],
-            [ 10,  0,  0,  0,  0,  0,  0, 10],
-            [ 20, 10, 40, 10, 10, 40, 10, 20],
-        ]
-        opp_rook_squares = [
-             [0,  0,  0, -5, -5,  0,  0,  0],
-             [5,  0,  0,  0,  0,  0,  0,  5],
-             [5,  0,  0,  0,  0,  0,  0,  5],
-             [5,  0,  0,  0,  0,  0,  0,  5],
-             [5,  0,  0,  0,  0,  0,  0,  5],
-             [5,  0,  0,  0,  0,  0,  0,  5],
-             [-5,-10,-10,-10,-10,-10,-10,-5],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-        ]
-        opp_queen_squares = [
-            [ 20, 10, 10,  5,  5, 10, 10, 20],
-            [ 10,  0,  0,  0,  0, -5,  0, 10],
-            [ 10,  0, -5, -5, -5, -5, -5, 10],
-            [  0,  0, -5, -5, -5, -5,  0,  5],
-            [  5,  0, -5, -5, -5, -5,  0,  5],
-            [ 10,  0, -5, -5, -5, -5,  0, 10],
-            [ 10,  0,  0,  0,  0,  0,  0, 10],
-            [ 20, 10, 10,  5,  5, 10, 10, 20],
-        ]
-        opp_king_squares = [
-            [-20,-30,-10,  0,  0,-10,-30,-20],
-            [-20,-20,  0,  0,  0,  0,-20,-20],
-            [ 10, 20, 20, 20, 20, 20, 20, 10],
-            [ 20, 30, 30, 40, 40, 30, 30, 20],
-            [ 30, 40, 40, 50, 50, 40, 40, 30],
-            [ 30, 40, 40, 50, 50, 40, 40, 30],
-            [ 30, 40, 40, 50, 50, 40, 40, 30],
-            [ 30, 40, 40, 50, 50, 40, 40, 30],
-        ]
-        zero_squares = [
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-             [0,  0,  0,  0,  0,  0,  0,  0],
-        ]
+        opp_pawn_squares = (
+            ( 0,  0,  0,  0,  0,  0,  0,  0),
+            (-5,-10,-10, 20, 20,-10,-10, -5),
+            (-5,  5, 10,  0,  0, 10,  5, -5),
+            ( 0,  0,  0,-20,-20,  0,  0,  0),
+            (-5, -5,-10,-25,-25,-10, -5, -5),
+            (-10,-10,-20,-30,-30,-20,-10,-10),
+            (-50,-50,-50,-50,-50,-50,-50,-50),
+            ( 0,  0,  0,  0,  0,  0,  0,  0),
+        )
+        opp_knight_squares = (
+            ( 50, 40, 20, 30, 30, 20, 40, 50),
+            ( 40, 20,  0, -5, -5,  0, 20, 40),
+            ( 30, -5,-10,-15,-15,-10, -5, 30),
+            ( 30,  0,-15,-20,-20,-15,  0, 30),
+            ( 30, -5,-15,-20,-20,-15, -5, 30),
+            ( 30,  0,-10,-15,-15,-10,  0, 30),
+            ( 40, 20,  0,  0,  0,  0, 20, 40),
+            ( 50,-40,-20,-30,-30,-20,-40, 50),
+        )
+        opp_bishop_squares = (
+            ( 20, 10, 40, 10, 10, 40, 10, 20),
+            ( 10, -5,  0,  0,  0,  0, -5, 10),
+            ( 10,-10,-10,-10,-10,-10,-10, 10),
+            ( 10,  0,-10,-10,-10,-10,  0, 10),
+            ( 10, -5, -5,-10,-10, -5, -5, 10),
+            ( 10,  0, -5,-10,-10, -5,  0, 10),
+            ( 10,  0,  0,  0,  0,  0,  0, 10),
+            ( 20, 10, 40, 10, 10, 40, 10, 20),
+        )
+        opp_rook_squares = (
+             (0,  0,  0, -5, -5,  0,  0,  0),
+             (5,  0,  0,  0,  0,  0,  0,  5),
+             (5,  0,  0,  0,  0,  0,  0,  5),
+             (5,  0,  0,  0,  0,  0,  0,  5),
+             (5,  0,  0,  0,  0,  0,  0,  5),
+             (5,  0,  0,  0,  0,  0,  0,  5),
+             (-5,-10,-10,-10,-10,-10,-10,-5),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+        )
+        opp_queen_squares = (
+            ( 20, 10, 10,  5,  5, 10, 10, 20),
+            ( 10,  0,  0,  0,  0, -5,  0, 10),
+            ( 10,  0, -5, -5, -5, -5, -5, 10),
+            (  0,  0, -5, -5, -5, -5,  0,  5),
+            (  5,  0, -5, -5, -5, -5,  0,  5),
+            ( 10,  0, -5, -5, -5, -5,  0, 10),
+            ( 10,  0,  0,  0,  0,  0,  0, 10),
+            ( 20, 10, 10,  5,  5, 10, 10, 20),
+        )
+        opp_king_squares = (
+            (-20,-30,-10,  0,  0,-10,-30,-20),
+            (-20,-20,  0,  0,  0,  0,-20,-20),
+            ( 10, 20, 20, 20, 20, 20, 20, 10),
+            ( 20, 30, 30, 40, 40, 30, 30, 20),
+            ( 30, 40, 40, 50, 50, 40, 40, 30),
+            ( 30, 40, 40, 50, 50, 40, 40, 30),
+            ( 30, 40, 40, 50, 50, 40, 40, 30),
+            ( 30, 40, 40, 50, 50, 40, 40, 30),
+        )
+        zero_squares = (
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+             (0,  0,  0,  0,  0,  0,  0,  0),
+        )
 
         # Pair encoded pieces to values
         value_map = {
-            9 : (pawn_val, own_pawn_squares),
-            7 : (knight_val, own_knight_squares),
-            3 : (bishop_val, own_bishop_squares),
-            13: (rook_val, own_rook_squares),
-            11: (queen_val, own_queen_squares),
-            5 : (king_val, own_king_squares),
+            'OWN_PAWN' : (pawn_val, own_pawn_squares),
+            'OWN_KNIGHT' : (knight_val, own_knight_squares),
+            'OWN_BISHOP' : (bishop_val, own_bishop_squares),
+            'OWN_ROOK': (rook_val, own_rook_squares),
+            'OWN_QUEEN': (queen_val, own_queen_squares),
+            'OWN_KING' : (king_val, own_king_squares),
 
-            8 : (-pawn_val, opp_pawn_squares),
-            6 : (-knight_val, opp_knight_squares),
-            2 : (-bishop_val, opp_bishop_squares),
-            12: (-rook_val, opp_rook_squares),
-            10: (-queen_val, opp_queen_squares),
-            4 : (-king_val, opp_king_squares),
+            'OPP_PAWN' : (-pawn_val, opp_pawn_squares),
+            'OPP_KNIGHT' : (-knight_val, opp_knight_squares),
+            'OPP_BISHOP' : (-bishop_val, opp_bishop_squares),
+            'OPP_ROOK': (-rook_val, opp_rook_squares),
+            'OPP_QUEEN': (-queen_val, opp_queen_squares),
+            'OPP_KING' : (-king_val, opp_king_squares),
 
-            0 : (0, zero_squares),
+            'EMPTY_SPACE' : (0, zero_squares),
         }
 
-        best_boards = []
-        root = boards[0][0]
-        leaf_sum = 0
-        leaf_count = 0
-        leaf_average = 0
-        best_average = 0
-
+        
         def check_sequence(sequence):
-            board_score = 0
-            leaf = board_sequence[-1]
+            leaf = tuple(map(tuple, sequence[-1]))
+            return sum(map(
+                lambda posY, row: sum(map(
+                    lambda posX, piece: get_score(leaf, posY, posX, piece, **value_map),
+                    count(), row)),
+                count(), leaf))
 
-            def get_score(row,col):
-                piece_values = value_map[leaf[row][col]]
-                board_score += piece_values[0] + piece_values[1][row][col]
-            map(lambda row: map(get_score(row,col), row), leaf)
 
-            if board_sequence[0] == root:
-                leaf_sum += board_score
-                leaf_count += 1
-            else:
-                leaf_average = leaf_sum / leaf_count
-                leaf_sum = board_score
-                leaf_count = 1
-                if leaf_average > best_average:
-                    best_average = leaf_average
-                    best_boards = [root]
-                elif leaf_average == best_average:
-                    if root not in best_boards:
-                        best_boards.append(root)
+        def sequence_grouper(root, sequences):
+            sequences = tuple(sequences)
+            root_value = sum(map(check_sequence, sequences)) / len(sequences)
+            return (root_value, root)
 
-                root = board_sequence[0]
-        if not best_boards:
-            return {
-                'best_board': root,
-                'board_score': best_average
-            }
 
+        best_boards = starmap(sequence_grouper, groupby(boards, lambda sequence: sequence[0]))
+        best_boards = groupby(sorted(best_boards, reverse=True), lambda root_value: root_value[0])
+        best_boards = next(best_boards)
+        best_average, best_boards = best_boards
+        best_boards = [root_value[1] for root_value in best_boards]
+        
         return {
             'best_board': best_boards[randint(0, len(best_boards) - 1)],
             'board_score': best_average
         }
-        map(check_sequence(sequence), boards)
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
