@@ -35,7 +35,7 @@ tests_require = [
 
 setup(
     name='neuralknight',
-    version='0.1.0a1',
+    version='0.1.0a2',
     description='A Chess-playing AI',
     long_description=README + '\n\n' + CHANGES,
     author='David Snowberger, Shannon Tully, and Adam Grandquist',
