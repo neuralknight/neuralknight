@@ -59,7 +59,13 @@ class CLIAgent(Cmd):
         game = requests.post(f'{ self.api_url }/v1.0/games').json()
         game['user'] = 1
         self.game_id = game['id']
-        self.user = requests.post(f'{ self.api_url }/issue-agent', json=game).json()['agent_id']
+        self.user = requests.post(
+            f'{ self.api_url }/issue-agent',
+            json=game,
+            headers={
+                'content-type': 'application/json'
+            },
+        ).json()['agent_id']
         requests.post(
             f'{ self.api_url }/issue-agent-lookahead',
             json={'id': self.game_id, 'player': 2, 'lookahead': 4})
