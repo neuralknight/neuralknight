@@ -131,6 +131,7 @@ def moves_for_king(board, piece, posX, posY):
     """
     Get castling.
     """
+    return
     if piece & 0x10:
         if (board[posY][0] & 0x10) and (board[posY][0] & 1) and (board[posY][0] & 0xE) == ROOK:
             yield (-2, 0)
