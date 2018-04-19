@@ -41,7 +41,7 @@ class Board(BaseBoard):
         """
         if self._active_player:
             def piece_to_index(piece):
-                return piece
+                return (piece & 0xF)
         else:
             def piece_to_index(piece):
                 return (piece & 0xE) | (0 if piece & 1 else 1)
