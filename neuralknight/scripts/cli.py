@@ -104,7 +104,7 @@ class CLIAgent(Cmd):
         board[args[1]][args[0]] = SELECTED_PIECE.format(
             board[args[1]][args[0]])
         print_board(map(' '.join, board))
-        print(f'Selected: { PIECE_NAME[piece] }')
+        print(f'Selected: { PIECE_NAME[piece & 0xf] }')
 
     def do_move(self, arg_str):
         """
