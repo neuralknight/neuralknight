@@ -13,6 +13,7 @@ PIECE_NAME = {
     11: 'queen',
     13: 'rook',
 }
+PROMPT = '> '
 BRIGHT_GREEN = '\u001b[42;1m'
 RESET = '\u001b[0m'
 SELECTED_PIECE = f'{ BRIGHT_GREEN }{{}}{ RESET }'
@@ -58,18 +59,23 @@ def poll_move_response(api_url, game_id, board):
         board = update_board(api_url, game_id, board)
         if board:
             print_board(format_board(get_info(api_url, game_id)))
+            print(PROMPT)
     except KeyboardInterrupt:
         print()
 
 
 class CLIAgent(Cmd):
-    prompt = '> '
+    prompt = PROMPT
 
     def __init__(self, api_url):
         """
         Init player board.
         """
+        super().__init__()
         self.api_url = api_url
+        self.do_reset()
+
+    def do_reset(self, *args):
         self.board = None
         self.future = None
         self.piece = None
@@ -79,8 +85,7 @@ class CLIAgent(Cmd):
         self.user = requests.post(f'{ self.api_url }/issue-agent', json=game).json()['agent_id']
         requests.post(
             f'{ self.api_url }/issue-agent-lookahead',
-            json={'id': self.game_id, 'player': 2, 'lookahead': 3})
-        super().__init__()
+            json={'id': self.game_id, 'player': 2, 'lookahead': 6})
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
@@ -133,7 +138,6 @@ class CLIAgent(Cmd):
         self.piece = None
 
         requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
-        sleep(1)
         self.board = update_board(self.api_url, self.game_id, self.board)
         if self.board:
             print_board(format_board(get_info(self.api_url, self.game_id)))

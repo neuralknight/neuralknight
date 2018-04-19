@@ -1,7 +1,9 @@
 import requests
-from itertools import count, groupby, starmap
+from itertools import chain, count, groupby, starmap
 from functools import lru_cache, partial
+from operator import itemgetter
 from random import randint
+from statistics import mean
 from uuid import uuid4
 
 import neuralknight
@@ -30,17 +32,16 @@ def get_score(leaf, posY, posX, piece, **value_map):
 
 def check_sequence(sequence, **value_map):
     leaf = tuple(map(tuple, sequence[-1]))
-    return sum(map(
-        lambda posY, row: sum(map(
+    return sum(chain.from_iterable(map(
+        lambda posY, row: map(
             lambda posX, piece: get_score(leaf, posY, posX, piece, **value_map),
-            count(), row)),
-        count(), leaf))
+            count(), row),
+        count(), leaf)))
 
 
 def sequence_grouper(root, sequences, **value_map):
-    sequences = tuple(sequences)
-    root_value = sum(map(partial(check_sequence, **value_map), sequences)) / len(sequences)
-    return (root_value, root)
+    root_value = mean(map(partial(check_sequence, **value_map), sequences))
+    return (round(root_value, 2), root)
 
 
 class BaseAgent:
@@ -82,7 +83,7 @@ class BaseAgent:
             return requests.get(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
 
     def close(self):
-        del self.AGENT_POOL[self.agent_id]
+        self.AGENT_POOL.pop(self.agent_id, None)
         return {}
 
     def evaluate_boards(self, boards):
@@ -261,21 +262,18 @@ class BaseAgent:
 
         # best_boards = [(root_value, root), ...]
         best_boards = starmap(
-            partial(sequence_grouper, **value_map), groupby(boards, lambda sequence: sequence[0]))
+            partial(sequence_grouper, **value_map), groupby(boards, itemgetter(0)))
         # best_boards = [(root_value, [(root_value, root), ...]), ...]
-        best_boards = groupby(sorted(best_boards, reverse=True), lambda root_value: root_value[0])
+        best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
         # best_boards = (root_value, [(root_value, root), ...])
         best_boards = next(best_boards)
         # best_average = root_value
         # best_boards = [(root_value, root), ...]
         best_average, best_boards = best_boards
         # best_boards = [root, ...]
-        best_boards = [root_value[1] for root_value in best_boards]
+        best_boards = tuple(map(itemgetter(1), best_boards))
 
-        return {
-            'best_board': best_boards[randint(0, len(best_boards) - 1)],
-            'board_score': best_average
-        }
+        return (best_average, best_boards[randint(0, len(best_boards) - 1)])
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''

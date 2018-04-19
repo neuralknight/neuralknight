@@ -150,7 +150,7 @@ class BoardModel:
             self.validation_for_piece(piece, posX, posY),
             self.moves_for_piece(piece, posX, posY))
 
-    def lookahead_boards_for_piece(self, piece, posX, posY):
+    def lookahead_boards_for_piece(self, check, piece, posX, posY):
         """
         Get all future board states.
         """
@@ -160,8 +160,22 @@ class BoardModel:
             new_state[posY + move[1]][posX + move[0]] = piece
             return BoardModel(new_state).swap()
 
+        valid_moves_for_piece = self.valid_moves_for_piece(piece, posX, posY)
+        if check:
+            def is_check(move):
+                return self.board[posY + move[1]][posX + move[0]] == KING
+            valid_moves_for_piece = filter(is_check, valid_moves_for_piece)
+        return map(mutate_board, valid_moves_for_piece)
+
+    def lookahead_check_for_piece(self, piece, posX, posY):
+        """
+        Get all future board states.
+        """
+        def is_check(move):
+            return self.board[posY + move[1]][posX + move[0]] == KING
+
         return map(
-            mutate_board,
+            is_check,
             self.valid_moves_for_piece(piece, posX, posY))
 
     def active_piece(self, piece):
@@ -244,6 +258,10 @@ class BoardModel:
         """
         Provide an iterable of valid moves for current board state.
         """
+        check = any(chain.from_iterable(
+            starmap(
+                self.lookahead_check_for_piece,
+                self.active_pieces())))
         if not self:
             return iter((((self if active else self.swap()) for _ in range(n)),))
         if n == 0:
@@ -255,7 +273,7 @@ class BoardModel:
                     board.lookahead_boards(n - 1, not active)),
                 chain.from_iterable(
                     starmap(
-                        self.lookahead_boards_for_piece,
+                        partial(self.lookahead_boards_for_piece, check),
                         self.active_pieces()))))
 
     def has_kings(self):

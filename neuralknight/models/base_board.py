@@ -87,7 +87,7 @@ class BaseBoard:
         return self.player2
 
     def close(self):
-        del self.GAMES[self.id]
+        self.GAMES.pop(self.id)
 
     def current_state_v1(self):
         """
