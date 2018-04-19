@@ -13,7 +13,7 @@ def main(global_config, **settings):
     else:
         settings['sqlalchemy.url'] = 'postgres://localhost:5432/neuralknight'
     if os.environ.get('PORT', ''):
-        settings['listen'] = '*:' + environ['PORT']
+        settings['listen'] = '*:' + os.environ['PORT']
     else:
         settings['listen'] = 'localhost:54321'
     config = Configurator(settings=settings)
