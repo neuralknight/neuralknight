@@ -1,5 +1,5 @@
 import requests
-
+from functools import lru_cache
 from random import randint
 from uuid import uuid4
 
@@ -221,15 +221,14 @@ class BaseAgent:
         leaf_average = 0
         best_average = 0
 
-        for board_sequence in boards:
+        def check_sequence(sequence):
             board_score = 0
             leaf = board_sequence[-1]
 
-            for row in range(8):
-                for col in range(8):
-                    piece_values = value_map[leaf[row][col]]
-                    board_score += piece_values[0]
-                    board_score += piece_values[1][row][col]
+            def get_score(row,col):
+                piece_values = value_map[leaf[row][col]]
+                board_score += piece_values[0] + piece_values[1][row][col]
+            map(lambda row: map(get_score(row,col), row), leaf)
 
             if board_sequence[0] == root:
                 leaf_sum += board_score
@@ -256,10 +255,10 @@ class BaseAgent:
             'best_board': best_boards[randint(0, len(best_boards) - 1)],
             'board_score': best_average
         }
+        map(check_sequence(sequence), boards)
 
     def put_board(self, board):
         '''Sends move selection to board state manager'''
-        # import pdb; pdb.set_trace()
         data = {'state': board}
         data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
         if 'end' in data:
