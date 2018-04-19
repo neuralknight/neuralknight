@@ -2,7 +2,6 @@ import requests
 import sys
 
 from cmd import Cmd
-from multiprocessing import Process
 from time import sleep
 
 PIECE_NAME = {
@@ -40,28 +39,6 @@ def print_board(board):
     for shell, line in zip(
             BOARD_OUTPUT_SHELL, tuple(board)):
         print(f'{ shell }{ "".join(line) }')
-
-
-def update_board(api_url, game_id, in_board):
-    board = in_board
-    while in_board == board:
-        sleep(5)
-        response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
-        state = response.json()['state']
-        if state == {'end': True}:
-            return print('game over')
-        board = state
-    return board
-
-
-def poll_move_response(api_url, game_id, board):
-    try:
-        board = update_board(api_url, game_id, board)
-        if board:
-            print_board(format_board(get_info(api_url, game_id)))
-            print(PROMPT)
-    except KeyboardInterrupt:
-        print()
 
 
 class CLIAgent(Cmd):
@@ -102,9 +79,6 @@ class CLIAgent(Cmd):
                 print('not your turn yet')
                 return
             self.future = None
-            self.board = update_board(self.api_url, self.game_id, self.board)
-            if not self.board:
-                sys.exit(0)
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
@@ -137,15 +111,25 @@ class CLIAgent(Cmd):
         move = {'move': (tuple(reversed(self.piece)), tuple(reversed(args)))}
         self.piece = None
 
-        requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
-        self.board = update_board(self.api_url, self.game_id, self.board)
-        if self.board:
+        response = requests.put(f'{ self.api_url }/agent/{ self.user }', json=move)
+        if response.json() == {'end': True}:
             print_board(format_board(get_info(self.api_url, self.game_id)))
-        else:
-            sys.exit(0)
-        self.process = Process(
-            target=poll_move_response, args=(self.api_url, self.game_id, self.board))
-        self.process.start()
+            return print('you won')
+        response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
+        in_board = response.json()['state']
+        print_board(format_board(get_info(self.api_url, self.game_id)))
+        if in_board == {'end': True}:
+            return print('you won')
+        print('making move ...')
+        board = in_board
+        while in_board == board:
+            sleep(2)
+            response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
+            state = response.json()['state']
+            if state == {'end': True}:
+                return print('game over')
+            board = state
+        print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def print_invalid(self, args):
         print_board(format_board(get_info(self.api_url, self.game_id)))
