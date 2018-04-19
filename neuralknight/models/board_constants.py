@@ -14,12 +14,21 @@ ROOK = 0B1100
 _FIRST_ROW = [ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK]
 _PAWN_ROW = [PAWN for _ in range(8)]
 
+# INITIAL_BOARD = [
+#     _FIRST_ROW,
+#     _PAWN_ROW,
+#     *[[0 for _ in range(8)] for _ in range(4)],
+#     [piece | 1 for piece in _PAWN_ROW],
+#     [piece | 1 for piece in _FIRST_ROW]]
 INITIAL_BOARD = [
-    _FIRST_ROW,
-    _PAWN_ROW,
-    *[[0 for _ in range(8)] for _ in range(4)],
-    [piece | 1 for piece in _PAWN_ROW],
-    [piece | 1 for piece in _FIRST_ROW]]
+    [ROOK, KNIGHT, BISHOP, QUEEN, KING, 0, 0, ROOK],
+    [0, PAWN, 0, PAWN, PAWN, PAWN, BISHOP, PAWN],
+    [0, 0, 0, 0, 0, 0, PAWN, KNIGHT],
+    [PAWN, 0, PAWN, 0, 0, 0, 0, 0],
+    [0, 0, 0, PAWN | 1, PAWN | 1, PAWN | 1, 0, 0],
+    [0, 0, 0, 0, BISHOP | 1, KNIGHT | 1, 0, 0],
+    [PAWN | 1, PAWN | 1, PAWN | 1, 0, 0, 0, PAWN | 1, PAWN | 1],
+    [ROOK | 1, KNIGHT | 1, 0, QUEEN | 1, KING | 1, BISHOP | 1, 0, ROOK | 1]]
 # low bit indicates active player piece
 
 BISHOP_MOVES = (

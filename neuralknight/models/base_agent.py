@@ -1,6 +1,6 @@
 import requests
 from itertools import count, groupby, starmap
-from functools import lru_cache
+from functools import lru_cache, partial
 from random import randint
 from uuid import uuid4
 
@@ -26,6 +26,22 @@ def get_score(leaf, posY, posX, piece, **value_map):
     }.get(piece, 'EMPTY_SPACE')
     piece_values = value_map[piece]
     return piece_values[0] + piece_values[1][posY][posX]
+
+
+def check_sequence(sequence, **value_map):
+    leaf = tuple(map(tuple, sequence[-1]))
+    return sum(map(
+        lambda posY, row: sum(map(
+            lambda posX, piece: get_score(leaf, posY, posX, piece, **value_map),
+            count(), row)),
+        count(), leaf))
+
+
+def sequence_grouper(root, sequences, **value_map):
+    sequences = tuple(sequences)
+    root_value = sum(map(partial(check_sequence, **value_map), sequences)) / len(sequences)
+    return (root_value, root)
+
 
 class BaseAgent:
     '''Slayer of chess'''
@@ -243,28 +259,19 @@ class BaseAgent:
             'EMPTY_SPACE' : (0, zero_squares),
         }
 
-        
-        def check_sequence(sequence):
-            leaf = tuple(map(tuple, sequence[-1]))
-            return sum(map(
-                lambda posY, row: sum(map(
-                    lambda posX, piece: get_score(leaf, posY, posX, piece, **value_map),
-                    count(), row)),
-                count(), leaf))
-
-
-        def sequence_grouper(root, sequences):
-            sequences = tuple(sequences)
-            root_value = sum(map(check_sequence, sequences)) / len(sequences)
-            return (root_value, root)
-
-
-        best_boards = starmap(sequence_grouper, groupby(boards, lambda sequence: sequence[0]))
+        # best_boards = [(root_value, root), ...]
+        best_boards = starmap(
+            partial(sequence_grouper, **value_map), groupby(boards, lambda sequence: sequence[0]))
+        # best_boards = [(root_value, [(root_value, root), ...]), ...]
         best_boards = groupby(sorted(best_boards, reverse=True), lambda root_value: root_value[0])
+        # best_boards = (root_value, [(root_value, root), ...])
         best_boards = next(best_boards)
+        # best_average = root_value
+        # best_boards = [(root_value, root), ...]
         best_average, best_boards = best_boards
+        # best_boards = [root, ...]
         best_boards = [root_value[1] for root_value in best_boards]
-        
+
         return {
             'best_board': best_boards[randint(0, len(best_boards) - 1)],
             'board_score': best_average

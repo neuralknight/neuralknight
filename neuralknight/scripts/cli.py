@@ -44,7 +44,7 @@ def print_board(board):
 def update_board(api_url, game_id, in_board):
     board = in_board
     while in_board == board:
-        sleep(10)
+        sleep(5)
         response = requests.get(f'{ api_url }/v1.0/games/{ game_id }')
         state = response.json()['state']
         if state == {'end': True}:
