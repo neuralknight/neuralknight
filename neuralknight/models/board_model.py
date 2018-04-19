@@ -99,15 +99,10 @@ def validation_for_piece(board, piece, posX, posY):
         validate_true,  # Pawn
         partial(validate_move, board),  # Queen
         partial(validate_move, board)  # Rook
-        )[piece // 2], posX, posY)
+        )[(piece & 0xE) // 2], posX, posY)
 
 
-@lru_cache()
 def moves_for_pawn(board, piece, posX, posY):
-    return tuple(_moves_for_pawn(board, piece, posX, posY))
-
-
-def _moves_for_pawn(board, piece, posX, posY):
     """
     Get all possible moves for pawn.
     """
@@ -132,6 +127,18 @@ def _moves_for_pawn(board, piece, posX, posY):
         yield ()  # en passant
 
 
+def moves_for_king(board, piece, posX, posY):
+    """
+    Get castling.
+    """
+    if piece & 0x10:
+        if (board[posY][0] & 0x10) and (board[posY][0] & 1) and (board[posY][0] & 0xE) == ROOK:
+            yield (-2, 0)
+            yield (-3, 0)
+        if (board[posY][7] & 0x10) and (board[posY][7] & 1) and (board[posY][7] & 0xE) == ROOK:
+            yield (2, 0)
+
+
 @lru_cache()
 def moves_for_piece(board, piece, posX, posY):
     """
@@ -140,12 +147,12 @@ def moves_for_piece(board, piece, posX, posY):
     return tuple(filter(partial(is_on_board, posX, posY), (
         (),  # No piece
         BISHOP_MOVES,
-        KING_MOVES,
+        chain(KING_MOVES, moves_for_king(board, piece, posX, posY)),
         KNIGHT_MOVES,
         moves_for_pawn(board, piece, posX, posY),
         QUEEN_MOVES,
         ROOK_MOVES
-      )[piece // 2]))
+      )[(piece & 0xE) // 2]))
 
 
 @lru_cache()
@@ -168,16 +175,16 @@ def lookahead_boards_for_piece(board, check, piece, posX, posY):
         new_state[posY][posX] = 0
         if piece == 9 and posY == 1:
             for promote in (BISHOP, KNIGHT, QUEEN, ROOK):
-                new_state[posY + move[1]][posX + move[0]] = promote
+                new_state[posY + move[1]][posX + move[0]] = promote | 1
                 yield swap(tuple(map(bytes, new_state)))
         else:
-            new_state[posY + move[1]][posX + move[0]] = piece
+            new_state[posY + move[1]][posX + move[0]] = piece & 0xF
             yield swap(tuple(map(bytes, new_state)))
 
     _valid_moves_for_piece = valid_moves_for_piece(board, piece, posX, posY)
     if check:
         _valid_moves_for_piece = filter(
-            lambda move: board[posY + move[1]][posX + move[0]] == KING,
+            lambda move: board[posY + move[1]][posX + move[0]] & 0xE == KING,
             _valid_moves_for_piece)
     return tuple(chain.from_iterable(map(mutate_board, _valid_moves_for_piece)))
 
@@ -187,7 +194,7 @@ def lookahead_check_for_piece(board, piece, posX, posY):
     Get possiblity of check in all future board states.
     """
     return map(
-        lambda move: board[posY + move[1]][posX + move[0]] == KING,
+        lambda move: (board[posY + move[1]][posX + move[0]] & 0xF) == KING,
         valid_moves_for_piece(board, piece, posX, posY))
 
 
@@ -237,7 +244,7 @@ def swap(board):
     return tuple(list(map(
         lambda row: bytes(map(
             lambda pp:
-                pp & 0xE | (1 if inactive_piece(pp) else 0),
+                (pp ^ 1) if pp else 0,
             row))[::-1],
         board))[::-1])
 
@@ -269,7 +276,7 @@ class BoardModel:
         """
         Ensure piece on board.
         """
-        return any(map(lambda row: piece in row, self.board))
+        return any(map(lambda row: piece in row or (piece | 0x10) in row, self.board))
 
     def swap(self):
         """
