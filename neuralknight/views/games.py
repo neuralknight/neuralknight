@@ -1,4 +1,5 @@
 from cornice import Service
+from operator import methodcaller
 from pyramid.httpexceptions import HTTPBadRequest
 
 from ..models.board import Board, NoBoard
@@ -22,7 +23,7 @@ game_info = Service(
 
 
 class BlankBoard:
-    BASE_BOARD = [[0 for _ in range(8)] for _ in range(8)]
+    BASE_BOARD = tuple(b'\0' * 8 for _ in range(8))
 
     def __str__(self):
         return '\n' * 8
@@ -56,7 +57,7 @@ def get_games(request):
     """
     Retrieve all game ids.
     """
-    return {'ids': list(Board.GAMES.keys())}
+    return {'ids': tuple(Board.GAMES.keys())}
 
 
 @games.post()
@@ -72,7 +73,13 @@ def get_states(request):
     """
     Start or continue a cursor of next board states.
     """
-    return get_game(request).slice_cursor_v1(**request.GET)
+    cursor = get_game(request).slice_cursor_v1(**request.GET)
+    cursor['boards'] = tuple(map(
+        lambda boards: tuple(map(
+            lambda board: tuple(map(methodcaller('hex'), board)),
+            boards)),
+        cursor['boards']))
+    return cursor
 
 
 @game_interaction.get()
@@ -80,7 +87,11 @@ def get_state(request):
     """
     Provide current state on the board.
     """
-    return get_game(request).current_state_v1()
+    state = get_game(request).current_state_v1()
+    if isinstance(state['state'], dict):
+        return state
+    state['state'] = tuple(map(methodcaller('hex'), state['state']))
+    return state
 
 
 @game_interaction.post()

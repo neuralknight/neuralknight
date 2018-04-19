@@ -90,14 +90,17 @@ class CLIAgent(Cmd):
             return self.print_invalid('piece ' + arg_str)
         self.piece = args
         response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
-        board = response.json()['state']
+        state = response.json()['state']
+        if state == {'end': True}:
+            return print('game over')
+        board = tuple(map(bytes.fromhex, state))
         try:
             piece = board[args[1]][args[0]]
         except IndexError:
             return self.print_invalid('piece ' + arg_str)
         if not (piece and (piece & 1)):
             return self.print_invalid('piece ' + arg_str)
-        board = [list(row) for row in get_info(self.api_url, self.game_id).splitlines()]
+        board = list(map(list, get_info(self.api_url, self.game_id).splitlines()))
         board[args[1]][args[0]] = SELECTED_PIECE.format(
             board[args[1]][args[0]])
         print_board(map(' '.join, board))
@@ -124,7 +127,10 @@ class CLIAgent(Cmd):
                 'content-type': 'application/json',
             }
         )
-        if response.json() == {'end': True}:
+        if response.status_code != 200:
+            print_board(format_board(get_info(self.api_url, self.game_id)))
+            return print('Invalid move.')
+        if response.json().get('state', {}).get('end', False):
             print_board(format_board(get_info(self.api_url, self.game_id)))
             return print('you won')
         response = requests.get(f'{ self.api_url }/v1.0/games/{ self.game_id }')
