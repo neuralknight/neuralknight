@@ -8,7 +8,7 @@ from operator import itemgetter
 from uuid import uuid4
 
 from .board_constants import (
-    INITIAL_BOARD, KING, unit,
+    INITIAL_BOARD, BISHOP, KING, KNIGHT, QUEEN, ROOK, unit,
     BISHOP_MOVES, KING_MOVES, KNIGHT_MOVES, QUEEN_MOVES, ROOK_MOVES)
 
 __all__ = ['BoardModel', 'CursorDelegate']
@@ -166,15 +166,20 @@ def lookahead_boards_for_piece(board, check, piece, posX, posY):
     def mutate_board(move):
         new_state = list(map(list, board))
         new_state[posY][posX] = 0
-        new_state[posY + move[1]][posX + move[0]] = piece
-        return swap(tuple(map(bytes, new_state)))
+        if piece == 9 and posY == 1:
+            for promote in (BISHOP, KNIGHT, QUEEN, ROOK):
+                new_state[posY + move[1]][posX + move[0]] = promote
+                yield swap(tuple(map(bytes, new_state)))
+        else:
+            new_state[posY + move[1]][posX + move[0]] = piece
+            yield swap(tuple(map(bytes, new_state)))
 
     _valid_moves_for_piece = valid_moves_for_piece(board, piece, posX, posY)
     if check:
         _valid_moves_for_piece = filter(
             lambda move: board[posY + move[1]][posX + move[0]] == KING,
             _valid_moves_for_piece)
-    return tuple(map(mutate_board, _valid_moves_for_piece))
+    return tuple(chain.from_iterable(map(mutate_board, _valid_moves_for_piece)))
 
 
 def lookahead_check_for_piece(board, piece, posX, posY):
@@ -299,8 +304,9 @@ class BoardModel:
         posX, posY, piece, _ = old
         if not active_piece(piece):
             raise RuntimeError
-        if old[2] != new[3]:
-            raise RuntimeError
+        if piece != new[3]:
+            if not (piece == 9 and new[0] == 0):
+                raise RuntimeError
         move = (new[0] - posX, new[1] - posY)
         if move not in valid_moves_for_piece(self.board, piece, posX, posY):
             raise RuntimeError
