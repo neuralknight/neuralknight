@@ -1,3 +1,4 @@
+import os
 import requests
 
 from uuid import uuid4
@@ -12,7 +13,10 @@ class NoBoard(Exception):
 
 class BaseBoard:
     GAMES = {}
-    PORT = 8080
+    if os.environ.get('PORT', ''):
+        PORT = os.environ['PORT']
+    else:
+        PORT = 8080
     API_URL = 'http://localhost:{}'.format(PORT)
 
     @classmethod
