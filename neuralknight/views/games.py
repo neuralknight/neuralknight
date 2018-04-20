@@ -79,9 +79,10 @@ def get_states(request):
     """
     cursor = get_game(request).slice_cursor_v1(**request.GET)
     cursor['boards'] = tuple(map(
-        lambda boards: tuple(map(
-            lambda board: tuple(map(methodcaller('hex'), board)),
-            boards)),
+        lambda boards: tuple(filter(None, map(
+            lambda board:
+            tuple(map(methodcaller('hex'), board)) if isinstance(board[0], bytes) else (),
+            boards))),
         cursor['boards']))
     return cursor
 
