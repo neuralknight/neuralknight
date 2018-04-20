@@ -1,8 +1,6 @@
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial
-from itertools import chain, count, groupby, repeat, starmap
-from operator import itemgetter, methodcaller
-from random import sample
+from itertools import chain, count, groupby, starmap
+from operator import itemgetter
 # from statistics import harmonic_mean
 
 from .base_agent import BaseAgent
@@ -41,27 +39,6 @@ class NewAgent(BaseAgent):
     def sequence_grouper(self, root, sequences, **value_map):
         root_value = min(map(partial(self.check_sequence, **value_map), sequences))
         return (round(root_value, -1) // 100, root)
-
-    def call(self, _call, *args, **kwargs):
-        return _call(*args, **kwargs)
-
-    def get_boards(self, cursor):
-        '''Retrieves potential board states'''
-        params = {'lookahead': self.lookahead}
-        if cursor:
-            params['cursor'] = cursor
-        return self.request('GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
-
-    def get_boards_cursor(self):
-        cursor = True
-        while cursor:
-            board_options = self.get_boards(cursor)
-            cursor = board_options['cursor']
-            yield tuple(map(
-                lambda boards: tuple(map(
-                    lambda board: tuple(map(bytes.fromhex, board)),
-                    boards)),
-                board_options['boards']))
 
     def evaluate_boards(self, boards):
         '''Determine value for each board state in array of board states
@@ -248,7 +225,10 @@ class NewAgent(BaseAgent):
         # best_boards = [(root_value, [(root_value, root), ...]), ...]
         best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
         # best_boards = (root_value, [(root_value, root), ...])
-        best_boards = next(best_boards)
+        try:
+            best_boards = next(best_boards)
+        except StopIteration:
+            return (opp_king_val * 64, [])
         # best_average = root_value
         # best_boards = [(root_value, root), ...]
         best_average, best_boards = best_boards
@@ -256,36 +236,3 @@ class NewAgent(BaseAgent):
         best_boards = tuple(map(itemgetter(1), best_boards))
 
         return (best_average, best_boards)
-
-    def play_round(self):
-        '''Play a game round'''
-        with ProcessPoolExecutor(4) as executor:
-            # best_boards = [(root_value, root), ...]
-            best_boards = executor.map(
-                self.call,
-                map(partial(methodcaller, 'evaluate_boards'), self.get_boards_cursor()),
-                repeat(self),
-                chunksize=50)
-            # best_boards = [(root_value, [(root_value, root), ...]), ...]
-            best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
-            # _, best_boards = (root_value, [(root_value, root), ...])
-            try:
-                _, best_boards = next(best_boards)
-            except StopIteration:
-                return self.close()
-            # best_boards = [root, ...]
-            best_boards = list(map(
-                next,
-                map(
-                    itemgetter(1),
-                    groupby(chain.from_iterable(map(itemgetter(1), best_boards))))))
-            if not best_boards:
-                return self.close()
-            return self.put_board(sample(best_boards, 1)[0])
-
-    def play_game(self):
-        '''Play a game'''
-        game_over = False
-        while not game_over:
-            game_over = self.play_round()
-        return game_over
