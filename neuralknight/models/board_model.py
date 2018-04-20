@@ -43,8 +43,6 @@ class CursorDelegate:
         slen = (900 // lookahead) if complete else 450
         boards = tuple(islice(it, slen))
         if len(boards) < slen:
-            if complete:
-                return {'cursor': None, 'boards': boards}
             try:
                 it = next(cur)[1]
             except StopIteration:
@@ -289,7 +287,7 @@ class BoardModel:
         """
         return swap(self.board)
 
-    def validate_mutation(self, mutation):
+    def validate_mutation(self, mutation, state):
         if len(mutation) != 2:
             raise InvalidMove
         if mutation[0][3] == 0:
@@ -298,20 +296,27 @@ class BoardModel:
             new, old = mutation
         else:
             raise InvalidMove
-        if active_piece(new[2]):
+        new_posX, new_posY, new_prev_piece, new_next_piece = new
+        new_next_piece = new_next_piece & 0xF
+        if active_piece(new_prev_piece):
             raise InvalidMove
-        posX, posY, piece, _ = old
+        posX, posY, moved_piece, _ = old
+        piece = moved_piece & 0xF
         if not active_piece(piece):
             raise InvalidMove
-        if (piece & 0xF) != (new[3] & 0xF):
-            if not ((piece & 0xF) == 9 and new[0] == 0):
+        if piece != new_next_piece:
+            if not (piece == 9 and new_posY == 0):
                 raise InvalidMove
-        move = (new[0] - posX, new[1] - posY)
-        if move not in valid_moves_for_piece(self.board, piece, posX, posY):
+        move = (new_posX - posX, new_posY - posY)
+        if move not in valid_moves_for_piece(self.board, moved_piece, posX, posY):
             raise InvalidMove
-        if (piece & 0xF) == 9:
+        if piece == 9:
             self.moves_since_pawn = 0
-        return True
+            if new_posY == 0 and new_next_piece == 9:
+                state = list(map(list, state))
+                state[new_posY][new_posX] = QUEEN
+                return swap(tuple(map(bytes, state)))
+        return swap(state)
 
     def update(self, state):
         """
@@ -327,12 +332,10 @@ class BoardModel:
                 old_row, new_row),
             count(),
             self.board, state))))
-        if self.validate_mutation(mutation):
-            board = BoardModel(swap(state))
-            board.move_count = self.move_count + 1
-            board.moves_since_pawn = self.moves_since_pawn + 1
-            return board
-        raise InvalidMove
+        board = BoardModel(self.validate_mutation(mutation, state))
+        board.move_count = self.move_count + 1
+        board.moves_since_pawn = self.moves_since_pawn + 1
+        return board
 
     def lookahead_boards_for_board(self, check):
         return chain.from_iterable(
