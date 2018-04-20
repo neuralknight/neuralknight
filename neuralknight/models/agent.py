@@ -43,10 +43,11 @@ class Agent(BaseAgent):
                 repeat(self),
                 chunksize=50)
             # best_boards = [(root_value, [(root_value, root), ...]), ...]
-            best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
+            best_boards = groupby(sorted(best_boards), itemgetter(0))
             # _, best_boards = (root_value, [(root_value, root), ...])
             try:
-                _, best_boards = next(best_boards)
+                score, best_boards = next(best_boards)
+                print(score)
             except StopIteration:
                 return self.close()
             # best_boards = [root, ...]

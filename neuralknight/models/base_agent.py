@@ -42,7 +42,7 @@ def check_sequence(sequence, **value_map):
 
 def sequence_grouper(root, sequences, **value_map):
     root_value = harmonic_mean(map(partial(check_sequence, **value_map), sequences))
-    return (round(root_value, -1) // 100, root)
+    return (round(root_value, -1), root)
 
 
 class BaseAgent:
@@ -417,10 +417,13 @@ class BaseAgent:
         best_boards = starmap(
             partial(sequence_grouper, **value_map), groupby(boards, itemgetter(0)))
         # best_boards = [(root_value, [(root_value, root), ...]), ...]
-        best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
+        best_boards = groupby(sorted(best_boards), itemgetter(0))
         # best_boards = (root_value, [(root_value, root), ...])
-        best_boards = next(best_boards)
         # best_average = root_value
+        try:
+            best_boards = next(best_boards)
+        except StopIteration:
+            return (opp_king_val * 64, [])
         # best_boards = [(root_value, root), ...]
         best_average, best_boards = best_boards
         # best_boards = [root, ...]
@@ -435,7 +438,7 @@ class BaseAgent:
         self.game_over = data.get('end', False)
         if self.game_over:
             return self.close()
-        return {}
+        return data
 
     def join_game(self):
         self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})

@@ -314,7 +314,7 @@ class BoardModel:
             self.moves_since_pawn = 0
             if new_posY == 0 and new_next_piece == 9:
                 state = list(map(list, state))
-                state[new_posY][new_posX] = QUEEN
+                state[new_posY][new_posX] = QUEEN | 1
                 return swap(tuple(map(bytes, state)))
         return swap(state)
 
