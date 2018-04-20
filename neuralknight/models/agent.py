@@ -45,9 +45,18 @@ class Agent(BaseAgent):
             # best_boards = [(root_value, [(root_value, root), ...]), ...]
             best_boards = groupby(sorted(best_boards, reverse=True), itemgetter(0))
             # _, best_boards = (root_value, [(root_value, root), ...])
-            _, best_boards = next(best_boards)
+            try:
+                _, best_boards = next(best_boards)
+            except StopIteration:
+                return self.close()
             # best_boards = [root, ...]
-            best_boards = list(map(next, map(itemgetter(1), groupby(chain.from_iterable(map(itemgetter(1), best_boards))))))
+            best_boards = list(map(
+                next,
+                map(
+                    itemgetter(1),
+                    groupby(chain.from_iterable(map(itemgetter(1), best_boards))))))
+            if not best_boards:
+                return self.close()
             return self.put_board(sample(best_boards, 1)[0])
 
     def play_game(self):

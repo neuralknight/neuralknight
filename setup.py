@@ -35,7 +35,7 @@ tests_require = [
 
 setup(
     name='neuralknight',
-    version='0.1.0a2',
+    version='1.0.0a1',
     description='A Chess-playing AI',
     long_description=README + '\n\n' + CHANGES,
     author='David Snowberger, Shannon Tully, and Adam Grandquist',
@@ -60,7 +60,7 @@ setup(
     extras_require={
         'testing': tests_require,
     },
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     install_requires=requires,
     entry_points={
         'paste.app_factory': [

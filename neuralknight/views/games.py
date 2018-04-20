@@ -24,8 +24,6 @@ game_info = Service(
 
 
 class BlankBoard:
-    BASE_BOARD = tuple(b'\0' * 8 for _ in range(8))
-
     def __str__(self):
         return '\n' * 8
 
@@ -39,7 +37,7 @@ class BlankBoard:
         return {'state': {'end': True}}
 
     def slice_cursor_v1(self, *args, **kwargs):
-        return {'cursor': None, 'boards': [self.BASE_BOARD]}
+        return {'cursor': None, 'boards': []}
 
     def update_state_v1(self, *args, **kwargs):
         return {'end': True}

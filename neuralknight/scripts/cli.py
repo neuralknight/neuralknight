@@ -53,8 +53,6 @@ class CLIAgent(Cmd):
         self.do_reset()
 
     def do_reset(self, *args):
-        self.board = None
-        self.future = None
         self.piece = None
         game = requests.post(f'{ self.api_url }/v1.0/games').json()
         game['user'] = 1
@@ -75,16 +73,6 @@ class CLIAgent(Cmd):
         """
         Select piece for move.
         """
-        if self.future:
-            if not self.future.started():
-                print('not your turn yet')
-                return
-            try:
-                self.future.result(0)
-            except TimeoutError:
-                print('not your turn yet')
-                return
-            self.future = None
         args = self.parse(arg_str)
         if len(args) != 2:
             return self.print_invalid('piece ' + arg_str)
