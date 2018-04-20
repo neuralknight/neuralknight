@@ -15,7 +15,7 @@ def main(global_config, **settings):
     if os.environ.get('PORT', ''):
         settings['listen'] = '*:' + os.environ['PORT']
     else:
-        settings['listen'] = 'localhost:54321'
+        settings['listen'] = 'localhost:8080'
     config = Configurator(settings=settings)
     config.include('cornice')
     config.include('pyramid_jinja2')
