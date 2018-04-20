@@ -11,7 +11,11 @@ from .board_constants import (
     INITIAL_BOARD, BISHOP, KING, KNIGHT, QUEEN, ROOK, unit,
     BISHOP_MOVES, KING_MOVES, KNIGHT_MOVES, QUEEN_MOVES, ROOK_MOVES)
 
-__all__ = ['BoardModel', 'CursorDelegate']
+__all__ = ['BoardModel', 'CursorDelegate', 'InvalidMove']
+
+
+class InvalidMove(RuntimeError):
+    pass
 
 
 class CursorDelegate:
@@ -285,6 +289,30 @@ class BoardModel:
         """
         return swap(self.board)
 
+    def validate_mutation(self, mutation):
+        if len(mutation) != 2:
+            raise InvalidMove
+        if mutation[0][3] == 0:
+            old, new = mutation
+        elif mutation[1][3] == 0:
+            new, old = mutation
+        else:
+            raise InvalidMove
+        if active_piece(new[2]):
+            raise InvalidMove
+        posX, posY, piece, _ = old
+        if not active_piece(piece):
+            raise InvalidMove
+        if (piece & 0xF) != (new[3] & 0xF):
+            if not ((piece & 0xF) == 9 and new[0] == 0):
+                raise InvalidMove
+        move = (new[0] - posX, new[1] - posY)
+        if move not in valid_moves_for_piece(self.board, piece, posX, posY):
+            raise InvalidMove
+        if (piece & 0xF) == 9:
+            self.moves_since_pawn = 0
+        return True
+
     def update(self, state):
         """
         Validate and return new board state.
@@ -299,29 +327,12 @@ class BoardModel:
                 old_row, new_row),
             count(),
             self.board, state))))
-        if len(mutation) != 2:
-            raise RuntimeError
-        if mutation[0][3] == 0:
-            old, new = mutation
-        elif mutation[1][3] == 0:
-            new, old = mutation
-        else:
-            raise RuntimeError
-        if active_piece(new[2]):
-            raise RuntimeError
-        posX, posY, piece, _ = old
-        if not active_piece(piece):
-            raise RuntimeError
-        if piece != new[3]:
-            if not (piece == 9 and new[0] == 0):
-                raise RuntimeError
-        move = (new[0] - posX, new[1] - posY)
-        if move not in valid_moves_for_piece(self.board, piece, posX, posY):
-            raise RuntimeError
-        board = BoardModel(swap(state))
-        board.move_count = self.move_count + 1
-        board.moves_since_pawn = 0 if piece == 9 else (self.moves_since_pawn + 1)
-        return board
+        if self.validate_mutation(mutation):
+            board = BoardModel(swap(state))
+            board.move_count = self.move_count + 1
+            board.moves_since_pawn = self.moves_since_pawn + 1
+            return board
+        raise InvalidMove
 
     def lookahead_boards_for_board(self, check):
         return chain.from_iterable(
