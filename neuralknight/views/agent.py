@@ -57,5 +57,4 @@ def agent_view(request):
         return agent.close()
     if isinstance(agent, UserAgent):
         return agent.play_round(request.json.get('move', None))
-    import pdb; pdb.set_trace()
     return agent.play_round()
