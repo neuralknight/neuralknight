@@ -39,7 +39,7 @@ From inside the source directory:
 This app is written using Python 3.6, Pyramid, and Postgres, with Heroku as a deployment platform
 
 ## API
-See our API docs [here](https://www.github.com/dsnowb/neuralknight/API.md)
+See our API docs [here](https://github.com/dsnowb/neuralknight/blob/master/API.md)
 
 ## Change Log
 - 05 April 2018 - Repo Created
