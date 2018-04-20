@@ -2,7 +2,7 @@
 
 **Authors**: David Snowberger, Shannon Tully, Adam Grandquist
 
-**Version**: 0.1.0
+**Version**: 1.0.0
 
 ## Overview
 An occasionally suicidal shell-based chess game.
@@ -23,11 +23,11 @@ To launch neuralknight, type the following into a shell:
 
 Should you wish to run a purely local instance:
 
-- Ensure postgres is installed
+- Download the source from [here](https://www.github.com/dsnowb/neuralknight)
 
 - Create a postgres database named *neuralknight*
 
-From inside the package directory:
+From inside the source directory:
 
 - Initialize the database with `initialize_neuralknight_db`
 
@@ -43,4 +43,4 @@ See our API docs [here](https://www.github.com/dsnowb/neuralknight/API.md)
 
 ## Change Log
 - 05 April 2018 - Repo Created
-- 19 April 2018 - 0.1.0 release
+- 19 April 2018 - 1.0.0 release
