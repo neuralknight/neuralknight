@@ -55,21 +55,33 @@ class CLIAgent(Cmd):
     def do_reset(self, *args):
         self.piece = None
         game = requests.post(f'{ self.api_url }/v1.0/games').json()
-        game['user'] = 1
-        self.game_id = game['id']
+        try:
+            self.game_id = game['id']
+        except KeyError:
+            return print('failed to reset')
         self.user = requests.post(
             f'{ self.api_url }/issue-agent',
-            json=game,
+            json={
+                'game_id': self.game_id,
+                'user': True},
             headers={
                 'content-type': 'application/json'
             },
         ).json()['agent_id']
+        try:
+            self.user = game['id']
+        except KeyError:
+            return print('failed to reset')
         requests.post(
-            f'{ self.api_url }/issue-agent-lookahead',
-            json={'id': self.game_id, 'player': 2, 'lookahead': 2})
-        # requests.post(
-        #     f'{ self.api_url }/issue-agent-new-ai',
-        #     json={'id': self.game_id, 'player': 2, 'lookahead': 4})
+            f'{ self.api_url }/issue-agent',
+            json={
+                'game_id': self.game_id,
+                'player': 2,
+                'lookahead': 2,
+                'delegate': 'max-balance-agent'},
+            headers={
+                'content-type': 'application/json'
+            })
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):

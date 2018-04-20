@@ -7,7 +7,6 @@ import zope.sqlalchemy
 # Base.metadata prior to any initialization routines
 # pylama:ignore=W0611
 from .agent import Agent  # flake8: noqa
-from .new_agent import NewAgent  # flake8: noqa
 from .base_agent import BaseAgent  # flake8: noqa
 from .base_board import BaseBoard  # flake8: noqa
 from .board_model import BoardModel  # flake8: noqa
