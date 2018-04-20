@@ -3,6 +3,7 @@ from operator import methodcaller
 from pyramid.httpexceptions import HTTPBadRequest
 
 from ..models.board import Board, NoBoard
+from ..models.board_model import InvalidMove
 
 games = Service(
     name='games',
@@ -30,6 +31,9 @@ class BlankBoard:
 
     def add_player_v1(self, *args, **kwargs):
         return {}
+
+    def close(self, *args, **kwargs):
+        return {'end': True}
 
     def current_state_v1(self, *args, **kwargs):
         return {'state': {'end': True}}
@@ -111,7 +115,11 @@ def put_state(request):
     """
     Make a move to a new state on the board.
     """
-    return get_game(request).update_state_v1(request.dbsession, **request.json)
+    try:
+        return get_game(request).update_state_v1(request.dbsession, **request.json)
+    except InvalidMove:
+        pass
+    return get_game(request).close()
 
 
 @game_info.get()
