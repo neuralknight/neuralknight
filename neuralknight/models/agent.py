@@ -48,6 +48,9 @@ class Agent(BaseAgent):
             try:
                 score, best_boards = next(best_boards)
                 print(score)
+                if score == 0:
+                    import pdb; pdb.set_trace()
+                    print('score failure')
             except StopIteration:
                 return self.close()
             # best_boards = [root, ...]

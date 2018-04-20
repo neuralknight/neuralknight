@@ -117,6 +117,9 @@ def put_state(request):
         return get_game(request).update_state_v1(request.dbsession, **request.json)
     except InvalidMove:
         pass
+    except Exception:
+        import pdb; pdb.set_trace()
+        print('exit')
     return {'invalid': True}
 
 

@@ -33,7 +33,11 @@ class CursorDelegate:
         else:
             it = board.prune_lookahead_boards(lookahead)
         it = groupby(it, itemgetter(0))
-        return next(it)[1], it
+        try:
+            return next(it)[1], it
+        except StopIteration:
+            pass
+        return iter(()), iter(())
 
     def slice_cursor_v1(self, board, cursor, lookahead, complete):
         """
