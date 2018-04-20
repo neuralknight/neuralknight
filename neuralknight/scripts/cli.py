@@ -115,7 +115,7 @@ class CLIAgent(Cmd):
                 'content-type': 'application/json',
             }
         )
-        if response.status_code != 200:
+        if response.status_code != 200 or response.json().get('invalid', False):
             print_board(format_board(get_info(self.api_url, self.game_id)))
             return print('Invalid move.')
         if response.json().get('state', {}).get('end', False):

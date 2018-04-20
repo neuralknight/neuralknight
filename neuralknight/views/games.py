@@ -117,7 +117,7 @@ def put_state(request):
         return get_game(request).update_state_v1(request.dbsession, **request.json)
     except InvalidMove:
         pass
-    return get_game(request).close()
+    return {'invalid': True}
 
 
 @game_info.get()
