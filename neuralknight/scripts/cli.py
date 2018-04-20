@@ -68,7 +68,7 @@ class CLIAgent(Cmd):
         ).json()['agent_id']
         requests.post(
             f'{ self.api_url }/issue-agent-lookahead',
-            json={'id': self.game_id, 'player': 2, 'lookahead': 1})
+            json={'id': self.game_id, 'player': 2, 'lookahead': 4})
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
