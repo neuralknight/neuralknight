@@ -410,7 +410,7 @@ class BaseAgent:
             'OPP_QUEEN': (opp_queen_val, opp_queen_squares),
             'OPP_KING': (opp_king_val, opp_king_squares),
 
-            'EMPTY_SPACE': (20000, zero_squares),
+            'EMPTY_SPACE': (50, zero_squares),
         }
 
         # best_boards = [(root_value, root), ...]
