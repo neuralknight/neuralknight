@@ -57,6 +57,7 @@ Response:
   {'id': *game_id*}
 
 ## /v1.0/games/{game}/states
+*game* query string is a game_id
 
 ### GET
 
@@ -70,6 +71,7 @@ Response:
   {'boards': *series of board states*, 'cursor': *cursor for the next slice of states*}
 
 ## /v1.0/games/{game}
+*game* query string is a game_id
 
 ### GET
 
@@ -95,6 +97,7 @@ Expected parameters:
   "state" - Chosen new board state
 
 ## /v1.0/games/{game}/info
+*game* query string is a game_id
 
 ### GET
 
