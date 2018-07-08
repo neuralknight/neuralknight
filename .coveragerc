@@ -1,0 +1,9 @@
+[run]
+source = neuralknight
+omit =
+  neuralknight/test*
+  neuralknight/scripts/*
+  neuralknight/__init__.py
+  neuralknight/routes.py
+  neuralknight/security.py
+  neuralknight/**/__init__.py
