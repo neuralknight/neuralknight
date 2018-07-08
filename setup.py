@@ -9,6 +9,10 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
 requires = [
+    'requests',
+]
+
+dev_require = [
     'cornice',
     'plaster_pastedeploy',
     'psycopg2-binary',
@@ -35,7 +39,7 @@ tests_require = [
 
 setup(
     name='neuralknight',
-    version='1.0.0a1',
+    version='1.0.0a2',
     description='A Chess-playing AI',
     long_description=README + '\n\n' + CHANGES,
     author='David Snowberger, Shannon Tully, and Adam Grandquist',
@@ -58,6 +62,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     extras_require={
+        'dev': dev_require,
         'testing': tests_require,
     },
     python_requires='>=3.6',

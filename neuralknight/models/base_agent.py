@@ -146,7 +146,7 @@ class WeightAgent(BaseAgent):
             'OPP_QUEEN': (self.OPP_QUEEN_VAL, self.OPP_QUEEN_SQUARES),
             'OPP_KING': (self.OPP_KING_VAL, self.OPP_KING_SQUARES),
 
-            'EMPTY_SPACE': (20000, self.ZERO_SQUARES),
+            'EMPTY_SPACE': (50, self.ZERO_SQUARES),
         }
 
         # best_boards = [(root_value, root), ...]

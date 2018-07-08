@@ -82,6 +82,9 @@ class CLIAgent(Cmd):
             headers={
                 'content-type': 'application/json'
             })
+        print('> piece <col> <row>  # select piece')
+        print('> move <col> <row>   # move selected piece to')
+        print('> reset              # start a new game')
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
@@ -168,6 +171,9 @@ class CLIAgent(Cmd):
     def print_invalid(self, args):
         print_board(format_board(get_info(self.api_url, self.game_id)))
         print('invalid command:', args)
+        print('> piece <col> <row>  # select piece')
+        print('> move <col> <row>   # move selected piece to')
+        print('> reset              # start a new game')
 
     @staticmethod
     def parse(args):
@@ -180,7 +186,7 @@ class CLIAgent(Cmd):
         try:
             args[1] = 8 - int(args[1])
             if not (0 <= args[1] < 8):
-                print('out of range')
+                print('out of range row')
                 raise ValueError
         except ValueError:
             print('not int', args[1])
@@ -188,7 +194,7 @@ class CLIAgent(Cmd):
         try:
             args[0] = ord(args[0]) - ord('a')
             if not (0 <= args[1] < 8):
-                print('out of range')
+                print('out of range column')
                 raise ValueError
         except ValueError:
             print('not char', args[0])
