@@ -67,6 +67,9 @@ class CLIAgent(Cmd):
         requests.post(
             f'{ self.api_url }/issue-agent-lookahead',
             json={'id': self.game_id, 'player': 2, 'lookahead': 4})
+        print('> piece <col> <row>  # select piece')
+        print('> move <col> <row>   # move selected piece to')
+        print('> reset              # start a new game')
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def do_piece(self, arg_str):
@@ -134,12 +137,28 @@ class CLIAgent(Cmd):
             state = response.json()['state']
             if state == {'end': True}:
                 return print('game over')
+            response = requests.get(
+                f'{ self.api_url }/agent/{ self.user }',
+                headers={
+                    'content-type': 'application/json',
+                }
+            )
+            if response.status_code != 200:
+                return self.do_reset()
+            try:
+                if response.json()['state'] == {'end': True}:
+                    return self.do_reset()
+            except Exception:
+                return self.do_reset()
             board = state
         print_board(format_board(get_info(self.api_url, self.game_id)))
 
     def print_invalid(self, args):
         print_board(format_board(get_info(self.api_url, self.game_id)))
         print('invalid command:', args)
+        print('> piece <col> <row>  # select piece')
+        print('> move <col> <row>   # move selected piece to')
+        print('> reset              # start a new game')
 
     @staticmethod
     def parse(args):
@@ -152,7 +171,7 @@ class CLIAgent(Cmd):
         try:
             args[1] = 8 - int(args[1])
             if not (0 <= args[1] < 8):
-                print('out of range')
+                print('out of range row')
                 raise ValueError
         except ValueError:
             print('not int', args[1])
@@ -160,7 +179,7 @@ class CLIAgent(Cmd):
         try:
             args[0] = ord(args[0]) - ord('a')
             if not (0 <= args[1] < 8):
-                print('out of range')
+                print('out of range column')
                 raise ValueError
         except ValueError:
             print('not char', args[0])
@@ -185,6 +204,10 @@ def main(argv=sys.argv):
         api_url = f'http://localhost:{ port }'
         if len(argv) > 1:
             api_url = argv[1]
-        CLIAgent(api_url).cmdloop()
+        while True:
+            try:
+                CLIAgent(api_url).cmdloop()
+            except Exception:
+                pass
     except KeyboardInterrupt:
         print()
