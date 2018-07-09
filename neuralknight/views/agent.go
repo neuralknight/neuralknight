@@ -1,52 +1,52 @@
-from cornice import Service
-from pyramid.httpexceptions import HTTPBadRequest
+package neuralknightviews
 
-from ..models import Agent
-from ..models import UserAgent
+import (
+	"net/http"
+	"regexp"
 
-agents = Service(
-    name='issue_agent',
-    path='/issue-agent',
-    description='Create agent')
-agent_states = Service(
-    name='game_states',
-    path='/agent/{agent_id}',
-    description='Agent states')
+	"github.com/neuralknight/neuralknight/neuralknight/models"
+	"github.com/satori/go.uuid"
+)
 
+var routerV1Agents = regexp.MustCompile("^api/v1.0/agents/?$")
+var routerV1AgentsID = regexp.MustCompile("^api/v1.0/agents/[\\w-]+/?$")
+var extractV1AgentsID = regexp.MustCompile("(?:/)[\\w-]+(?:/?)$")
 
-@agents.post()
-def issue_agent_view(request):
-    try:
-        json = dict(request.json)
-        if json.pop('user', False):
-            return {'agent_id': UserAgent(**json).agent_id}
-        return {'agent_id': Agent(**json).agent_id}
-    except Exception:
-        pass
-    raise HTTPBadRequest
+// ServeAPIAgentsHTTP neuralknightviews.
+func ServeAPIAgentsHTTP(w http.ResponseWriter, r *http.Request) {
+	if routerV1Agents.MatchString(r.URL.Path) {
+		serveAPIAgentsListHTTP(w, r)
+		return
+	}
+	if routerV1AgentsID.MatchString(r.URL.Path) {
+		serveAPIAgentsIDHTTP(w, r)
+		return
+	}
+	http.NotFound(w, r)
+}
 
+func serveAPIAgentsListHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		neuralknightmodels.MakeAgent(w, r)
+		return
+	}
+	http.NotFound(w, r)
+}
 
-@agent_states.get()
-def get_agent_view(request):
-    agent_id = request.matchdict['agent_id']
-    try:
-        agent = Agent.get_agent(agent_id)
-    except KeyError:
-        return {'end': True, 'state': {'end': True}}
-
-    return {'state': agent.get_state()}
-
-
-@agent_states.put()
-def put_agent_view(request):
-    agent_id = request.matchdict['agent_id']
-    try:
-        agent = Agent.get_agent(agent_id)
-    except KeyError:
-        return {'end': True, 'state': {'end': True}}
-
-    if request.json.get('end', False):
-        return agent.close()
-    if isinstance(agent, UserAgent):
-        return agent.play_round(request.json.get('move', None))
-    return agent.play_round()
+func serveAPIAgentsIDHTTP(w http.ResponseWriter, r *http.Request) {
+	agentID, err := uuid.FromString(extractV1AgentsID.FindString(r.URL.Path))
+	if err != nil {
+		panic(err)
+	}
+	agent := neuralknightmodels.AgentPool[agentID]
+	switch r.Method {
+	case http.MethodGet:
+		agent.GetState(w, r)
+		return
+	case http.MethodPut:
+		agent.PlayRound(w, r)
+		return
+	}
+	http.NotFound(w, r)
+}

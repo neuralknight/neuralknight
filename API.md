@@ -13,7 +13,7 @@ Expected parameter:
 Optional parameter:
   "user" - If this parameter is passed (with any value), a user agent, as opposed to an AI agent, is returned.
 Response:
-  {'agent_id': *agent_id*}
+  {'AgentID': *AgentID*}
 
 ## /issue-agent-lookahead
 
@@ -25,7 +25,7 @@ Expected parameters:
   "id" - The id of a game the agent is to join.
   "lookahead" - The number of game states - ply - the agent should try to forecast
 Response:
-  {'agent_id': *agent_id*}
+  {'AgentID': *AgentID*}
 
 ## /agent
 

@@ -1,27 +1,63 @@
-from operator import methodcaller
+package neuralknightmodels
 
-from .agent import Agent
+import (
+	"encoding/hex"
+	"encoding/json"
+	"io"
+	"net/http"
+)
 
+// UserAgent Human Agent
+type userAgent struct {
+	simpleAgent
+}
 
-class UserAgent(Agent):
-    '''Human Agent'''
+type userMoveMessage struct {
+	move [2][2]int
+}
 
-    def play_round(self, move):
-        if move is None:
-            return
-        proposal = self.get_state()
-        if isinstance(proposal, dict):
-            return
-        proposal = list(map(list, map(bytes.fromhex, proposal)))
-        proposal[move[1][0]][move[1][1]] = proposal[move[0][0]][move[0][1]]
-        proposal[move[0][0]][move[0][1]] = 0
-        return self.put_board(tuple(map(bytes, proposal)))
+func getMove(r io.Reader) [2][2]int {
+	var message userMoveMessage
+	err := json.NewDecoder(r).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	return message.move
+}
 
-    def put_board(self, board):
-        '''Sends move selection to board state manager'''
-        data = {'state': tuple(map(methodcaller('hex'), board))}
-        data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        self.game_over = data.get('end', False)
-        if self.game_over:
-            return self.close()
-        return data
+// PlayRound Play a game round
+func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	move := getMove(r.Body)
+	proposal := agent.getState()
+	if proposal.end {
+		json.NewEncoder(w).Encode(proposal)
+		return
+	}
+	var out board
+	for i, r := range proposal.state {
+		row, err := hex.DecodeString(r)
+		if err != nil {
+			panic(err)
+		}
+		if len(row) != 8 {
+			panic(row)
+		}
+		copy(out[i][:], row)
+	}
+	out[move[1][0]][move[1][1]] = out[move[0][0]][move[0][1]]
+	out[move[0][0]][move[0][1]] = 0
+	resp := agent.putBoard(out)
+	defer resp.Body.Close()
+	var message stateMessage
+	err := json.NewDecoder(resp.Body).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	agent.gameOver = message.end
+	if agent.gameOver {
+		agent.close(w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(message)
+}

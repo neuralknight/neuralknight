@@ -1,111 +1,264 @@
-import os
-import requests
+package neuralknightmodels
 
-from operator import methodcaller
-from uuid import uuid4
+import (
+	"bytes"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"os"
 
-from . import base_agent
+	"github.com/satori/go.uuid"
+)
 
-import neuralknight
+// Agent agent.
+type Agent interface {
+	PlayRound(w http.ResponseWriter, r *http.Request)
+	GetState(w http.ResponseWriter, r *http.Request)
+}
 
+// Slayer of chess
+type simpleAgent struct {
+	apiURL           url.URL
+	port             int
+	agentID          uuid.UUID
+	delegate         baseAgent
+	gameID           uuid.UUID
+	gameOver         bool
+	lookahead        int
+	player           int
+	requestCount     int
+	requestCountData int
+}
 
-class Agent:
-    """
-    Slayer of chess
-    """
+// AgentPool agent.
+var AgentPool = make(map[uuid.UUID]Agent)
 
-    AGENT_POOL = {}
-    if os.environ.get('PORT', ''):
-        PORT = os.environ['PORT']
-    else:
-        PORT = 8080
-    API_URL = 'http://localhost:{}'.format(PORT)
+type agentCreateResponse struct {
+	AgentID string
+}
 
-    @classmethod
-    def get_agent(cls, _id):
-        """
-        Provide game matching id.
-        """
-        return cls.AGENT_POOL[_id]
+type agentCreateMessage struct {
+	user      bool
+	gameID    string
+	player    int
+	lookahead int
+	delegate  string
+}
 
-    def __init__(
-            self,
-            game_id, player, lookahead=1,
-            delegate=base_agent.Agent, *args, **kwargs):
-        if isinstance(delegate, str):
-            delegate = base_agent.AGENTS.get(delegate, base_agent.Agent)
-        self.agent_id = str(uuid4())
-        self.AGENT_POOL[self.agent_id] = self
-        self.delegate = delegate(*args, **kwargs)
-        self.game_id = game_id
-        self.game_over = False
-        self.lookahead = lookahead
-        self.player = player
-        self.request_count = 0
-        self.request_count_data = 0
-        self.join_game()
+// MakeAgent agent.
+func MakeAgent(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var agent simpleAgent
+	var message agentCreateMessage
+	json.NewDecoder(r.Body).Decode(message)
+	gameID, err := uuid.FromString(message.gameID)
+	if err != nil {
+		panic(err)
+	}
+	var port = os.Getenv("PORT")
+	n, err := fmt.Sscanf(port, "%d", &agent.port)
+	if err != nil || n == 0 {
+		agent.port = 8080
+	}
+	agent.agentID = uuid.Must(uuid.NewV4())
+	agent.gameID = gameID
+	agent.player = message.player
+	if message.user {
+		user := userAgent{agent}
+		AgentPool[user.agentID] = user
+		resp := user.joinGame()
+		defer resp.Body.Close()
+		json.NewEncoder(w).Encode(agentCreateResponse{user.agentID.String()})
+		return
+	}
+	agent.delegate = agents[message.delegate]
+	agent.lookahead = message.lookahead
+	AgentPool[agent.agentID] = agent
+	resp := agent.joinGame()
+	defer resp.Body.Close()
+	json.NewEncoder(w).Encode(agentCreateResponse{agent.agentID.String()})
+}
 
-    def request(self, method, resource, *args, json=None, **kwargs):
-        if neuralknight.testapp:
-            if method == 'POST':
-                return neuralknight.testapp.post_json(resource, json).json
-            if method == 'PUT':
-                return neuralknight.testapp.put_json(resource, json).json
-            if method == 'GET':
-                return neuralknight.testapp.get(resource, json).json
-        if method == 'POST':
-            return requests.post(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
-        if method == 'PUT':
-            return requests.put(f'{ self.API_URL }{ resource }', json=json, **kwargs).json()
-        if method == 'GET':
-            return requests.get(f'{ self.API_URL }{ resource }', data=json, **kwargs).json()
+// GetAgent agent.
+func getAgent(agentID uuid.UUID) Agent {
+	agent, err := AgentPool[agentID]
+	if !err {
+		panic(err)
+	}
+	return agent
+}
 
-    def close(self):
-        self.AGENT_POOL.pop(self.agent_id, None)
-        return {}
+// Close agent.
+func (agent simpleAgent) close(w http.ResponseWriter, r *http.Request) {
+	delete(AgentPool, agent.agentID)
+}
 
-    def get_boards(self, cursor):
-        '''Retrieves potential board states'''
-        params = {'lookahead': self.lookahead}
-        if cursor:
-            params['cursor'] = cursor
-        return self.request('GET', '/v1.0/games/{}/states'.format(self.game_id), params=params)
+// getBoards agent.
+func (agent simpleAgent) getBoards(cursor *uuid.UUID) *http.Response {
+	params := url.Values{"lookahead": {}}
+	if cursor != nil {
+		params.Add("cursor", cursor.String())
+	}
+	path, err := url.Parse("v1.0/games/" + agent.gameID.String() + "/states?" + params.Encode())
+	if err != nil {
+		panic(err)
+	}
+	apiURL := agent.apiURL.ResolveReference(path)
+	resp, err := http.Get(apiURL.RequestURI())
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
 
-    def get_boards_cursor(self):
-        cursor = True
-        while cursor:
-            board_options = self.get_boards(cursor)
-            cursor = board_options['cursor']
-            self.request_count += 1
-            self.request_count_data += len(cursor)
-            yield tuple(map(
-                lambda boards: tuple(map(
-                    lambda board: tuple(map(bytes.fromhex, board)),
-                    boards)),
-                board_options['boards']))
+type cursorMessage struct {
+	cursor string
+	boards [][8]string
+}
 
-    def get_state(self):
-        '''Gets current board state'''
-        if self.game_over:
-            return {'end': True}
-        data = self.request('GET', f'/v1.0/games/{ self.game_id }')
-        return data['state']
+func (agent simpleAgent) getBoardsCursorOne(boards chan<- board, cursor *uuid.UUID) *uuid.UUID {
+	boardOptions := agent.getBoards(cursor)
+	defer boardOptions.Body.Close()
+	var message cursorMessage
+	err := json.NewDecoder(boardOptions.Body).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	for _, b := range message.boards {
+		var out board
+		for i, r := range b {
+			row, err := hex.DecodeString(r)
+			if err != nil {
+				panic(err)
+			}
+			if len(row) != 8 {
+				panic(row)
+			}
+			copy(out[i][:], row)
+		}
+		boards <- out
+	}
+	if message.cursor != "" {
+		cur, err := uuid.FromString(message.cursor)
+		if err != nil {
+			panic(err)
+		}
+		return &cur
+	}
+	return nil
+}
 
-    def join_game(self):
-        self.request('POST', f'/v1.0/games/{ self.game_id }', json={'id': self.agent_id})
+// getBoardsCursor agent.
+func (agent simpleAgent) getBoardsCursor() <-chan board {
+	boards := make(chan board)
+	go func() {
+		cursor := agent.getBoardsCursorOne(boards, nil)
+		for cursor != nil {
+			cursor = agent.getBoardsCursorOne(boards, cursor)
+		}
+	}()
+	return boards
+}
 
-    def play_round(self):
-        '''Play a game round'''
-        print(self.request_count, self.request_count_data)
-        return self.put_board(self.delegate.play_round(self.get_boards_cursor()))
+// stateMessage models.
+type stateMessage struct {
+	end, invalid bool
+	state        [8]string
+}
 
-    def put_board(self, board):
-        '''Sends move selection to board state manager'''
-        data = {'state': tuple(map(methodcaller('hex'), board))}
-        data = self.request('PUT', f'/v1.0/games/{ self.game_id }', json=data)
-        self.game_over = data.get('end', False)
-        if self.game_over:
-            return self.close()
-        if data.get('invalid', False):
-            return self.play_round()
-        return data
+// GetState Gets current board state.
+func (agent simpleAgent) GetState(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	message := agent.getState()
+	err := json.NewEncoder(w).Encode(message)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// GetState Gets current board state.
+func (agent simpleAgent) getState() stateMessage {
+	if agent.gameOver {
+		var message stateMessage
+		message.end = true
+		return message
+	}
+	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
+	if err != nil {
+		panic(err)
+	}
+	apiURL := agent.apiURL.ResolveReference(path)
+	resp, err := http.Get(apiURL.RequestURI())
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	var message stateMessage
+	err = json.NewDecoder(resp.Body).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	return message
+}
+
+func (agent simpleAgent) joinGame() *http.Response {
+	var json = make(map[string]uuid.UUID, 1)
+	json["id"] = agent.agentID
+	resp, err := http.PostForm(agent.apiURL.EscapedPath(), url.Values{"id": {agent.agentID.String()}})
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
+
+// PlayRound Play a game round
+func (agent simpleAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
+	println(agent.requestCount, agent.requestCountData)
+	resp := agent.putBoard(agent.delegate.playRound(agent.getBoardsCursor()))
+	defer resp.Body.Close()
+	var message stateMessage
+	err := json.NewDecoder(resp.Body).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	agent.gameOver = message.end
+	if agent.gameOver {
+		agent.close(w, r)
+	}
+	if message.invalid {
+		agent.PlayRound(w, r)
+		return
+	}
+}
+
+type playMessage struct{ state [8]string }
+
+// Sends move selection to board state manager
+func (agent simpleAgent) putBoard(board board) *http.Response {
+	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
+	if err != nil {
+		panic(err)
+	}
+	apiURL := agent.apiURL.ResolveReference(path)
+	var message playMessage
+	for i, r := range board {
+		message.state[i] = hex.EncodeToString(r[:])
+	}
+	data, err := json.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	req, err := http.NewRequest(http.MethodPut, apiURL.RequestURI(), bytes.NewReader(data))
+	if err != nil {
+		panic(err)
+	}
+	defer req.Body.Close()
+	var client http.Client
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
