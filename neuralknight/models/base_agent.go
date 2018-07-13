@@ -43,6 +43,7 @@ func (agent coreBaseAgent) evaluateBoards(boards <-chan board) <-chan scoredBoar
 				out <- scoredBoard{0, b}
 			}
 		}
+		close(out)
 	}()
 	return out
 }
@@ -73,6 +74,7 @@ func (agent coreBaseAgent) playRound(boards <-chan board) board {
 		for _, b := range maxBoards {
 			maxBoard <- b
 		}
+		close(maxBoard)
 	}()
 	out := <-maxBoard
 	for b := range maxBoard {
@@ -240,6 +242,7 @@ func (agent weightAgent) evaluateBoards(boards <-chan board) <-chan scoredBoard 
 		for _, b := range maxBoards {
 			maxBoard <- scoredBoard{max, b}
 		}
+		close(maxBoard)
 	}()
 
 	return maxBoard

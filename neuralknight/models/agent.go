@@ -158,6 +158,7 @@ func (agent simpleAgent) getBoardsCursor() <-chan board {
 		for cursor != nil {
 			cursor = agent.getBoardsCursorOne(boards, cursor)
 		}
+		close(boards)
 	}()
 	return boards
 }

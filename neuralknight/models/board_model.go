@@ -1,5 +1,7 @@
 package neuralknightmodels
 
+import "math"
+
 // """
 // Chess state handling model.
 // """
@@ -18,22 +20,19 @@ package neuralknightmodels
 //
 
 // InvalidMove error.
-type InvalidMove error
+type InvalidMove struct{}
 
 type cursorDelegate struct{}
 
 // class CursorDelegate:
 //     def __init__(self):
 //         self.cursors = {}
-//
 
+// Retrieve iterable for cursor.
 func (cursor cursorDelegate) getCursor() {
 }
 
 //     def get_cursor(self, board, cursor, lookahead, complete):
-//         """
-//         Retrieve iterable for cursor.
-//         """
 //         if cursor in self.cursors:
 //             return self.cursors.pop(cursor)
 //         if complete:
@@ -46,15 +45,12 @@ func (cursor cursorDelegate) getCursor() {
 //         except StopIteration:
 //             pass
 //         return iter(()), iter(())
-//
 
+// Retrieve REST cursor slice.
 func (cursor cursorDelegate) sliceCursorV1() {
 }
 
 //     def slice_cursor_v1(self, board, cursor, lookahead, complete):
-//         """
-//         Retrieve REST cursor slice.
-//         """
 //         it, cur = self.get_cursor(board, cursor, lookahead, complete)
 //         slen = (900 // lookahead) if complete else 450
 //         boards = tuple(islice(it, slen))
@@ -66,53 +62,47 @@ func (cursor cursorDelegate) sliceCursorV1() {
 //         cursor = str(uuid4())
 //         self.cursors[cursor] = (it, cur)
 //         return {"cursor": cursor, "boards": boards}
-//
-//
 
 // Validate a move against board bounds.
-func isOnBoard(posX int, posY int, move [2]int) bool {
+func isOnBoard(posX int8, posY int8, move [2]int8) bool {
 	posX = posX + move[0]
 	posY = posY + move[1]
 	return 0 <= posX && posX < 8 && 0 <= posY && posY < 8
 }
 
 // Validate a move against ending location.
-func validateEnding(board board, posX int, posY int, move [2]int) bool {
-	return false
+func validateEnding(board board, posX int8, posY int8, move [2]int8) bool {
+	return !activePiece(board[posY+move[1]][posX+move[0]])
 }
 
-// @lru_cache()
-// def validate_ending(board, posX, posY, move):
-//     """
-//     """
-//     return not active_piece(
-//         board[posY + move[1]][posX + move[0]])
-//
-//
-// @lru_cache()
-// def validate_move(board, posX, posY, move):
-//     """
-//     Validate clear path along move.
-//     """
-//     return (
-//         validate_ending(board, posX, posY, move)
-//         and all(
-//             map(
-//                 lambda _range:
-//                     not board
-//                     [posY + unit(move[1]) * _range]
-//                     [posX + unit(move[0]) * _range],
-//                 range(1, max(abs(move[0]), abs(move[1]))))))
-//
-//
-// @lru_cache()
+// Validate clear path along move.
+func validateMove(board board, posX int8, posY int8, move [2]int8) bool {
+	limit := int8(math.Max(math.Abs(float64(move[0])), math.Abs(float64(move[1]))))
+	x := unit(move[0])
+	y := unit(move[1])
+	var i int8
+	for i = 1; i < limit; i++ {
+		if board[posY+y*i][posX+x*i] != 0 {
+			return false
+		}
+	}
+	return validateEnding(board, posX, posY, move)
+}
+
+func validateTrue(board, int8, int8, [2]int8) bool { return true }
+
+// Get final validation function for piece.
+func validationForPiece(piece uint8) func(board, int8, int8, [2]int8) bool {
+	switch piece & 0xE / 2 {
+	case 1, 5, 6:
+		return validateMove
+	case 2, 3:
+		return validateEnding
+	}
+	return validateTrue
+}
+
 // def validation_for_piece(board, piece, posX, posY):
-//     """
-//     Get final validation function for piece.
-//     """
-//     def validate_true(*args):
-//         return True
-//
 //     return partial((
 //         validate_true,  # No piece
 //         partial(validate_move, board),  # Bishop
@@ -122,241 +112,303 @@ func validateEnding(board board, posX int, posY int, move [2]int) bool {
 //         partial(validate_move, board),  # Queen
 //         partial(validate_move, board)  # Rook
 //         )[(piece & 0xE) // 2], posX, posY)
-//
-//
-// def moves_for_pawn(board, piece, posX, posY):
-//     """
-//     Get all possible moves for pawn.
-//     """
-//     if (
-//             is_on_board(posX, posY, (0, -1))
-//             and (not board[posY - 1][posX])):
-//         yield (0, -1)
-//     if (
-//             posY == 6
-//             and (not board[posY - 1][posX])
-//             and (not board[posY - 2][posX])):
-//         yield (0, -2)
-//     if (
-//             is_on_board(posX, posY, (-1, -1))
-//             and inactive_piece(board[posY - 1][posX - 1])):
-//         yield (-1, -1)
-//     if (
-//             is_on_board(posX, posY, (1, -1))
-//             and inactive_piece(board[posY - 1][posX + 1])):
-//         yield (1, -1)
-//     if piece & 0x10:
-//         yield ()  # en passant
-//
-//
-// def moves_for_king(board, piece, posX, posY):
-//     """
-//     Get castling.
-//     """
-//     return
-//     if piece & 0x10:
-//         if (board[posY][0] & 0x10) and (board[posY][0] & 1) and (board[posY][0] & 0xE) == ROOK:
-//             yield (-2, 0)
-//             yield (-3, 0)
-//         if (board[posY][7] & 0x10) and (board[posY][7] & 1) and (board[posY][7] & 0xE) == ROOK:
-//             yield (2, 0)
-//
-//
-// @lru_cache()
-// def moves_for_piece(board, piece, posX, posY):
-//     """
-//     Get all possible moves for piece type.
-//     """
-//     return tuple(filter(partial(is_on_board, posX, posY), (
-//         (),  # No piece
-//         BISHOP_MOVES,
-//         chain(KING_MOVES, moves_for_king(board, piece, posX, posY)),
-//         KNIGHT_MOVES,
-//         moves_for_pawn(board, piece, posX, posY),
-//         QUEEN_MOVES,
-//         ROOK_MOVES
-//       )[(piece & 0xE) // 2]))
-//
-//
-// @lru_cache()
-// def valid_moves_for_piece(board, piece, posX, posY):
-//     """
-//     Get all valid moves for piece type.
-//     """
-//     return tuple(filter(
-//         validation_for_piece(board, piece, posX, posY),
-//         moves_for_piece(board, piece, posX, posY)))
-//
-//
-// @lru_cache()
-// def lookahead_boards_for_piece(board, check, piece, posX, posY):
-//     """
-//     Get all future board states.
-//     """
-//     def mutate_board(move):
-//         new_state = list(map(list, board))
-//         new_state[posY][posX] = 0
-//         if piece == 9 and posY == 1:
-//             for promote in (BISHOP, KNIGHT, QUEEN, ROOK):
-//                 new_state[posY + move[1]][posX + move[0]] = promote | 1
-//                 yield swap(tuple(map(bytes, new_state)))
-//         else:
-//             new_state[posY + move[1]][posX + move[0]] = piece & 0xF
-//             yield swap(tuple(map(bytes, new_state)))
-//
-//     _valid_moves_for_piece = valid_moves_for_piece(board, piece, posX, posY)
-//     if check:
-//         _valid_moves_for_piece = filter(
-//             lambda move: board[posY + move[1]][posX + move[0]] & 0xE == KING,
-//             _valid_moves_for_piece)
-//     return tuple(chain.from_iterable(map(mutate_board, _valid_moves_for_piece)))
-//
-//
-// def lookahead_check_for_piece(board, piece, posX, posY):
-//     """
-//     Get possiblity of check in all future board states.
-//     """
-//     return map(
-//         lambda move: (board[posY + move[1]][posX + move[0]] & 0xF) == KING,
-//         valid_moves_for_piece(board, piece, posX, posY))
-//
-//
-// @lru_cache()
-// def lookahead_check(board):
-//     return any(chain.from_iterable(
-//         starmap(partial(lookahead_check_for_piece, board), active_pieces(board))))
-//
-//
-// @lru_cache()
-// def active_piece(piece):
-//     """
-//     Validate piece as active.
-//     """
-//     return piece & 1 and piece & 0xE
-//
-//
-// @lru_cache()
-// def inactive_piece(piece):
-//     """
-//     Validate piece as inactive.
-//     """
-//     return (not piece & 1) and piece & 0xE
-//
-//
-// @lru_cache()
-// def active_pieces(board):
-//     """
-//     Get all pieces for current player.
-//     """
-//     return tuple(chain.from_iterable(
-//         map(
-//             lambda posY, row: filter(None, map(
-//                 lambda posX, piece:
-//                     (piece, posX, posY)
-//                     if active_piece(piece) else
-//                     None,
-//                 count(), row)),
-//             count(), board)))
-//
-//
-// @lru_cache()
-// def swap(board):
-//     """
-//     Rotate active player.
-//     """
-//     return tuple(list(map(
-//         lambda row: bytes(map(
-//             lambda pp:
-//                 (pp ^ 1) if pp else 0,
-//             row))[::-1],
-//         board))[::-1])
-//
-//
-// def make_tuple(*args):
-//     return args
-//
-//
-// class BoardModel:
-//     """
-//     Chess board model.
-//     """
-//
-//     def __init__(self, board=None):
-//         """
-//         Set up board.
-//         """
-//         self.board = board or INITIAL_BOARD
-//         self.move_count = 1
-//         self.moves_since_pawn = 0
-//
-//     def __bool__(self):
-//         """
-//         Ensure active player king on board.
-//         """
-//         return self.moves_since_pawn >= 50 or self.has_kings()
-//
-//     def __contains__(self, piece):
-//         """
-//         Ensure piece on board.
-//         """
-//         return any(map(lambda row: piece in row or (piece | 0x10) in row, self.board))
-//
-//     def swap(self):
-//         """
-//         Rotate active player.
-//         """
-//         return swap(self.board)
-//
-//     def validate_mutation(self, mutation, state):
-//         if len(mutation) != 2:
-//             raise InvalidMove
-//         if mutation[0][3] == 0:
-//             old, new = mutation
-//         elif mutation[1][3] == 0:
-//             new, old = mutation
-//         else:
-//             raise InvalidMove
-//         new_posX, new_posY, new_prev_piece, new_next_piece = new
-//         new_next_piece = new_next_piece & 0xF
-//         if active_piece(new_prev_piece):
-//             raise InvalidMove
-//         posX, posY, moved_piece, _ = old
-//         piece = moved_piece & 0xF
-//         if not active_piece(piece):
-//             raise InvalidMove
-//         if piece != new_next_piece:
-//             if not (piece == 9 and new_posY == 0):
-//                 raise InvalidMove
-//         move = (new_posX - posX, new_posY - posY)
-//         if move not in valid_moves_for_piece(self.board, moved_piece, posX, posY):
-//             raise InvalidMove
-//         if piece == 9:
-//             self.moves_since_pawn = 0
-//             if new_posY == 0 and new_next_piece == 9:
-//                 state = list(map(list, state))
-//                 state[new_posY][new_posX] = QUEEN | 1
-//                 return swap(tuple(map(bytes, state)))
-//         return swap(state)
-//
-//     def update(self, state):
-//         """
-//         Validate and return new board state.
-//         """
-//         mutation = tuple(filter(None, chain.from_iterable(map(
-//             lambda posY, old_row, new_row: map(
-//                 lambda posX, old_piece, new_piece:
-//                     None
-//                     if old_piece == new_piece else
-//                     (posX, posY, old_piece, new_piece),
-//                 count(),
-//                 old_row, new_row),
-//             count(),
-//             self.board, state))))
-//         board = BoardModel(self.validate_mutation(mutation, state))
-//         board.move_count = self.move_count + 1
-//         board.moves_since_pawn = self.moves_since_pawn + 1
-//         return board
-//
+
+// Get all possible moves for pawn.
+func movesForPawn(board board, piece uint8, posX int8, posY int8) <-chan [2]int8 {
+	out := make(chan [2]int8)
+	go func() {
+		if isOnBoard(posX, posY, [2]int8{0, -1}) && board[posY-1][posX] == 0 {
+			out <- [2]int8{0, -1}
+		}
+		if posY == 6 && board[5][posX] == 0 && board[4][posX] == 0 {
+			out <- [2]int8{0, -2}
+		}
+		if isOnBoard(posX, posY, [2]int8{-1, -1}) && inactivePiece(board[posY-1][posX-1]) {
+			out <- [2]int8{-1, -1}
+		}
+		if isOnBoard(posX, posY, [2]int8{1, -1}) && inactivePiece(board[posY-1][posX+1]) {
+			out <- [2]int8{1, -1}
+		}
+		if piece&0x10 != 0 {
+		}
+		close(out)
+	}()
+	return out
+}
+
+// Get castling.
+func movesForKing(board board, piece uint8, posX int8, posY int8) <-chan [2]int8 {
+	out := make(chan [2]int8)
+	go func() {
+		if piece&0x10 != 0 {
+			leftPiece := board[posY][0]
+			if leftPiece&0x10 != 0 && leftPiece&0x1 != 0 && leftPiece&0xE == ROOK {
+				out <- [2]int8{-2}
+				out <- [2]int8{-3}
+			}
+			rightPiece := board[posY][7]
+			if rightPiece&0x10 != 0 && rightPiece&0x1 != 0 && rightPiece&0xE == ROOK {
+				out <- [2]int8{2}
+			}
+		}
+		close(out)
+	}()
+	return out
+}
+
+// Get all possible moves for piece type.
+func movesForPiece(board board, piece uint8, posX int8, posY int8) <-chan [2]int8 {
+	out := make(chan [2]int8)
+	go func() {
+		switch piece & 0xE / 2 {
+		case 1:
+			for _, m := range bishopMoves {
+				out <- m
+			}
+		case 2:
+			for _, m := range kingMoves {
+				out <- m
+			}
+			for m := range movesForKing(board, piece, posX, posY) {
+				out <- m
+			}
+		case 3:
+			for _, m := range knightMoves {
+				out <- m
+			}
+		case 4:
+			for m := range movesForPawn(board, piece, posX, posY) {
+				out <- m
+			}
+		case 5:
+			for _, m := range queenMoves {
+				out <- m
+			}
+		case 6:
+			for _, m := range rookMoves {
+				out <- m
+			}
+		}
+		close(out)
+	}()
+	return out
+}
+
+// Get all valid moves for piece type.
+func validMovesForPiece(board board, piece uint8, posX int8, posY int8) <-chan [2]int8 {
+	out := make(chan [2]int8)
+	go func() {
+		filter := validationForPiece(piece)
+		for m := range movesForPiece(board, piece, posX, posY) {
+			if filter(board, posY, posX, m) {
+				out <- m
+			}
+		}
+		close(out)
+	}()
+	return out
+}
+
+// Get all future board states.
+func lookaheadBoardsForPiece(b board, check bool, piece uint8, posX int8, posY int8) <-chan board {
+	out := make(chan board)
+
+	go func() {
+		mutateBoard := func(move [2]int8) {
+			newState := b
+			newState[posY][posX] = 0
+			if piece == 9 && posY == 1 {
+				for _, promote := range [4]uint8{BISHOP, KNIGHT, QUEEN, ROOK} {
+					newState[posY+move[1]][posX+move[0]] = promote | 1
+					out <- swap(newState)
+				}
+			} else {
+				newState[posY+move[1]][posX+move[0]] = piece & 0xF
+				out <- swap(newState)
+			}
+		}
+
+		validMovesForPiece := validMovesForPiece(b, piece, posX, posY)
+		if check {
+			for move := range validMovesForPiece {
+				if b[posY+move[1]][posX+move[0]]&0xF == KING {
+					mutateBoard(move)
+				}
+			}
+		} else {
+			for move := range validMovesForPiece {
+				mutateBoard(move)
+			}
+		}
+		close(out)
+	}()
+	return out
+}
+
+// Get possiblity of check in all future board states.
+func lookaheadCheckForPiece(board board, piece uint8, posX int8, posY int8) bool {
+	for move := range validMovesForPiece(board, piece, posX, posY) {
+		if board[posY+move[1]][posX+move[0]]&0xF == KING {
+			return true
+		}
+	}
+	return false
+}
+
+// Get possiblity of check in all future board states.
+func lookaheadCheck(board board) bool {
+	for piece := range activePieces(board) {
+		if lookaheadCheckForPiece(board, piece.piece, piece.posX, piece.posY) {
+			return true
+		}
+	}
+	return false
+}
+
+// Validate piece as active.
+func activePiece(piece uint8) bool {
+	return piece&1 != 0 && piece&0xE != 0
+}
+
+// Validate piece as inactive.
+func inactivePiece(piece uint8) bool {
+	return piece&1 == 0 && piece&0xE != 0
+}
+
+// Piece with position.
+type Piece struct {
+	piece uint8
+	posX  int8
+	posY  int8
+}
+
+// Get all pieces for current player.
+func activePieces(board board) <-chan Piece {
+	out := make(chan Piece)
+	go func() {
+		for posY, r := range board {
+			for posX, piece := range r {
+				if activePiece(piece) {
+					out <- Piece{piece, int8(posX), int8(posY)}
+				}
+			}
+		}
+	}()
+	return out
+}
+
+// Rotate active player.
+func swap(b board) board {
+	var out board
+	for posY, r := range b {
+		for posX, piece := range r {
+			if piece != 0 {
+				out[7-posY][7-posX] = piece ^ 1
+			}
+		}
+	}
+	return out
+}
+
+// Chess board model.
+type boardModel struct {
+	board
+	moveCount      int
+	movesSincePawn int
+}
+
+// Ensure active player king on board.
+func (board boardModel) active() bool {
+	return board.movesSincePawn < 50 || board.hasKings()
+}
+
+// Ensure piece on board.
+func (board boardModel) contains(piece uint8) bool {
+	for _, r := range board.board {
+		for _, p := range r {
+			if p == piece&0xF {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Rotate active player.
+func (board boardModel) swap() board {
+	return swap(board.board)
+}
+
+type mutation struct {
+	posX      int8
+	posY      int8
+	prevPiece uint8
+	nextPiece uint8
+}
+
+func (board boardModel) validateMutation(mutation []mutation, state board) board {
+	if len(mutation) != 2 {
+		panic(InvalidMove{})
+	}
+	old := mutation[0]
+	new := mutation[1]
+	if mutation[0].prevPiece == 0 {
+	} else if mutation[1].prevPiece == 0 {
+		temp := old
+		old = new
+		new = temp
+	} else {
+		panic(InvalidMove{})
+	}
+	new.nextPiece = new.nextPiece & 0xF
+	if activePiece(new.prevPiece) {
+		panic(InvalidMove{})
+	}
+	old.prevPiece = old.prevPiece & 0xF
+	if !activePiece(old.prevPiece) {
+		panic(InvalidMove{})
+	}
+	if old.prevPiece != new.nextPiece {
+		if old.prevPiece != 9 || new.posY != 0 {
+			panic(InvalidMove{})
+		}
+	}
+	move := [2]int8{new.posX - old.posX, new.posY - old.posY}
+	valid := false
+	for m := range validMovesForPiece(board.board, old.prevPiece, old.posX, old.posY) {
+		if move[0] == m[0] && move[1] == m[1] {
+			valid = true
+		}
+	}
+	if !valid {
+		panic(InvalidMove{})
+	}
+	if old.prevPiece == 9 {
+		board.movesSincePawn = 0
+		if new.posY == 0 && new.nextPiece == 9 {
+			state[new.posY][new.posX] = QUEEN | 1
+		}
+	}
+	return swap(state)
+}
+
+// Validate and return new board state.
+func (board boardModel) update(state board) boardModel {
+	m := make([]mutation, 0)
+	for posY, r := range board.board {
+		for posX, piece := range r {
+			if piece != state[posY][posX] {
+				m = append(m, mutation{int8(posX), int8(posY), piece, state[posY][posX]})
+			}
+		}
+	}
+	var next boardModel
+	next.board = board.validateMutation(m, state)
+	next.moveCount = board.moveCount + 1
+	next.movesSincePawn = board.movesSincePawn + 1
+	return next
+}
+
 //     def lookahead_boards_for_board(self, check):
 //         return chain.from_iterable(
 //             starmap(
@@ -434,9 +486,8 @@ func validateEnding(board board, posX int, posY int, move [2]int) bool {
 //                     lambda t: (board if active else swap(board),) + tuple(t),
 //                     BoardModel(board)._lookahead_boards(n - 1, not active)),
 //                 self._valid_root_lookahead_boards(check)))
-//
-//     def has_kings(self):
-//         """
-//         Ensure active kings on board.
-//         """
-//         return (KING | 1) in self and KING in self
+
+// Ensure active kings on board.
+func (board boardModel) hasKings() bool {
+	return board.contains(KING|1) && board.contains(KING)
+}

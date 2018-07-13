@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func unit(i int) int {
+func unit(i int8) int8 {
 	if i < 0 {
 		return -1
 	}
