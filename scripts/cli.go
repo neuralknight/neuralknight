@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -67,10 +68,16 @@ func printBoard(board []string) {
 	}
 }
 
+func printCmds() {
+	println("> piece <col> <row>  # select piece")
+	println("> move <col> <row>   # move selected piece to")
+	println("> reset              # start a new game")
+}
+
 // CLIAgent agent.
 type CLIAgent struct {
 	apiURL url.URL
-	piece  *string
+	piece  *[2]int
 	gameID uuid.UUID
 	user   uuid.UUID
 }
@@ -108,9 +115,16 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		panic(err)
 	}
-	var message neuralknightmodels.AgentCreateMessage
 	apiURL = agent.apiURL.ResolveReference(path)
-	resp, err = http.Post(apiURL.RequestURI(), "")
+	var messageCreate neuralknightmodels.AgentCreateMessage
+	messageCreate.GameID = agent.gameID.String()
+	messageCreate.Player = 1
+	messageCreate.User = true
+	buffer, err := json.Marshal(messageCreate)
+	if err != nil {
+		panic(err)
+	}
+	resp, err = http.Post(apiURL.RequestURI(), "", bytes.NewReader(buffer))
 	if err != nil {
 		panic(err)
 	}
@@ -124,50 +138,40 @@ func (agent CLIAgent) doReset() {
 		panic(err)
 	}
 	agent.user = agentID
+	messageCreate.User = false
+	messageCreate.Player = 2
+	messageCreate.Lookahead = 2
+	messageCreate.Delegate = "max-balance-agent"
+	buffer, err = json.Marshal(messageCreate)
+	if err != nil {
+		panic(err)
+	}
+	resp, err = http.Post(apiURL.RequestURI(), "", bytes.NewReader(buffer))
+	if err != nil {
+		panic(err)
+	}
+	err = json.NewDecoder(resp.Body).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	printCmds()
+	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
 }
 
-func (agent CLIAgent) cmdLoop() {}
+// Select piece for move.
+func (agent CLIAgent) doPiece(col, row string) {
+	args := agent.parse(col, row)
+	if args == nil {
+		agent.printInvalid("piece " + col + " " + row)
+		return
+	}
+	agent.piece = args
+}
 
 // class CLIAgent(Cmd):
 //     prompt = PROMPT
 //
-//     def do_reset(self, *args):
-//         self.user = requests.post(
-//             f"{ self.api_url }/issue-agent",
-//             json={
-//                 "game_id": self.game_id,
-//                 "user": True},
-//             headers={
-//                 "content-type": "application/json"
-//             },
-//         ).json()["AgentID"]
-//         try:
-//             self.user = game["id"]
-//         except KeyError:
-//             return print("failed to reset")
-//         requests.post(
-//             f"{ self.api_url }/issue-agent",
-//             json={
-//                 "game_id": self.game_id,
-//                 "player": 2,
-//                 "lookahead": 2,
-//                 "delegate": "max-balance-agent"},
-//             headers={
-//                 "content-type": "application/json"
-//             })
-//         print("> piece <col> <row>  # select piece")
-//         print("> move <col> <row>   # move selected piece to")
-//         print("> reset              # start a new game")
-//         print_board(format_board(get_info(self.api_url, self.game_id)))
-//
 //     def do_piece(self, arg_str):
-//         """
-//         Select piece for move.
-//         """
-//         args = self.parse(arg_str)
-//         if len(args) != 2:
-//             return self.print_invalid("piece " + arg_str)
-//         self.piece = args
 //         response = requests.get(f"{ self.api_url }/v1.0/games/{ self.game_id }")
 //         state = response.json()["state"]
 //         if state == {"end": True}:
@@ -185,17 +189,21 @@ func (agent CLIAgent) cmdLoop() {}
 //         print_board(map(" ".join, board))
 //         print(f"Selected: { PIECE_NAME[piece & 0xF] }")
 //
+
+// Make move.
+func (agent CLIAgent) doMove(col, row string) {
+	if agent.piece == nil {
+		agent.printInvalid("move " + col + " " + row)
+		return
+	}
+	args := agent.parse(col, row)
+	if args == nil {
+		agent.printInvalid("move " + col + " " + row)
+		return
+	}
+}
+
 //     def do_move(self, arg_str):
-//         """
-//         Make move.
-//         """
-//         if not self.piece:
-//             return self.print_invalid("move " + arg_str)
-//
-//         args = self.parse(arg_str)
-//         if len(args) != 2:
-//             return self.print_invalid("move " + arg_str)
-//
 //         move = {"move": (tuple(reversed(self.piece)), tuple(reversed(args)))}
 //         self.piece = None
 //
@@ -241,49 +249,80 @@ func (agent CLIAgent) cmdLoop() {}
 //             board = state
 //         print_board(format_board(get_info(self.api_url, self.game_id)))
 //
-//     def print_invalid(self, args):
-//         print_board(format_board(get_info(self.api_url, self.game_id)))
-//         print("invalid command:", args)
-//         print("> piece <col> <row>  # select piece")
-//         print("> move <col> <row>   # move selected piece to")
-//         print("> reset              # start a new game")
-//
-//     @staticmethod
-//     def parse(args):
-//         """
-//         Split arguments.
-//         """
-//         args = args.split()
-//         if len(args) != 2:
-//             return args
-//         try:
-//             args[1] = 8 - int(args[1])
-//             if not (0 <= args[1] < 8):
-//                 print("out of range row")
-//                 raise ValueError
-//         except ValueError:
-//             print("not int", args[1])
-//             return ()
-//         try:
-//             args[0] = ord(args[0]) - ord("a")
-//             if not (0 <= args[1] < 8):
-//                 print("out of range column")
-//                 raise ValueError
-//         except ValueError:
-//             print("not char", args[0])
-//             return ()
-//         return args
-//
-//     def emptyline(self):
-//         """
-//         Do nothing on empty command.
-//         """
-//
-//     def precmd(self, line):
-//         """
-//         Sanitize data.
-//         """
-//         return line.strip().lower()
+
+func (agent CLIAgent) printInvalid(args string) {
+	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+	println("invalid command:", args)
+	printCmds()
+}
+
+// Split arguments.
+func (agent CLIAgent) parse(col, row string) *[2]int {
+	var output [2]int
+	if len(col) != 1 {
+		println("not valid column", col)
+		return nil
+	}
+	switch col[0] {
+	case 'a':
+		output[0] = 0
+	case 'b':
+		output[0] = 1
+	case 'c':
+		output[0] = 2
+	case 'd':
+		output[0] = 3
+	case 'e':
+		output[0] = 4
+	case 'f':
+		output[0] = 5
+	case 'g':
+		output[0] = 6
+	case 'h':
+		output[0] = 7
+	default:
+		println("out of range column", col)
+		return nil
+	}
+	n, err := fmt.Sscanf(row, "%d", &output[1])
+	if n != 1 || err != nil {
+		println(err, row)
+		return nil
+	}
+	if output[1] > 8 || output[1] <= 0 {
+		println("out of range row", output[1])
+		return nil
+	}
+	output[1] = 8 - output[1]
+	return &output
+}
+
+// Sanitize data.
+func (agent CLIAgent) cmdLoop() {
+	for {
+		print(prompt)
+		var cmd, col, row string
+		n, err := fmt.Scanln(&cmd, &col, &row)
+		cmd = strings.ToLower(cmd)
+		if n == 1 && cmd == "reset" {
+			continue
+		}
+		if err != nil {
+			agent.printInvalid("Invalid command")
+			continue
+		}
+		col = strings.ToLower(col)
+		row = strings.ToLower(row)
+		if cmd == "piece" {
+			agent.doPiece(col, row)
+			continue
+		}
+		if cmd == "move" {
+			agent.doMove(col, row)
+			continue
+		}
+	}
+}
 
 func main() {
 	apiURLFlag := flag.String("api_url", "http://localhost:8080", "api_url")

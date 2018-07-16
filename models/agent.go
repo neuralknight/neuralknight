@@ -40,11 +40,11 @@ type AgentCreateResponse struct {
 }
 
 type AgentCreateMessage struct {
-	user      bool
-	gameID    string
-	player    int
-	lookahead int
-	delegate  string
+	User      bool
+	GameID    string
+	Player    int
+	Lookahead int
+	Delegate  string
 }
 
 // MakeAgent agent.
@@ -53,7 +53,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	var agent simpleAgent
 	var message AgentCreateMessage
 	json.NewDecoder(r.Body).Decode(message)
-	gameID, err := uuid.FromString(message.gameID)
+	gameID, err := uuid.FromString(message.GameID)
 	if err != nil {
 		panic(err)
 	}
@@ -64,8 +64,8 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	agent.agentID = uuid.Must(uuid.NewV4())
 	agent.gameID = gameID
-	agent.player = message.player
-	if message.user {
+	agent.player = message.Player
+	if message.User {
 		user := userAgent{agent}
 		AgentPool[user.agentID] = user
 		resp := user.joinGame()
@@ -73,8 +73,8 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(AgentCreateResponse{user.agentID.String()})
 		return
 	}
-	agent.delegate = agents[message.delegate]
-	agent.lookahead = message.lookahead
+	agent.delegate = agents[message.Delegate]
+	agent.lookahead = message.Lookahead
 	AgentPool[agent.agentID] = agent
 	resp := agent.joinGame()
 	defer resp.Body.Close()
