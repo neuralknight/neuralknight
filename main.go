@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-
-	"github.com/neuralknight/neuralknight/neuralknight"
 )
 
 func main() {
@@ -27,7 +25,7 @@ func main() {
 		close(idleConnsClosed)
 	}()
 
-	srv.Handler = neuralknight.Handler{}
+	srv.Handler = Handler{}
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		// Error starting or closing listener:
