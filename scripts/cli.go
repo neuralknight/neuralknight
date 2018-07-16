@@ -2,18 +2,22 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
 )
 
-var pieceName = map[int]string{
+type board [8][8]uint8
+
+var pieceName = map[uint8]string{
 	3:  "bishop",
 	5:  "king",
 	7:  "knight",
@@ -26,7 +30,6 @@ const (
 	prompt              = "> "
 	brightGreen         = "\u001b[42;1m"
 	reset               = "\u001b[0m"
-	selectedPiece       = brightGreen + "{}" + reset
 	topBoardOutputShell = `
   A B C D E F G H
   +---------------`
@@ -166,29 +169,51 @@ func (agent CLIAgent) doPiece(col, row string) {
 		return
 	}
 	agent.piece = args
+	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
+	if err != nil {
+		panic(err)
+	}
+	apiURL := agent.apiURL.ResolveReference(path)
+	resp, err := http.Get(apiURL.RequestURI())
+	if err != nil {
+		panic(err)
+	}
+	var message neuralknightmodels.BoardStateMessage
+	err = json.NewDecoder(resp.Body).Decode(message)
+	if err != nil {
+		panic(err)
+	}
+	if message.End {
+		println("game over")
+		return
+	}
+	var state board
+	for i, r := range message.State {
+		row, err := hex.DecodeString(r)
+		if err != nil {
+			panic(err)
+		}
+		if len(row) != 8 {
+			panic(row)
+		}
+		copy(state[i][:], row)
+	}
+	piece := state[args[1]][args[0]]
+	if piece&1 == 0 {
+		agent.printInvalid("piece " + col + " " + row)
+		return
+	}
+	board := strings.Split(getInfo(agent.apiURL, agent.gameID), "\n")
+	for i, boardRow := range board {
+		board[i] = strings.Join(strings.Split(boardRow, ""), " ")
+	}
+	boardRow := board[args[1]]
+	boardRowSelection := strings.Split(boardRow, " ")
+	boardRowSelection[args[0]] = brightGreen + boardRowSelection[args[0]] + reset
+	board[args[1]] = strings.Join(boardRowSelection, " ")
+	printBoard(board)
+	println("Selected:", pieceName[piece&0xF])
 }
-
-// class CLIAgent(Cmd):
-//     prompt = PROMPT
-//
-//     def do_piece(self, arg_str):
-//         response = requests.get(f"{ self.api_url }/v1.0/games/{ self.game_id }")
-//         state = response.json()["state"]
-//         if state == {"end": True}:
-//             return print("game over")
-//         board = tuple(map(bytes.fromhex, state))
-//         try:
-//             piece = board[args[1]][args[0]]
-//         except IndexError:
-//             return self.print_invalid("piece " + arg_str)
-//         if not (piece and (piece & 1)):
-//             return self.print_invalid("piece " + arg_str)
-//         board = list(map(list, get_info(self.api_url, self.game_id).splitlines()))
-//         board[args[1]][args[0]] = SELECTED_PIECE.format(
-//             board[args[1]][args[0]])
-//         print_board(map(" ".join, board))
-//         print(f"Selected: { PIECE_NAME[piece & 0xF] }")
-//
 
 // Make move.
 func (agent CLIAgent) doMove(col, row string) {
@@ -201,54 +226,67 @@ func (agent CLIAgent) doMove(col, row string) {
 		agent.printInvalid("move " + col + " " + row)
 		return
 	}
+	path, err := url.Parse("v1.0/agent/" + agent.user.String())
+	if err != nil {
+		panic(err)
+	}
+	apiURL := agent.apiURL.ResolveReference(path)
+	var message neuralknightmodels.UserMoveMessage
+	message.Move = [2][2]int{[2]int{agent.piece[1], agent.piece[0]}, [2]int{args[1], args[0]}}
+	data, err := json.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	req, err := http.NewRequest(http.MethodPut, apiURL.RequestURI(), bytes.NewReader(data))
+	if err != nil {
+		panic(err)
+	}
+	defer req.Body.Close()
+	var client http.Client
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	var boardStateMessage neuralknightmodels.BoardStateMessage
+	json.NewDecoder(resp.Body).Decode(boardStateMessage)
+	if boardStateMessage.Invalid {
+		println("Invalid move.")
+		return
+	}
+	if boardStateMessage.End {
+		printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+		println("you won")
+		agent.doReset()
+		return
+	}
+	state := boardStateMessage.State
+	nextState := state
+	path, err = url.Parse("v1.0/games/" + agent.gameID.String())
+	if err != nil {
+		panic(err)
+	}
+	apiURL = agent.apiURL.ResolveReference(path)
+	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+	println("making move ...")
+	for state == nextState {
+		time.Sleep(2)
+		resp, err = http.Get(apiURL.RequestURI())
+		if err != nil {
+			panic(err)
+		}
+		err = json.NewDecoder(resp.Body).Decode(boardStateMessage)
+		if err != nil {
+			panic(err)
+		}
+		if boardStateMessage.End {
+			println("you won")
+			agent.doReset()
+			return
+		}
+	}
+	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
 }
-
-//     def do_move(self, arg_str):
-//         move = {"move": (tuple(reversed(self.piece)), tuple(reversed(args)))}
-//         self.piece = None
-//
-//         response = requests.put(
-//             f"{ self.api_url }/agent/{ self.user }",
-//             json=move,
-//             headers={
-//                 "content-type": "application/json",
-//             }
-//         )
-//         if response.status_code != 200 or response.json().get("invalid", False):
-//             print_board(format_board(get_info(self.api_url, self.game_id)))
-//             return print("Invalid move.")
-//         if response.json().get("state", {}).get("end", False):
-//             print_board(format_board(get_info(self.api_url, self.game_id)))
-//             return print("you won")
-//         response = requests.get(f"{ self.api_url }/v1.0/games/{ self.game_id }")
-//         in_board = response.json()["state"]
-//         print_board(format_board(get_info(self.api_url, self.game_id)))
-//         if in_board == {"end": True}:
-//             return print("you won")
-//         print("making move ...")
-//         board = in_board
-//         while in_board == board:
-//             sleep(2)
-//             response = requests.get(f"{ self.api_url }/v1.0/games/{ self.game_id }")
-//             state = response.json()["state"]
-//             if state == {"end": True}:
-//                 return print("game over")
-//             response = requests.get(
-//                 f"{ self.api_url }/agent/{ self.user }",
-//                 headers={
-//                     "content-type": "application/json",
-//                 }
-//             )
-//             if response.status_code != 200:
-//                 return self.do_reset()
-//             try:
-//                 if response.json()["state"] == {"end": True}:
-//                     return self.do_reset()
-//             except Exception:
-//                 return self.do_reset()
-//             board = state
-//         print_board(format_board(get_info(self.api_url, self.game_id)))
-//
 
 func (agent CLIAgent) printInvalid(args string) {
 	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))

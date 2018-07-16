@@ -2,6 +2,12 @@ package neuralknightmodels
 
 import "math"
 
+// BoardStateMessage models.
+type BoardStateMessage struct {
+	End, Invalid bool
+	State        [8]string
+}
+
 // """
 // Chess state handling model.
 // """

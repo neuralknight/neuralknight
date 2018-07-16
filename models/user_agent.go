@@ -12,17 +12,18 @@ type userAgent struct {
 	simpleAgent
 }
 
-type userMoveMessage struct {
-	move [2][2]int
+// UserMoveMessage Human Agent
+type UserMoveMessage struct {
+	Move [2][2]int
 }
 
 func getMove(r io.Reader) [2][2]int {
-	var message userMoveMessage
+	var message UserMoveMessage
 	err := json.NewDecoder(r).Decode(message)
 	if err != nil {
 		panic(err)
 	}
-	return message.move
+	return message.Move
 }
 
 // PlayRound Play a game round
@@ -30,12 +31,12 @@ func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	move := getMove(r.Body)
 	proposal := agent.getState()
-	if proposal.end {
+	if proposal.End {
 		json.NewEncoder(w).Encode(proposal)
 		return
 	}
 	var out board
-	for i, r := range proposal.state {
+	for i, r := range proposal.State {
 		row, err := hex.DecodeString(r)
 		if err != nil {
 			panic(err)
@@ -49,12 +50,12 @@ func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	out[move[0][0]][move[0][1]] = 0
 	resp := agent.putBoard(out)
 	defer resp.Body.Close()
-	var message stateMessage
+	var message BoardStateMessage
 	err := json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		panic(err)
 	}
-	agent.gameOver = message.end
+	agent.gameOver = message.End
 	if agent.gameOver {
 		agent.close(w, r)
 		return

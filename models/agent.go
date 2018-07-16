@@ -163,12 +163,6 @@ func (agent simpleAgent) getBoardsCursor() <-chan board {
 	return boards
 }
 
-// stateMessage models.
-type stateMessage struct {
-	end, invalid bool
-	state        [8]string
-}
-
 // GetState Gets current board state.
 func (agent simpleAgent) GetState(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -180,10 +174,10 @@ func (agent simpleAgent) GetState(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetState Gets current board state.
-func (agent simpleAgent) getState() stateMessage {
+func (agent simpleAgent) getState() BoardStateMessage {
 	if agent.gameOver {
-		var message stateMessage
-		message.end = true
+		var message BoardStateMessage
+		message.End = true
 		return message
 	}
 	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
@@ -196,7 +190,7 @@ func (agent simpleAgent) getState() stateMessage {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	var message stateMessage
+	var message BoardStateMessage
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		panic(err)
@@ -219,16 +213,16 @@ func (agent simpleAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	println(agent.requestCount, agent.requestCountData)
 	resp := agent.putBoard(agent.delegate.playRound(agent.getBoardsCursor()))
 	defer resp.Body.Close()
-	var message stateMessage
+	var message BoardStateMessage
 	err := json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		panic(err)
 	}
-	agent.gameOver = message.end
+	agent.gameOver = message.End
 	if agent.gameOver {
 		agent.close(w, r)
 	}
-	if message.invalid {
+	if message.Invalid {
 		agent.PlayRound(w, r)
 		return
 	}
