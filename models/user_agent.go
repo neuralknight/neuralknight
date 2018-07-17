@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -21,7 +22,7 @@ func getMove(r io.Reader) [2][2]int {
 	var message UserMoveMessage
 	err := json.NewDecoder(r).Decode(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	return message.Move
 }
@@ -39,10 +40,10 @@ func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	for i, r := range proposal.State {
 		row, err := hex.DecodeString(r)
 		if err != nil {
-			panic(err)
+			log.Panicln(err)
 		}
 		if len(row) != 8 {
-			panic(row)
+			log.Panicln(row)
 		}
 		copy(out[i][:], row)
 	}
@@ -53,7 +54,7 @@ func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	var message BoardStateMessage
 	err := json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	agent.gameOver = message.End
 	if agent.gameOver {

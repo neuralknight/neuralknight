@@ -1,6 +1,12 @@
 package neuralknightmodels
 
-import "math"
+import (
+	"log"
+	"math"
+
+	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
+)
 
 // BoardStateMessage models.
 type BoardStateMessage struct {
@@ -318,7 +324,9 @@ func swap(b board) board {
 
 // Chess board model.
 type boardModel struct {
+	gorm.Model
 	board
+	gameID         uuid.UUID
 	moveCount      int
 	movesSincePawn int
 }
@@ -354,7 +362,7 @@ type mutation struct {
 
 func (board boardModel) validateMutation(mutation []mutation, state board) board {
 	if len(mutation) != 2 {
-		panic(InvalidMove{})
+		log.Panicln(InvalidMove{})
 	}
 	old := mutation[0]
 	new := mutation[1]
@@ -364,19 +372,19 @@ func (board boardModel) validateMutation(mutation []mutation, state board) board
 		old = new
 		new = temp
 	} else {
-		panic(InvalidMove{})
+		log.Panicln(InvalidMove{})
 	}
 	new.nextPiece = new.nextPiece & 0xF
 	if activePiece(new.prevPiece) {
-		panic(InvalidMove{})
+		log.Panicln(InvalidMove{})
 	}
 	old.prevPiece = old.prevPiece & 0xF
 	if !activePiece(old.prevPiece) {
-		panic(InvalidMove{})
+		log.Panicln(InvalidMove{})
 	}
 	if old.prevPiece != new.nextPiece {
 		if old.prevPiece != 9 || new.posY != 0 {
-			panic(InvalidMove{})
+			log.Panicln(InvalidMove{})
 		}
 	}
 	move := [2]int8{new.posX - old.posX, new.posY - old.posY}
@@ -387,7 +395,7 @@ func (board boardModel) validateMutation(mutation []mutation, state board) board
 		}
 	}
 	if !valid {
-		panic(InvalidMove{})
+		log.Panicln(InvalidMove{})
 	}
 	if old.prevPiece == 9 {
 		board.movesSincePawn = 0

@@ -1,5 +1,23 @@
 package neuralknightmodels
 
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+
+	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
+)
+
+// Board board.
+type Board interface {
+	AddPlayer(w http.ResponseWriter, r *http.Request)
+	GetInfo(w http.ResponseWriter, r *http.Request)
+	GetState(w http.ResponseWriter, r *http.Request)
+	GetStates(w http.ResponseWriter, r *http.Request)
+	PlayRound(w http.ResponseWriter, r *http.Request)
+}
+
 // BoardInfoMessage board.
 type BoardInfoMessage struct {
 	Print string
@@ -10,6 +28,166 @@ type BoardCreateMessage struct {
 	ID string
 }
 
+// MakeGame agent.
+func MakeGame(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Panicln("failed to connect database")
+	}
+	defer db.Close()
+	db.AutoMigrate(&simpleAgent{})
+	var agent simpleAgent
+	var message AgentCreateMessage
+	json.NewDecoder(r.Body).Decode(message)
+	gameID, err := uuid.FromString(message.GameID)
+	if err != nil {
+		log.Panicln(err)
+	}
+	agent.agentID = uuid.Must(uuid.NewV4())
+	agent.gameID = gameID
+	agent.player = message.Player
+	agent.delegate = agents[message.Delegate]
+	agent.lookahead = message.Lookahead
+	db.Create(&agent)
+	resp := agent.joinGame()
+	defer resp.Body.Close()
+	json.NewEncoder(w).Encode(BoardCreateMessage{agent.agentID.String()})
+}
+
+// GetGame game.
+func GetGame(gameID uuid.UUID) Board {
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Panicln("failed to connect database")
+	}
+	defer db.Close()
+	var game boardModel
+	db.First(&game, "gameID = ?", gameID.String())
+	if game.gameID != gameID {
+		log.Panicln(game)
+	}
+	return game
+}
+
+// GetGames game.
+func GetGames(w http.ResponseWriter, r *http.Request) {
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Panicln("failed to connect database")
+	}
+	defer db.Close()
+}
+
+func (boardModel) AddPlayer(w http.ResponseWriter, r *http.Request) {}
+func (boardModel) GetInfo(w http.ResponseWriter, r *http.Request)   {}
+func (boardModel) GetState(w http.ResponseWriter, r *http.Request)  {}
+func (boardModel) GetStates(w http.ResponseWriter, r *http.Request) {}
+func (boardModel) PlayRound(w http.ResponseWriter, r *http.Request) {}
+
+// class BlankBoard:
+//     def __str__(self):
+//         return "\n" * 8
+//
+//     def add_player_v1(self, *args, **kwargs):
+//         return {}
+//
+//     def close(self, *args, **kwargs):
+//         return {"end": True}
+//
+//     def current_state_v1(self, *args, **kwargs):
+//         return {"state": {"end": True}}
+//
+//     def slice_cursor_v1(self, *args, **kwargs):
+//         return {"cursor": None, "boards": []}
+//
+//     def update_state_v1(self, *args, **kwargs):
+//         return {"end": True}
+//
+//
+// def get_game(request):
+//     """
+//     Retrieve board for request.
+//     """
+//     try:
+//         return Board.get_game(request.matchdict["game"])
+//     except NoBoard:
+//         pass
+//     return BlankBoard()
+//
+//
+// @games.get()
+// def get_games(request):
+//     """
+//     Retrieve all game ids.
+//     """
+//     return {"ids": tuple(Board.GAMES.keys())}
+//
+//
+// @games.post()
+// def post_game(request):
+//     """
+//     Create a new game and provide an id for interacting.
+//     """
+//     return {"id": Board().id}
+//
+//
+// @game_states.get()
+// def get_states(request):
+//     """
+//     Start or continue a cursor of next board states.
+//     """
+//     cursor = get_game(request).slice_cursor_v1(**request.GET)
+//     cursor["boards"] = tuple(map(
+//         lambda boards: tuple(map(
+//             lambda board: tuple(map(methodcaller("hex"), board)),
+//             boards)),
+//         cursor["boards"]))
+//     return cursor
+//
+//
+// @game_interaction.get()
+// def get_state(request):
+//     """
+//     Provide current state on the board.
+//     """
+//     state = get_game(request).current_state_v1()
+//     if isinstance(state["state"], dict):
+//         return state
+//     state["state"] = tuple(map(methodcaller("hex"), state["state"]))
+//     return state
+//
+//
+// @game_interaction.post()
+// def join_game(request):
+//     """
+//     Add player to board.
+//     """
+//     try:
+//         user_id = request.json["id"]
+//     except KeyError:
+//         raise HTTPBadRequest
+//     return get_game(request).add_player_v1(request.dbsession, user_id)
+//
+//
+// @game_interaction.put()
+// def put_state(request):
+//     """
+//     Make a move to a new state on the board.
+//     """
+//     try:
+//         return get_game(request).update_state_v1(request.dbsession, **request.json)
+//     except InvalidMove:
+//         pass
+//     return {"invalid": True}
+//
+//
+// @game_info.get()
+// def get_info(request):
+//     """
+//     Provide current state on the board.
+//     """
+//     return {"print": str(get_game(request))}
 // """
 // Chess state handling model.
 // """

@@ -6,9 +6,23 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
+const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
+
 func main() {
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Panicln("failed to connect database")
+	}
+
+	db.DB().SetMaxIdleConns(10)
+	db.DB().SetMaxOpenConns(100)
+	db.DB().SetConnMaxLifetime(time.Hour)
+
 	var srv http.Server
 
 	idleConnsClosed := make(chan struct{})

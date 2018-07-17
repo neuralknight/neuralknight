@@ -1,6 +1,7 @@
 package neuralknightviews
 
 import (
+	"log"
 	"net/http"
 	"regexp"
 
@@ -29,24 +30,23 @@ func serveAPIAgentsListHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		neuralknightmodels.MakeAgent(w, r)
-		return
+	default:
+		http.NotFound(w, r)
 	}
-	http.NotFound(w, r)
 }
 
 func serveAPIAgentsIDHTTP(w http.ResponseWriter, r *http.Request) {
 	agentID, err := uuid.FromString(extractV1AgentsID.FindString(r.URL.Path))
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
-	agent := neuralknightmodels.AgentPool[agentID]
+	agent := neuralknightmodels.GetAgent(agentID)
 	switch r.Method {
 	case http.MethodGet:
 		agent.GetState(w, r)
-		return
 	case http.MethodPut:
 		agent.PlayRound(w, r)
-		return
+	default:
+		http.NotFound(w, r)
 	}
-	http.NotFound(w, r)
 }

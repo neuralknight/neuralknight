@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,17 +41,17 @@ var boardOutputShell = [8]string{"8|", "7|", "6|", "5|", "4|", "3|", "2|", "1|"}
 func getInfo(apiURL url.URL, gameID uuid.UUID) string {
 	path, err := url.Parse("v1.0/games/" + gameID.String() + "/info")
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	apiURL = *apiURL.ResolveReference(path)
 	resp, err := http.Get(apiURL.RequestURI())
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	var message neuralknightmodels.BoardInfoMessage
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	return message.Print
 }
@@ -97,26 +98,26 @@ func (agent CLIAgent) doReset() {
 	agent.piece = nil
 	path, err := url.Parse("v1.0/games/")
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	apiURL := agent.apiURL.ResolveReference(path)
 	resp, err := http.Post(apiURL.RequestURI(), "", bytes.NewReader([]byte{}))
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	var game neuralknightmodels.BoardCreateMessage
 	err = json.NewDecoder(resp.Body).Decode(game)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	gameID, err := uuid.FromString(game.ID)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	agent.gameID = gameID
 	path, err = url.Parse("v1.0/agent/")
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	apiURL = agent.apiURL.ResolveReference(path)
 	var messageCreate neuralknightmodels.AgentCreateMessage
@@ -125,20 +126,20 @@ func (agent CLIAgent) doReset() {
 	messageCreate.User = true
 	buffer, err := json.Marshal(messageCreate)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	resp, err = http.Post(apiURL.RequestURI(), "", bytes.NewReader(buffer))
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	var message neuralknightmodels.AgentCreateResponse
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	agentID, err := uuid.FromString(message.AgentID)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	agent.user = agentID
 	messageCreate.User = false
@@ -147,15 +148,15 @@ func (agent CLIAgent) doReset() {
 	messageCreate.Delegate = "max-balance-agent"
 	buffer, err = json.Marshal(messageCreate)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	resp, err = http.Post(apiURL.RequestURI(), "", bytes.NewReader(buffer))
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	printCmds()
 	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
@@ -171,17 +172,17 @@ func (agent CLIAgent) doPiece(col, row string) {
 	agent.piece = args
 	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	apiURL := agent.apiURL.ResolveReference(path)
 	resp, err := http.Get(apiURL.RequestURI())
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	var message neuralknightmodels.BoardStateMessage
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	if message.End {
 		println("game over")
@@ -191,10 +192,10 @@ func (agent CLIAgent) doPiece(col, row string) {
 	for i, r := range message.State {
 		row, err := hex.DecodeString(r)
 		if err != nil {
-			panic(err)
+			log.Panicln(err)
 		}
 		if len(row) != 8 {
-			panic(row)
+			log.Panicln(row)
 		}
 		copy(state[i][:], row)
 	}
@@ -228,24 +229,24 @@ func (agent CLIAgent) doMove(col, row string) {
 	}
 	path, err := url.Parse("v1.0/agent/" + agent.user.String())
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	apiURL := agent.apiURL.ResolveReference(path)
 	var message neuralknightmodels.UserMoveMessage
 	message.Move = [2][2]int{[2]int{agent.piece[1], agent.piece[0]}, [2]int{args[1], args[0]}}
 	data, err := json.Marshal(message)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	req, err := http.NewRequest(http.MethodPut, apiURL.RequestURI(), bytes.NewReader(data))
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	defer req.Body.Close()
 	var client http.Client
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	defer resp.Body.Close()
 	var boardStateMessage neuralknightmodels.BoardStateMessage
@@ -264,7 +265,7 @@ func (agent CLIAgent) doMove(col, row string) {
 	nextState := state
 	path, err = url.Parse("v1.0/games/" + agent.gameID.String())
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	apiURL = agent.apiURL.ResolveReference(path)
 	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
@@ -273,11 +274,11 @@ func (agent CLIAgent) doMove(col, row string) {
 		time.Sleep(2)
 		resp, err = http.Get(apiURL.RequestURI())
 		if err != nil {
-			panic(err)
+			log.Panicln(err)
 		}
 		err = json.NewDecoder(resp.Body).Decode(boardStateMessage)
 		if err != nil {
-			panic(err)
+			log.Panicln(err)
 		}
 		if boardStateMessage.End {
 			println("you won")
@@ -366,11 +367,11 @@ func main() {
 	apiURLFlag := flag.String("api_url", "http://localhost:8080", "api_url")
 	flag.Parse()
 	if apiURLFlag == nil {
-		panic(nil)
+		log.Panicln(nil)
 	}
 	apiURL, err := url.Parse(*apiURLFlag)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 	makeCLIAgent(*apiURL).cmdLoop()
 }
