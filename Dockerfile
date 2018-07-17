@@ -1,20 +1,13 @@
-FROM ubuntu:16.04
+FROM golang:alpine
 
-RUN apt-get update -y && \
-    apt-get install -y python3-pip python3-dev && \
-    apt-get install -y git && \
-    python3 -m pip install --upgrade pip setuptools
+EXPOSE 80
 
-# We copy this file first to leverage docker cache
-COPY ./requirements.txt /app/requirements.txt
-COPY ./docker.ini /app/docker.ini
+RUN apk add --no-cache git
 
-WORKDIR /app
+WORKDIR /go/src/github.com/neuralknight/neuralknight
+COPY . .
 
-RUN pip3 install -r requirements.txt
-# COPY . /app
+RUN go get -d -v ./...
+RUN go install -v ./...
 
-RUN pserve docker.ini
-ENTRYPOINT [ "/bin/bash" ]
-
-CMD [ "pserve docker.ini" ]
+CMD ["neuralknight"]
