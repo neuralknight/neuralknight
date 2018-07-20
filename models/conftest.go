@@ -1,4 +1,4 @@
-package neuralknight
+package models
 
 // from os import environ
 // from pyramid.testing import DummyRequest, setUp, tearDown

@@ -1,4 +1,4 @@
-package neuralknightviews
+package views
 
 import (
 	"log"
@@ -17,7 +17,7 @@ var extractV1GamesIDStates = regexp.MustCompile("(?:/)[\\w-]+(?:/states/?)$")
 var routerV1GamesIDInfo = regexp.MustCompile("^api/v1.0/games/[\\w-]+/info/?$")
 var extractV1GamesIDInfo = regexp.MustCompile("(?:/)[\\w-]+(?:/info/?)$")
 
-// ServeAPIGamesHTTP neuralknightviews.
+// ServeAPIGamesHTTP views.
 func ServeAPIGamesHTTP(w http.ResponseWriter, r *http.Request) {
 	if routerV1Games.MatchString(r.URL.Path) {
 		serveAPIGamesListHTTP(w, r)
@@ -41,9 +41,9 @@ func ServeAPIGamesHTTP(w http.ResponseWriter, r *http.Request) {
 func serveAPIGamesListHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		neuralknightmodels.GetGames(w, r)
+		models.GetGames(w, r)
 	case http.MethodPost:
-		neuralknightmodels.MakeGame(w, r)
+		models.MakeGame(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -54,7 +54,7 @@ func serveAPIGamesIDHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	game := neuralknightmodels.GetGame(gameID)
+	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
 		game.GetState(w, r)
@@ -72,7 +72,7 @@ func serveAPIGamesIDStatesHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	game := neuralknightmodels.GetGame(gameID)
+	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
 		game.GetStates(w, r)
@@ -86,7 +86,7 @@ func serveAPIGamesIDInfoHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	game := neuralknightmodels.GetGame(gameID)
+	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
 		game.GetInfo(w, r)

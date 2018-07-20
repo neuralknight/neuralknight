@@ -48,7 +48,7 @@ func getInfo(apiURL url.URL, gameID uuid.UUID) string {
 	if err != nil {
 		log.Panicln(err)
 	}
-	var message neuralknightmodels.BoardInfoMessage
+	var message models.BoardInfoMessage
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		log.Panicln(err)
@@ -105,7 +105,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	var game neuralknightmodels.BoardCreateMessage
+	var game models.BoardCreateMessage
 	err = json.NewDecoder(resp.Body).Decode(game)
 	if err != nil {
 		log.Panicln(err)
@@ -120,7 +120,7 @@ func (agent CLIAgent) doReset() {
 		log.Panicln(err)
 	}
 	apiURL = agent.apiURL.ResolveReference(path)
-	var messageCreate neuralknightmodels.AgentCreateMessage
+	var messageCreate models.AgentCreateMessage
 	messageCreate.GameID = agent.gameID.String()
 	messageCreate.Player = 1
 	messageCreate.User = true
@@ -132,7 +132,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	var message neuralknightmodels.AgentCreateResponse
+	var message models.AgentCreateResponse
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		log.Panicln(err)
@@ -179,7 +179,7 @@ func (agent CLIAgent) doPiece(col, row string) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	var message neuralknightmodels.BoardStateMessage
+	var message models.BoardStateMessage
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		log.Panicln(err)
@@ -232,7 +232,7 @@ func (agent CLIAgent) doMove(col, row string) {
 		log.Panicln(err)
 	}
 	apiURL := agent.apiURL.ResolveReference(path)
-	var message neuralknightmodels.UserMoveMessage
+	var message models.UserMoveMessage
 	message.Move = [2][2]int{[2]int{agent.piece[1], agent.piece[0]}, [2]int{args[1], args[0]}}
 	data, err := json.Marshal(message)
 	if err != nil {
@@ -249,7 +249,7 @@ func (agent CLIAgent) doMove(col, row string) {
 		log.Panicln(err)
 	}
 	defer resp.Body.Close()
-	var boardStateMessage neuralknightmodels.BoardStateMessage
+	var boardStateMessage models.BoardStateMessage
 	json.NewDecoder(resp.Body).Decode(boardStateMessage)
 	if boardStateMessage.Invalid {
 		println("Invalid move.")

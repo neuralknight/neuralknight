@@ -1,4 +1,4 @@
-package neuralknightviews
+package views
 
 import (
 	"log"
@@ -13,7 +13,7 @@ var routerV1Agents = regexp.MustCompile("^api/v1.0/agents/?$")
 var routerV1AgentsID = regexp.MustCompile("^api/v1.0/agents/[\\w-]+/?$")
 var extractV1AgentsID = regexp.MustCompile("(?:/)[\\w-]+(?:/?)$")
 
-// ServeAPIAgentsHTTP neuralknightviews.
+// ServeAPIAgentsHTTP views.
 func ServeAPIAgentsHTTP(w http.ResponseWriter, r *http.Request) {
 	if routerV1Agents.MatchString(r.URL.Path) {
 		serveAPIAgentsListHTTP(w, r)
@@ -29,7 +29,7 @@ func ServeAPIAgentsHTTP(w http.ResponseWriter, r *http.Request) {
 func serveAPIAgentsListHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		neuralknightmodels.MakeAgent(w, r)
+		models.MakeAgent(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -40,7 +40,7 @@ func serveAPIAgentsIDHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	agent := neuralknightmodels.GetAgent(agentID)
+	agent := models.GetAgent(agentID)
 	switch r.Method {
 	case http.MethodGet:
 		agent.GetState(w, r)

@@ -1,4 +1,4 @@
-package neuralknight
+package models
 
 import (
 	"testing"

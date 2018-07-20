@@ -1,4 +1,4 @@
-package neuralknight
+package views
 
 import (
 	"testing"

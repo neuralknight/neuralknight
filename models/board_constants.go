@@ -1,4 +1,4 @@
-package neuralknightmodels
+package models
 
 type board [8][8]uint8
 

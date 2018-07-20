@@ -1,4 +1,4 @@
-package neuralknightmodels
+package models
 
 // import os
 // import requests
