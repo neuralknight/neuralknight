@@ -1,3 +1,18 @@
+// name="neuralknight",
+// version="1.0.0",
+// description="A Chess-playing AI",
+// author="David Snowberger <david.snowberger@fartherout.org>, Shannon Tully, and Adam Grandquist <grandquista@gmail.com>",
+// author_email="grandquista@gmail.com",
+// url="https://www.github.com/neuralknight/neuralknight",
+// license="MIT",
+//     "Development Status :: 3 - Alpha",
+//     "Intended Audience :: Developers",
+//     "Topic :: Games/Entertainment :: Board Games",
+//     "Operating System :: OS Independent",
+//     "Natural Language :: English",
+//     "License :: Freely Distributable",
+// keywords="chess entertainment game ai",
+
 package main
 
 import (
