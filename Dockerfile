@@ -2,7 +2,7 @@ FROM golang:alpine
 
 EXPOSE 80
 
-RUN apk add --no-cache git
+RUN apk add --no-cache gcc git musl-dev
 
 WORKDIR /go/src/github.com/neuralknight/neuralknight
 COPY . .
