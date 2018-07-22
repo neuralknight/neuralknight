@@ -9,6 +9,6 @@ go:
 after_install:
   - go vet
 
-after_sucess:
+after_success:
   - go get github.com/mattn/goveralls
   - $GOPATH/bin/goveralls -v -service=travis-ci
