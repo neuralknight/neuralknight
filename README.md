@@ -1,5 +1,8 @@
 # neuralknight
 
+[![Build Status](https://travis-ci.org/neuralknight/neuralknight.svg?branch=master)](https://travis-ci.org/neuralknight/neuralknight)
+[![Coverage Status](https://coveralls.io/repos/github/neuralknight/neuralknight/badge.svg?branch=master)](https://coveralls.io/github/neuralknight/neuralknight?branch=master)
+
 Rebuild of https://github.com/dsnowb/neuralknight in go.
 
 **Authors**: David Snowberger, Shannon Tully, Adam Grandquist
