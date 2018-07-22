@@ -33,7 +33,7 @@ func MakeGame(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
-		log.Panicln("failed to connect database")
+		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 	db.AutoMigrate(&simpleAgent{})
@@ -59,7 +59,7 @@ func MakeGame(w http.ResponseWriter, r *http.Request) {
 func GetGame(gameID uuid.UUID) Board {
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
-		log.Panicln("failed to connect database")
+		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 	var game boardModel
@@ -74,7 +74,7 @@ func GetGame(gameID uuid.UUID) Board {
 func GetGames(w http.ResponseWriter, r *http.Request) {
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
-		log.Panicln("failed to connect database")
+		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 }

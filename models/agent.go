@@ -9,7 +9,6 @@ import (
 	"net/url"
 
 	"github.com/jinzhu/gorm"
-	// _ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/satori/go.uuid"
 )
 
@@ -54,7 +53,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
-		log.Panicln("failed to connect database")
+		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 	db.AutoMigrate(&simpleAgent{})
@@ -89,7 +88,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 func GetAgent(agentID uuid.UUID) Agent {
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
-		log.Panicln("failed to connect database")
+		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 	var agent simpleAgent
@@ -109,7 +108,7 @@ func GetAgent(agentID uuid.UUID) Agent {
 func (agent simpleAgent) close(w http.ResponseWriter, r *http.Request) {
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
-		log.Panicln("failed to connect database")
+		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 	db.Model(&agent).Update("gameOver", true)
