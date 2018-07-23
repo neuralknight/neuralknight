@@ -67,13 +67,14 @@ func GetGames(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	db.AutoMigrate(&boardModel{})
 	var game boardModel
-	rows, err := db.Model(game).Rows()
+	rows, err := db.Find(&game).Rows()
 	if err != nil {
 		log.Panicln("Failed to get game rows", err)
 	}
-	games := make([]boardModel, 1)
 	defer rows.Close()
-	for err := rows.Scan(game); rows.Next(); err = rows.Scan(game) {
+	games := make([]boardModel, 0)
+	for rows.Next() {
+		err := rows.Scan(game)
 		if err != nil {
 			log.Panicln("Failed to scan row", err)
 		}
