@@ -31,7 +31,7 @@ type BoardCreateMessage struct {
 // MakeGame agent.
 func MakeGame(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	db, err := gorm.Open("postgres", connStr)
+	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}
@@ -57,7 +57,7 @@ func MakeGame(w http.ResponseWriter, r *http.Request) {
 
 // GetGame game.
 func GetGame(gameID uuid.UUID) Board {
-	db, err := gorm.Open("postgres", connStr)
+	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}
@@ -72,11 +72,12 @@ func GetGame(gameID uuid.UUID) Board {
 
 // GetGames game.
 func GetGames(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open("postgres", connStr)
+	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
+	http.NotFound(w, r)
 }
 
 func (boardModel) AddPlayer(w http.ResponseWriter, r *http.Request) {}

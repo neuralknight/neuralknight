@@ -51,7 +51,7 @@ type AgentCreateMessage struct {
 // MakeAgent agent.
 func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	db, err := gorm.Open("postgres", connStr)
+	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}
@@ -86,7 +86,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 
 // GetAgent agent.
 func GetAgent(agentID uuid.UUID) Agent {
-	db, err := gorm.Open("postgres", connStr)
+	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}
@@ -106,7 +106,7 @@ func GetAgent(agentID uuid.UUID) Agent {
 
 // Close agent.
 func (agent simpleAgent) close(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open("postgres", connStr)
+	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}

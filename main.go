@@ -24,44 +24,48 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	// _ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 
 func shutdown(srv *http.Server, sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
+	defer close(idleConnsClosed)
+
 	<-sigint
 
-	// We received an interrupt signal, shut down.
 	if err := srv.Shutdown(context.Background()); err != nil {
-		// Error from closing listeners, or context timeout:
-		log.Printf("HTTP server Shutdown: %v", err)
+		log.Println("HTTP server Shutdown:", err)
 	}
 }
 
-// Main interruptable process.
-func Main(sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
-	defer close(idleConnsClosed)
-
-	var srv http.Server
-
-	go shutdown(&srv, sigint, idleConnsClosed)
-
-	db, err := gorm.Open("sqlite3", "chess.db")
+func setupDB(dialect string, args ...interface{}) *gorm.DB {
+	db, err := gorm.Open(dialect, args...)
 	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
+		log.Panicln("Failed to connect database:", err, connStr)
 	}
 
 	db.DB().SetMaxIdleConns(10)
 	db.DB().SetMaxOpenConns(100)
 	db.DB().SetConnMaxLifetime(time.Hour)
 
+	return db
+}
+
+// Main interruptable process.
+func Main(sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
+	var srv http.Server
+	go shutdown(&srv, sigint, idleConnsClosed)
+
+	db := setupDB("sqlite3", "chess.db")
+
+	db.Close()
+
 	srv.Handler = Handler{}
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		// Error starting or closing listener:
-		log.Printf("HTTP server ListenAndServe: %v", err)
+		log.Println("HTTP server ListenAndServe:", err)
 	}
 }
 
