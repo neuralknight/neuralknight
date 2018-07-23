@@ -17,7 +17,7 @@ func TestShutdown(t *testing.T) {
 }
 
 func TestSetupDB(t *testing.T) {
-	db := setupDB("sqlite3", "db")
+	db := setupDB("sqlite3", "chess.db")
 	if db == nil {
 		t.Fatal("nil database connection")
 	}

@@ -36,23 +36,9 @@ func MakeGame(w http.ResponseWriter, r *http.Request) {
 		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
-	db.AutoMigrate(&simpleAgent{})
-	var agent simpleAgent
-	var message AgentCreateMessage
-	json.NewDecoder(r.Body).Decode(message)
-	gameID, err := uuid.FromString(message.GameID)
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent.agentID = uuid.Must(uuid.NewV4())
-	agent.gameID = gameID
-	agent.player = message.Player
-	agent.delegate = agents[message.Delegate]
-	agent.lookahead = message.Lookahead
-	db.Create(&agent)
-	resp := agent.joinGame()
-	defer resp.Body.Close()
-	json.NewEncoder(w).Encode(BoardCreateMessage{agent.agentID.String()})
+	db.AutoMigrate(&boardModel{})
+	var game boardModel
+	json.NewEncoder(w).Encode(BoardCreateMessage{game.gameID.String()})
 }
 
 // GetGame game.
@@ -62,6 +48,7 @@ func GetGame(gameID uuid.UUID) Board {
 		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
+	db.AutoMigrate(&boardModel{})
 	var game boardModel
 	db.First(&game, "gameID = ?", gameID.String())
 	if game.gameID != gameID {
@@ -72,12 +59,27 @@ func GetGame(gameID uuid.UUID) Board {
 
 // GetGames game.
 func GetGames(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
+		log.Panicln("Failed to connect database", err, connStr)
 	}
 	defer db.Close()
-	http.NotFound(w, r)
+	db.AutoMigrate(&boardModel{})
+	var game boardModel
+	rows, err := db.Model(game).Rows()
+	if err != nil {
+		log.Panicln("Failed to get game rows", err)
+	}
+	games := make([]boardModel, 1)
+	defer rows.Close()
+	for err := rows.Scan(game); rows.Next(); err = rows.Scan(game) {
+		if err != nil {
+			log.Panicln("Failed to scan row", err)
+		}
+		games = append(games, game)
+	}
+	json.NewEncoder(w).Encode(games)
 }
 
 func (boardModel) AddPlayer(w http.ResponseWriter, r *http.Request) {}
