@@ -61,5 +61,6 @@ func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 		agent.close(w, r)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(message)
 }

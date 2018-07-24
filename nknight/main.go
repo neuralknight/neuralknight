@@ -38,8 +38,8 @@ const (
 
 var boardOutputShell = [8]string{"8|", "7|", "6|", "5|", "4|", "3|", "2|", "1|"}
 
-func getInfo(apiURL url.URL, gameID uuid.UUID) string {
-	path, err := url.Parse("v1.0/games/" + gameID.String() + "/info")
+func getInfo(apiURL url.URL, ID uuid.UUID) string {
+	path, err := url.Parse("v1.0/games/" + ID.String() + "/info")
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -110,18 +110,14 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	gameID, err := uuid.FromString(game.ID)
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent.gameID = gameID
+	agent.gameID = game.ID
 	path, err = url.Parse("v1.0/agent/")
 	if err != nil {
 		log.Panicln(err)
 	}
 	apiURL = agent.apiURL.ResolveReference(path)
 	var messageCreate models.AgentCreateMessage
-	messageCreate.GameID = agent.gameID.String()
+	messageCreate.GameID = agent.gameID
 	messageCreate.Player = 1
 	messageCreate.User = true
 	buffer, err := json.Marshal(messageCreate)

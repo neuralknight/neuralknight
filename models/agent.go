@@ -24,7 +24,7 @@ const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-
 type simpleAgent struct {
 	gorm.Model
 	apiURL           url.URL
-	agentID          uuid.UUID
+	ID               uuid.UUID
 	delegate         baseAgent
 	gameID           uuid.UUID
 	gameOver         bool
@@ -36,13 +36,13 @@ type simpleAgent struct {
 
 // AgentCreateResponse model.
 type AgentCreateResponse struct {
-	AgentID string
+	AgentID uuid.UUID
 }
 
 // AgentCreateMessage model.
 type AgentCreateMessage struct {
 	User      bool
-	GameID    string
+	GameID    uuid.UUID
 	Player    int
 	Lookahead int
 	Delegate  string
@@ -60,12 +60,8 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	var agent simpleAgent
 	var message AgentCreateMessage
 	json.NewDecoder(r.Body).Decode(message)
-	gameID, err := uuid.FromString(message.GameID)
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent.agentID = uuid.Must(uuid.NewV4())
-	agent.gameID = gameID
+	agent.ID = uuid.NewV5(uuid.NamespaceOID, "chess.agent")
+	agent.gameID = message.GameID
 	agent.player = message.Player
 	if message.User {
 		db.AutoMigrate(&userAgent{})
@@ -73,7 +69,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 		db.Create(&user)
 		resp := user.joinGame()
 		defer resp.Body.Close()
-		json.NewEncoder(w).Encode(AgentCreateResponse{user.agentID.String()})
+		json.NewEncoder(w).Encode(AgentCreateResponse{user.ID})
 		return
 	}
 	agent.delegate = agents[message.Delegate]
@@ -81,22 +77,23 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	db.Create(&agent)
 	resp := agent.joinGame()
 	defer resp.Body.Close()
-	json.NewEncoder(w).Encode(AgentCreateResponse{agent.agentID.String()})
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(AgentCreateResponse{agent.ID})
 }
 
 // GetAgent agent.
-func GetAgent(agentID uuid.UUID) Agent {
+func GetAgent(ID uuid.UUID) Agent {
 	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
 	}
 	defer db.Close()
 	var agent simpleAgent
-	db.First(&agent, "agentID = ?", agentID.String())
-	if agent.agentID != agentID {
+	db.First(&agent, "ID = ?", ID)
+	if agent.ID != ID {
 		var user userAgent
-		db.First(&user, "agentID = ?", agentID.String())
-		if user.agentID != agentID {
+		db.First(&user, "ID = ?", ID)
+		if user.ID != ID {
 			log.Panicln(agent)
 		}
 		return user
@@ -186,6 +183,7 @@ func (agent simpleAgent) getBoardsCursor() <-chan board {
 func (agent simpleAgent) GetState(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	message := agent.getState()
+	w.WriteHeader(http.StatusOK)
 	err := json.NewEncoder(w).Encode(message)
 	if err != nil {
 		log.Panicln(err)
@@ -219,8 +217,8 @@ func (agent simpleAgent) getState() BoardStateMessage {
 
 func (agent simpleAgent) joinGame() *http.Response {
 	var json = make(map[string]uuid.UUID, 1)
-	json["id"] = agent.agentID
-	resp, err := http.PostForm(agent.apiURL.EscapedPath(), url.Values{"id": {agent.agentID.String()}})
+	json["id"] = agent.ID
+	resp, err := http.PostForm(agent.apiURL.EscapedPath(), url.Values{"id": {agent.ID.String()}})
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -245,6 +243,7 @@ func (agent simpleAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 		agent.PlayRound(w, r)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 type playMessage struct{ state [8]string }

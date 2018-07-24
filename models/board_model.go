@@ -326,7 +326,7 @@ func swap(b board) board {
 type boardModel struct {
 	gorm.Model
 	board
-	gameID         uuid.UUID
+	ID             uuid.UUID
 	moveCount      int
 	movesSincePawn int
 }

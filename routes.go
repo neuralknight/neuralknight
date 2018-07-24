@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"regexp"
@@ -11,6 +12,12 @@ import (
 // Handler neuralknight
 type Handler struct{}
 
+// ErrorMessage neuralknight
+type ErrorMessage struct {
+	error string
+	// extra interface{}
+}
+
 var routerV1 = regexp.MustCompile("^api/v1.0/")
 var routerV1Games = regexp.MustCompile("^api/v1.0/games")
 var routerV1Agents = regexp.MustCompile("^api/v1.0/agents")
@@ -18,28 +25,32 @@ var routerV1Agents = regexp.MustCompile("^api/v1.0/agents")
 func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
+			w.Header().Set("Content-Type", "text/json; charset=utf-8")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			encoder := json.NewEncoder(w)
 			switch err := err.(type) {
 			case error:
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				w.WriteHeader(http.StatusBadRequest)
+				encoder.Encode(ErrorMessage{err.Error()}) //, err})
 			case string:
-				http.Error(w, err, http.StatusInternalServerError)
+				w.WriteHeader(http.StatusBadRequest)
+				encoder.Encode(ErrorMessage{err}) //, nil})
 			default:
-				http.Error(w, "Unhandled error", http.StatusInternalServerError)
+				w.WriteHeader(http.StatusInternalServerError)
+				encoder.Encode(ErrorMessage{"Unhandled error"}) //, err})
 				log.Println("Unhandled error:", err)
 			}
 		}
 	}()
 	if routerV1.MatchString(r.URL.Path) {
 		if routerV1Games.MatchString(r.URL.Path) {
-			views.ServeAPIGamesHTTP(w, r)
 			w.Header().Set("Content-Type", "text/json; charset=utf-8")
-			w.WriteHeader(200)
+			views.ServeAPIGamesHTTP(w, r)
 			return
 		}
 		if routerV1Agents.MatchString(r.URL.Path) {
-			views.ServeAPIAgentsHTTP(w, r)
 			w.Header().Set("Content-Type", "text/json; charset=utf-8")
-			w.WriteHeader(200)
+			views.ServeAPIAgentsHTTP(w, r)
 			return
 		}
 	}

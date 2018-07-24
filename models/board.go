@@ -25,7 +25,7 @@ type BoardInfoMessage struct {
 
 // BoardCreateMessage board.
 type BoardCreateMessage struct {
-	ID string
+	ID uuid.UUID
 }
 
 // MakeGame agent.
@@ -38,11 +38,13 @@ func MakeGame(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	db.AutoMigrate(&boardModel{})
 	var game boardModel
-	json.NewEncoder(w).Encode(BoardCreateMessage{game.gameID.String()})
+	game.ID = uuid.NewV5(uuid.NamespaceOID, "chess.board")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(BoardCreateMessage{game.ID})
 }
 
 // GetGame game.
-func GetGame(gameID uuid.UUID) Board {
+func GetGame(ID uuid.UUID) Board {
 	db, err := gorm.Open("sqlite3", "chess.db")
 	if err != nil {
 		log.Panicln("failed to connect database", err, connStr)
@@ -50,8 +52,8 @@ func GetGame(gameID uuid.UUID) Board {
 	defer db.Close()
 	db.AutoMigrate(&boardModel{})
 	var game boardModel
-	db.First(&game, "gameID = ?", gameID.String())
-	if game.gameID != gameID {
+	db.First(&game, "ID = ?", ID)
+	if game.ID != ID {
 		log.Panicln(game)
 	}
 	return game
@@ -80,14 +82,34 @@ func GetGames(w http.ResponseWriter, r *http.Request) {
 		}
 		games = append(games, game)
 	}
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(games)
 }
 
-func (boardModel) AddPlayer(w http.ResponseWriter, r *http.Request) {}
-func (boardModel) GetInfo(w http.ResponseWriter, r *http.Request)   {}
-func (boardModel) GetState(w http.ResponseWriter, r *http.Request)  {}
-func (boardModel) GetStates(w http.ResponseWriter, r *http.Request) {}
-func (boardModel) PlayRound(w http.ResponseWriter, r *http.Request) {}
+// AddPlayer game.
+func (board boardModel) AddPlayer(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusCreated)
+}
+
+// GetInfo game.
+func (board boardModel) GetInfo(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+// GetState game.
+func (board boardModel) GetState(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+// GetStates game.
+func (board boardModel) GetStates(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+// PlayRound game.
+func (board boardModel) PlayRound(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
 
 // class BlankBoard:
 //     def __str__(self):
