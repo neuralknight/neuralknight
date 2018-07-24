@@ -133,11 +133,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	agentID, err := uuid.FromString(message.AgentID)
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent.user = agentID
+	agent.user = message.AgentID
 	messageCreate.User = false
 	messageCreate.Player = 2
 	messageCreate.Lookahead = 2
