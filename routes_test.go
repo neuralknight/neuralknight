@@ -186,7 +186,7 @@ func TestServeHTTPPostAgents(t *testing.T) {
 	case string:
 		t.Fatal("Agents extra type string", extra)
 	case nil:
-		t.Fatal("Agents extra type nil")
+		break
 	default:
 		t.Fatal("Agents extra type unknown", extra)
 	}
