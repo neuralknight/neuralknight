@@ -13,7 +13,7 @@ import (
 
 func TestServeHTTPBadURL(t *testing.T) {
 	var handler Handler
-	r, err := http.NewRequest(http.MethodGet, "url", bytes.NewReader([]byte{}))
+	r, err := http.NewRequest(http.MethodGet, "foo", bytes.NewReader([]byte{}))
 	if err != nil {
 		t.Fatal(err)
 	}
