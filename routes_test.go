@@ -25,6 +25,20 @@ func TestServeHTTPBadURL(t *testing.T) {
 	}
 }
 
+func TestServeHTTPIndex(t *testing.T) {
+	var handler Handler
+	r, err := http.NewRequest(http.MethodGet, "", bytes.NewReader([]byte{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	defer w.Result().Body.Close()
+	handler.ServeHTTP(w, r)
+	if w.Code != 404 {
+		t.Fatal("Index response code:", w.Code)
+	}
+}
+
 func TestServeHTTPNoModel(t *testing.T) {
 	var handler Handler
 	r, err := http.NewRequest(http.MethodGet, "api/v1.0/", bytes.NewReader([]byte{}))
