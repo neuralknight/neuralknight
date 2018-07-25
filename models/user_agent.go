@@ -28,13 +28,12 @@ func getMove(r io.Reader) [2][2]int {
 }
 
 // PlayRound Play a game round
-func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
+func (agent userAgent) PlayRound(r *http.Request) BoardStateMessage {
 	defer r.Body.Close()
 	move := getMove(r.Body)
-	proposal := agent.getState()
+	proposal := agent.GetState(r)
 	if proposal.End {
-		json.NewEncoder(w).Encode(proposal)
-		return
+		return proposal
 	}
 	var out board
 	for i, r := range proposal.State {
@@ -58,9 +57,8 @@ func (agent userAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	}
 	agent.gameOver = message.End
 	if agent.gameOver {
-		agent.close(w, r)
-		return
+		agent.close()
+		return message
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(message)
+	return message
 }

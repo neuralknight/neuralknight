@@ -1,6 +1,7 @@
 package views
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"regexp"
@@ -41,9 +42,19 @@ func ServeAPIGamesHTTP(w http.ResponseWriter, r *http.Request) {
 func serveAPIGamesListHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		models.GetGames(w, r)
+		message := models.GetGames(r)
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	case http.MethodPost:
-		models.MakeGame(w, r)
+		message := models.MakeGame(r)
+		w.WriteHeader(http.StatusCreated)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		http.NotFound(w, r)
 	}
@@ -57,11 +68,26 @@ func serveAPIGamesIDHTTP(w http.ResponseWriter, r *http.Request) {
 	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
-		game.GetState(w, r)
+		message := game.GetState(r)
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	case http.MethodPost:
-		game.AddPlayer(w, r)
+		message := game.AddPlayer(r)
+		w.WriteHeader(http.StatusCreated)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	case http.MethodPut:
-		game.PlayRound(w, r)
+		message := game.PlayRound(r)
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		http.NotFound(w, r)
 	}
@@ -75,7 +101,12 @@ func serveAPIGamesIDStatesHTTP(w http.ResponseWriter, r *http.Request) {
 	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
-		game.GetStates(w, r)
+		message := game.GetStates(r)
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		http.NotFound(w, r)
 	}
@@ -89,7 +120,12 @@ func serveAPIGamesIDInfoHTTP(w http.ResponseWriter, r *http.Request) {
 	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
-		game.GetInfo(w, r)
+		message := game.GetInfo(r)
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		http.NotFound(w, r)
 	}

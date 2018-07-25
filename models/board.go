@@ -1,21 +1,76 @@
 package models
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 )
 
+func openDB() *gorm.DB {
+	db, err := gorm.Open("sqlite3", "chess.db")
+	if err != nil {
+		log.Panicln("failed to connect database", err, connStr)
+	}
+
+	tx := db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	tx.DB().SetMaxIdleConns(10)
+	tx.DB().SetMaxOpenConns(100)
+	tx.DB().SetConnMaxLifetime(time.Hour)
+
+	if !tx.HasTable(&boardModel{}) {
+		tx.CreateTable(&boardModel{})
+	}
+	tx.AutoMigrate(&boardModel{})
+
+	if !tx.HasTable(&simpleAgent{}) {
+		tx.CreateTable(&simpleAgent{})
+	}
+	tx.AutoMigrate(&simpleAgent{})
+
+	if !tx.HasTable(&userAgent{}) {
+		tx.CreateTable(&userAgent{})
+	}
+	tx.AutoMigrate(&userAgent{})
+
+	commitDB(tx)
+
+	return db.Begin()
+}
+
+func commitDB(db *gorm.DB) {
+	errors := db.GetErrors()
+	if len(errors) != 0 {
+		log.Panicln(errors)
+	}
+	db.Commit()
+}
+
+func closeDB(db *gorm.DB) {
+	defer func() {
+		if r := recover(); r != nil {
+			db.Rollback()
+		}
+		db.Close()
+	}()
+	commitDB(db)
+}
+
 // Board board.
 type Board interface {
-	AddPlayer(w http.ResponseWriter, r *http.Request)
-	GetInfo(w http.ResponseWriter, r *http.Request)
-	GetState(w http.ResponseWriter, r *http.Request)
-	GetStates(w http.ResponseWriter, r *http.Request)
-	PlayRound(w http.ResponseWriter, r *http.Request)
+	AddPlayer(r *http.Request) BoardStateMessage
+	GetInfo(r *http.Request) BoardStateMessage
+	GetState(r *http.Request) BoardStateMessage
+	GetStates(r *http.Request) BoardStateMessage
+	PlayRound(r *http.Request) BoardStateMessage
 }
 
 // BoardInfoMessage board.
@@ -29,28 +84,20 @@ type BoardCreateMessage struct {
 }
 
 // MakeGame agent.
-func MakeGame(w http.ResponseWriter, r *http.Request) {
+func MakeGame(r *http.Request) BoardCreateMessage {
 	defer r.Body.Close()
-	db, err := gorm.Open("sqlite3", "chess.db")
-	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
-	}
-	defer db.Close()
-	db.AutoMigrate(&boardModel{})
+	db := openDB()
+	defer closeDB(db)
 	var game boardModel
 	game.ID = uuid.NewV5(uuid.NamespaceOID, "chess.board")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(BoardCreateMessage{game.ID})
+	db.Create(&game)
+	return BoardCreateMessage{game.ID}
 }
 
 // GetGame game.
 func GetGame(ID uuid.UUID) Board {
-	db, err := gorm.Open("sqlite3", "chess.db")
-	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
-	}
-	defer db.Close()
-	db.AutoMigrate(&boardModel{})
+	db := openDB()
+	defer closeDB(db)
 	var game boardModel
 	db.First(&game, "ID = ?", ID)
 	if game.ID != ID {
@@ -60,55 +107,51 @@ func GetGame(ID uuid.UUID) Board {
 }
 
 // GetGames game.
-func GetGames(w http.ResponseWriter, r *http.Request) {
+func GetGames(r *http.Request) []BoardStateMessage {
 	defer r.Body.Close()
-	db, err := gorm.Open("sqlite3", "chess.db")
-	if err != nil {
-		log.Panicln("Failed to connect database", err, connStr)
-	}
-	defer db.Close()
-	db.AutoMigrate(&boardModel{})
+	db := openDB()
+	defer closeDB(db)
 	var game boardModel
 	rows, err := db.Find(&game).Rows()
 	if err != nil {
 		log.Panicln("Failed to get game rows", err)
 	}
 	defer rows.Close()
-	games := make([]boardModel, 0)
+	games := make([]BoardStateMessage, 0)
 	for rows.Next() {
-		err := rows.Scan(game)
+		var message BoardStateMessage
+		err := rows.Scan(message)
 		if err != nil {
 			log.Panicln("Failed to scan row", err)
 		}
-		games = append(games, game)
+		games = append(games, message)
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(games)
+	return games
 }
 
 // AddPlayer game.
-func (board boardModel) AddPlayer(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusCreated)
+func (board boardModel) AddPlayer(r *http.Request) BoardStateMessage {
+	return BoardStateMessage{}
 }
 
 // GetInfo game.
-func (board boardModel) GetInfo(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (board boardModel) GetInfo(r *http.Request) BoardStateMessage {
+	return BoardStateMessage{}
 }
 
 // GetState game.
-func (board boardModel) GetState(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (board boardModel) GetState(r *http.Request) BoardStateMessage {
+	return BoardStateMessage{}
 }
 
 // GetStates game.
-func (board boardModel) GetStates(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (board boardModel) GetStates(r *http.Request) BoardStateMessage {
+	return BoardStateMessage{}
 }
 
 // PlayRound game.
-func (board boardModel) PlayRound(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (board boardModel) PlayRound(r *http.Request) BoardStateMessage {
+	return BoardStateMessage{}
 }
 
 // class BlankBoard:

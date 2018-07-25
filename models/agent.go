@@ -7,24 +7,26 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 )
 
 // Agent agent.
 type Agent interface {
-	PlayRound(w http.ResponseWriter, r *http.Request)
-	GetState(w http.ResponseWriter, r *http.Request)
+	PlayRound(r *http.Request) BoardStateMessage
+	GetState(r *http.Request) BoardStateMessage
 }
 
 const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 
 // Slayer of chess
 type simpleAgent struct {
-	gorm.Model
+	ID               uuid.UUID `gorm:"primary_key"`
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	DeletedAt        *time.Time `sql:"index"`
 	apiURL           url.URL
-	ID               uuid.UUID
 	delegate         baseAgent
 	gameID           uuid.UUID
 	gameOver         bool
@@ -49,14 +51,10 @@ type AgentCreateMessage struct {
 }
 
 // MakeAgent agent.
-func MakeAgent(w http.ResponseWriter, r *http.Request) {
+func MakeAgent(r *http.Request) AgentCreatedMessage {
 	defer r.Body.Close()
-	db, err := gorm.Open("sqlite3", "chess.db")
-	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
-	}
-	defer db.Close()
-	db.AutoMigrate(&simpleAgent{})
+	db := openDB()
+	defer closeDB(db)
 	var agent simpleAgent
 	var message AgentCreateMessage
 	json.NewDecoder(r.Body).Decode(message)
@@ -64,30 +62,24 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	agent.gameID = message.GameID
 	agent.player = message.Player
 	if message.User {
-		db.AutoMigrate(&userAgent{})
 		user := userAgent{agent}
 		db.Create(&user)
 		resp := user.joinGame()
 		defer resp.Body.Close()
-		json.NewEncoder(w).Encode(AgentCreatedMessage{user.ID})
-		return
+		return AgentCreatedMessage{user.ID}
 	}
 	agent.delegate = agents[message.Delegate]
 	agent.lookahead = message.Lookahead
 	db.Create(&agent)
 	resp := agent.joinGame()
 	defer resp.Body.Close()
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(AgentCreatedMessage{agent.ID})
+	return AgentCreatedMessage{agent.ID}
 }
 
 // GetAgent agent.
 func GetAgent(ID uuid.UUID) Agent {
-	db, err := gorm.Open("sqlite3", "chess.db")
-	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
-	}
-	defer db.Close()
+	db := openDB()
+	defer closeDB(db)
 	var agent simpleAgent
 	db.First(&agent, "ID = ?", ID)
 	if agent.ID != ID {
@@ -102,12 +94,9 @@ func GetAgent(ID uuid.UUID) Agent {
 }
 
 // Close agent.
-func (agent simpleAgent) close(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open("sqlite3", "chess.db")
-	if err != nil {
-		log.Panicln("failed to connect database", err, connStr)
-	}
-	defer db.Close()
+func (agent simpleAgent) close() {
+	db := openDB()
+	defer closeDB(db)
 	db.Model(&agent).Update("gameOver", true)
 }
 
@@ -180,18 +169,8 @@ func (agent simpleAgent) getBoardsCursor() <-chan board {
 }
 
 // GetState Gets current board state.
-func (agent simpleAgent) GetState(w http.ResponseWriter, r *http.Request) {
+func (agent simpleAgent) GetState(r *http.Request) BoardStateMessage {
 	defer r.Body.Close()
-	message := agent.getState()
-	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(message)
-	if err != nil {
-		log.Panicln(err)
-	}
-}
-
-// GetState Gets current board state.
-func (agent simpleAgent) getState() BoardStateMessage {
 	if agent.gameOver {
 		var message BoardStateMessage
 		message.End = true
@@ -226,7 +205,7 @@ func (agent simpleAgent) joinGame() *http.Response {
 }
 
 // PlayRound Play a game round
-func (agent simpleAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
+func (agent simpleAgent) PlayRound(r *http.Request) BoardStateMessage {
 	println(agent.requestCount, agent.requestCountData)
 	resp := agent.putBoard(agent.delegate.playRound(agent.getBoardsCursor()))
 	defer resp.Body.Close()
@@ -237,13 +216,13 @@ func (agent simpleAgent) PlayRound(w http.ResponseWriter, r *http.Request) {
 	}
 	agent.gameOver = message.End
 	if agent.gameOver {
-		agent.close(w, r)
+		agent.close()
+		return BoardStateMessage{}
 	}
 	if message.Invalid {
-		agent.PlayRound(w, r)
-		return
+		return agent.PlayRound(r)
 	}
-	w.WriteHeader(http.StatusOK)
+	return BoardStateMessage{}
 }
 
 type playMessage struct{ state [8]string }

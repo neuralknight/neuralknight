@@ -1,6 +1,7 @@
 package views
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"regexp"
@@ -29,7 +30,12 @@ func ServeAPIAgentsHTTP(w http.ResponseWriter, r *http.Request) {
 func serveAPIAgentsListHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		models.MakeAgent(w, r)
+		message := models.MakeAgent(r)
+		w.WriteHeader(http.StatusCreated)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		http.NotFound(w, r)
 	}
@@ -43,9 +49,19 @@ func serveAPIAgentsIDHTTP(w http.ResponseWriter, r *http.Request) {
 	agent := models.GetAgent(agentID)
 	switch r.Method {
 	case http.MethodGet:
-		agent.GetState(w, r)
+		message := agent.GetState(r)
+		w.WriteHeader(http.StatusCreated)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	case http.MethodPut:
-		agent.PlayRound(w, r)
+		message := agent.PlayRound(r)
+		w.WriteHeader(http.StatusCreated)
+		err := json.NewEncoder(w).Encode(message)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		http.NotFound(w, r)
 	}

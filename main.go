@@ -21,9 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
@@ -40,27 +38,10 @@ func shutdown(srv *http.Server, sigint <-chan os.Signal, idleConnsClosed chan<- 
 	}
 }
 
-func setupDB(dialect string, args ...interface{}) *gorm.DB {
-	db, err := gorm.Open(dialect, args...)
-	if err != nil {
-		log.Panicln("Failed to connect database:", err, connStr)
-	}
-
-	db.DB().SetMaxIdleConns(10)
-	db.DB().SetMaxOpenConns(100)
-	db.DB().SetConnMaxLifetime(time.Hour)
-
-	return db
-}
-
 // Main interruptable process.
 func Main(sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
 	var srv http.Server
 	go shutdown(&srv, sigint, idleConnsClosed)
-
-	db := setupDB("sqlite3", "chess.db")
-
-	db.Close()
 
 	srv.Handler = Handler{}
 

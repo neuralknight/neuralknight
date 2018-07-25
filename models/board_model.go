@@ -3,8 +3,8 @@ package models
 import (
 	"log"
 	"math"
+	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 )
 
@@ -324,21 +324,23 @@ func swap(b board) board {
 
 // Chess board model.
 type boardModel struct {
-	gorm.Model
-	board
-	ID             uuid.UUID
-	moveCount      int
-	movesSincePawn int
+	ID             uuid.UUID `gorm:"primary_key"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      *time.Time `sql:"index"`
+	State          board      `gorm:"-"`
+	MoveCount      int
+	MovesSincePawn int
 }
 
 // Ensure active player king on board.
 func (board boardModel) active() bool {
-	return board.movesSincePawn < 50 || board.hasKings()
+	return board.MovesSincePawn < 50 || board.hasKings()
 }
 
 // Ensure piece on board.
 func (board boardModel) contains(piece uint8) bool {
-	for _, r := range board.board {
+	for _, r := range board.State {
 		for _, p := range r {
 			if p == piece&0xF {
 				return true
@@ -350,7 +352,7 @@ func (board boardModel) contains(piece uint8) bool {
 
 // Rotate active player.
 func (board boardModel) swap() board {
-	return swap(board.board)
+	return swap(board.State)
 }
 
 type mutation struct {
@@ -389,7 +391,7 @@ func (board boardModel) validateMutation(mutation []mutation, state board) board
 	}
 	move := [2]int8{new.posX - old.posX, new.posY - old.posY}
 	valid := false
-	for m := range validMovesForPiece(board.board, old.prevPiece, old.posX, old.posY) {
+	for m := range validMovesForPiece(board.State, old.prevPiece, old.posX, old.posY) {
 		if move[0] == m[0] && move[1] == m[1] {
 			valid = true
 		}
@@ -398,7 +400,7 @@ func (board boardModel) validateMutation(mutation []mutation, state board) board
 		log.Panicln(InvalidMove{})
 	}
 	if old.prevPiece == 9 {
-		board.movesSincePawn = 0
+		board.MovesSincePawn = 0
 		if new.posY == 0 && new.nextPiece == 9 {
 			state[new.posY][new.posX] = QUEEN | 1
 		}
@@ -409,7 +411,7 @@ func (board boardModel) validateMutation(mutation []mutation, state board) board
 // Validate and return new board state.
 func (board boardModel) update(state board) boardModel {
 	m := make([]mutation, 0)
-	for posY, r := range board.board {
+	for posY, r := range board.State {
 		for posX, piece := range r {
 			if piece != state[posY][posX] {
 				m = append(m, mutation{int8(posX), int8(posY), piece, state[posY][posX]})
@@ -417,9 +419,9 @@ func (board boardModel) update(state board) boardModel {
 		}
 	}
 	var next boardModel
-	next.board = board.validateMutation(m, state)
-	next.moveCount = board.moveCount + 1
-	next.movesSincePawn = board.movesSincePawn + 1
+	next.State = board.validateMutation(m, state)
+	next.MoveCount = board.MoveCount + 1
+	next.MovesSincePawn = board.MovesSincePawn + 1
 	return next
 }
 
