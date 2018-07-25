@@ -25,14 +25,16 @@ var routerV1Agents = regexp.MustCompile("^api/v1.0/agents")
 func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
-			http.Error(w, "", http.StatusInternalServerError)
 			encoder := json.NewEncoder(w)
 			switch err := err.(type) {
 			case error:
+				http.Error(w, "", http.StatusInternalServerError)
 				encoder.Encode(ErrorMessage{err.Error(), err})
 			case string:
+				http.Error(w, "", http.StatusBadRequest)
 				encoder.Encode(ErrorMessage{err, nil})
 			default:
+				http.Error(w, "", http.StatusInternalServerError)
 				encoder.Encode(ErrorMessage{"Unhandled error", err})
 				log.Println("Unhandled error:", err)
 			}
