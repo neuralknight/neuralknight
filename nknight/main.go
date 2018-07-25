@@ -128,7 +128,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	var message models.AgentCreateResponse
+	var message models.AgentCreatedMessage
 	err = json.NewDecoder(resp.Body).Decode(message)
 	if err != nil {
 		log.Panicln(err)

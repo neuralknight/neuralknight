@@ -34,8 +34,8 @@ type simpleAgent struct {
 	requestCountData int
 }
 
-// AgentCreateResponse model.
-type AgentCreateResponse struct {
+// AgentCreatedMessage model.
+type AgentCreatedMessage struct {
 	AgentID uuid.UUID
 }
 
@@ -69,7 +69,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 		db.Create(&user)
 		resp := user.joinGame()
 		defer resp.Body.Close()
-		json.NewEncoder(w).Encode(AgentCreateResponse{user.ID})
+		json.NewEncoder(w).Encode(AgentCreatedMessage{user.ID})
 		return
 	}
 	agent.delegate = agents[message.Delegate]
@@ -78,7 +78,7 @@ func MakeAgent(w http.ResponseWriter, r *http.Request) {
 	resp := agent.joinGame()
 	defer resp.Body.Close()
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(AgentCreateResponse{agent.ID})
+	json.NewEncoder(w).Encode(AgentCreatedMessage{agent.ID})
 }
 
 // GetAgent agent.
