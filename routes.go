@@ -14,8 +14,8 @@ type Handler struct{}
 
 // ErrorMessage neuralknight
 type ErrorMessage struct {
-	error string
-	// extra interface{}
+	Error string
+	Extra interface{}
 }
 
 var routerV1 = regexp.MustCompile("^api/v1.0/")
@@ -25,19 +25,15 @@ var routerV1Agents = regexp.MustCompile("^api/v1.0/agents")
 func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
-			w.Header().Set("Content-Type", "text/json; charset=utf-8")
-			w.Header().Set("X-Content-Type-Options", "nosniff")
+			http.Error(w, "", http.StatusInternalServerError)
 			encoder := json.NewEncoder(w)
 			switch err := err.(type) {
 			case error:
-				w.WriteHeader(http.StatusBadRequest)
-				encoder.Encode(ErrorMessage{err.Error()}) //, err})
+				encoder.Encode(ErrorMessage{err.Error(), err})
 			case string:
-				w.WriteHeader(http.StatusBadRequest)
-				encoder.Encode(ErrorMessage{err}) //, nil})
+				encoder.Encode(ErrorMessage{err, nil})
 			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				encoder.Encode(ErrorMessage{"Unhandled error"}) //, err})
+				encoder.Encode(ErrorMessage{"Unhandled error", err})
 				log.Println("Unhandled error:", err)
 			}
 		}

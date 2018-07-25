@@ -177,6 +177,19 @@ func TestServeHTTPPostAgents(t *testing.T) {
 	if err != nil {
 		t.Fatal("Agents unmarshal:", err)
 	}
+	if len(message.Error) == 0 {
+		t.Fatal("Agents error len: 0")
+	}
+	switch extra := message.Extra.(type) {
+	case error:
+		t.Fatal("Agents extra type error")
+	case string:
+		t.Fatal("Agents extra type string", extra)
+	case nil:
+		t.Fatal("Agents extra type nil")
+	default:
+		t.Fatal("Agents extra type unknown", extra)
+	}
 }
 
 func TestServeHTTPPutAgents(t *testing.T) {
