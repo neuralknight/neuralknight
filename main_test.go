@@ -26,7 +26,7 @@ func TestInteruptMain(t *testing.T) {
 	close(sigint)
 }
 
-func TestMain(t *testing.T) {
+func TestMainEntry(t *testing.T) {
 	go main()
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second)
 }

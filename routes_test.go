@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 )
 
@@ -250,4 +252,12 @@ func TestServeHTTPDeleteAgents(t *testing.T) {
 	if w.Code != 404 {
 		t.Fatal("Agents model response code:", w.Code)
 	}
+}
+
+func TestMain(m *testing.M) {
+	defer func() {
+		db, _ := gorm.Open("sqlite3", "chess.db")
+		db.DropTableIfExists("simple_agents", "board_models", "user_agents")
+	}()
+	os.Exit(m.Run())
 }
