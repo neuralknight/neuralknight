@@ -39,7 +39,7 @@ const (
 var boardOutputShell = [8]string{"8|", "7|", "6|", "5|", "4|", "3|", "2|", "1|"}
 
 func getInfo(apiURL url.URL, ID uuid.UUID) string {
-	path, err := url.Parse("v1.0/games/" + ID.String() + "/info")
+	path, err := url.Parse("api/v1.0/games/" + ID.String() + "/info")
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -96,12 +96,12 @@ func makeCLIAgent(apiURL url.URL) CLIAgent {
 
 func (agent CLIAgent) doReset() {
 	agent.piece = nil
-	path, err := url.Parse("v1.0/games/")
+	path, err := url.Parse("api/v1.0/games/")
 	if err != nil {
 		log.Panicln(err)
 	}
 	apiURL := agent.apiURL.ResolveReference(path)
-	resp, err := http.Post(apiURL.RequestURI(), "", bytes.NewReader([]byte{}))
+	resp, err := http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -111,7 +111,7 @@ func (agent CLIAgent) doReset() {
 		log.Panicln(err)
 	}
 	agent.gameID = game.ID
-	path, err = url.Parse("v1.0/agent/")
+	path, err = url.Parse("api/v1.0/agent/")
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -124,7 +124,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	resp, err = http.Post(apiURL.RequestURI(), "", bytes.NewReader(buffer))
+	resp, err = http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -142,7 +142,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	resp, err = http.Post(apiURL.RequestURI(), "", bytes.NewReader(buffer))
+	resp, err = http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -162,7 +162,7 @@ func (agent CLIAgent) doPiece(col, row string) {
 		return
 	}
 	agent.piece = args
-	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
+	path, err := url.Parse("api/v1.0/games/" + agent.gameID.String())
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -219,7 +219,7 @@ func (agent CLIAgent) doMove(col, row string) {
 		agent.printInvalid("move " + col + " " + row)
 		return
 	}
-	path, err := url.Parse("v1.0/agent/" + agent.user.String())
+	path, err := url.Parse("api/v1.0/agent/" + agent.user.String())
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -255,7 +255,7 @@ func (agent CLIAgent) doMove(col, row string) {
 	}
 	state := boardStateMessage.State
 	nextState := state
-	path, err = url.Parse("v1.0/games/" + agent.gameID.String())
+	path, err = url.Parse("api/v1.0/games/" + agent.gameID.String())
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -336,6 +336,7 @@ func (agent CLIAgent) cmdLoop() {
 		n, err := fmt.Scanln(&cmd, &col, &row)
 		cmd = strings.ToLower(cmd)
 		if n == 1 && cmd == "reset" {
+			agent.doReset()
 			continue
 		}
 		if err != nil {
