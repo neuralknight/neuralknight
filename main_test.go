@@ -28,5 +28,5 @@ func TestInteruptMain(t *testing.T) {
 
 func TestMainEntry(t *testing.T) {
 	go main()
-	time.Sleep(time.Second)
+	time.Sleep(time.Microsecond * 10)
 }
