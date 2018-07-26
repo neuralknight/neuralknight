@@ -653,12 +653,12 @@ type coreBaseAgent struct{}
 type userAgentDelegate struct{}
 
 // UserMoveMessage Human Agent
-type userMoveMessage struct {
+type UserMoveMessage struct {
 	Move [2][2]int
 }
 
 func getMove(r io.Reader) [2][2]int {
-	var message userMoveMessage
+	var message UserMoveMessage
 	err := json.NewDecoder(r).Decode(message)
 	if err != nil {
 		log.Panicln(err)
