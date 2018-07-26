@@ -21,7 +21,7 @@ type Agent interface {
 const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 
 // Slayer of chess
-type simpleAgent struct {
+type agentModel struct {
 	ID               uuid.UUID `gorm:"primary_key"`
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
@@ -55,7 +55,7 @@ func MakeAgent(r *http.Request) AgentCreatedMessage {
 	defer r.Body.Close()
 	db := openDB()
 	defer closeDB(db)
-	var agent simpleAgent
+	var agent agentModel
 	var message AgentCreateMessage
 	json.NewDecoder(r.Body).Decode(message)
 	agent.ID = uuid.NewV5(uuid.NamespaceOID, "chess.agent")
@@ -77,7 +77,7 @@ func MakeAgent(r *http.Request) AgentCreatedMessage {
 func GetAgent(ID uuid.UUID) Agent {
 	db := openDB()
 	defer closeDB(db)
-	var agent simpleAgent
+	var agent agentModel
 	db.First(&agent, "ID = ?", ID)
 	if agent.ID != ID {
 		log.Panicln(agent)
@@ -86,14 +86,14 @@ func GetAgent(ID uuid.UUID) Agent {
 }
 
 // Close agent.
-func (agent simpleAgent) close() {
+func (agent agentModel) close() {
 	db := openDB()
 	defer closeDB(db)
 	db.Model(&agent).Update("gameOver", true)
 }
 
 // getBoards agent.
-func (agent simpleAgent) getBoards(cursor *uuid.UUID) *http.Response {
+func (agent agentModel) getBoards(cursor *uuid.UUID) *http.Response {
 	params := url.Values{"lookahead": {}}
 	if cursor != nil {
 		params.Add("cursor", cursor.String())
@@ -115,7 +115,7 @@ type cursorMessage struct {
 	boards [][8]string
 }
 
-func (agent simpleAgent) getBoardsCursorOne(boards chan<- board, cursor *uuid.UUID) *uuid.UUID {
+func (agent agentModel) getBoardsCursorOne(boards chan<- board, cursor *uuid.UUID) *uuid.UUID {
 	boardOptions := agent.getBoards(cursor)
 	defer boardOptions.Body.Close()
 	var message cursorMessage
@@ -148,7 +148,7 @@ func (agent simpleAgent) getBoardsCursorOne(boards chan<- board, cursor *uuid.UU
 }
 
 // getBoardsCursor agent.
-func (agent simpleAgent) getBoardsCursor() <-chan board {
+func (agent agentModel) getBoardsCursor() <-chan board {
 	boards := make(chan board)
 	go func() {
 		cursor := agent.getBoardsCursorOne(boards, nil)
@@ -161,7 +161,7 @@ func (agent simpleAgent) getBoardsCursor() <-chan board {
 }
 
 // GetState Gets current board state.
-func (agent simpleAgent) GetState(r *http.Request) BoardStateMessage {
+func (agent agentModel) GetState(r *http.Request) BoardStateMessage {
 	defer r.Body.Close()
 	if agent.gameOver {
 		var message BoardStateMessage
@@ -186,7 +186,7 @@ func (agent simpleAgent) GetState(r *http.Request) BoardStateMessage {
 	return message
 }
 
-func (agent simpleAgent) joinGame() *http.Response {
+func (agent agentModel) joinGame() *http.Response {
 	var json = make(map[string]uuid.UUID, 1)
 	json["id"] = agent.ID
 	resp, err := http.PostForm(agent.apiURL.EscapedPath(), url.Values{"id": {agent.ID.String()}})
@@ -197,7 +197,7 @@ func (agent simpleAgent) joinGame() *http.Response {
 }
 
 // PlayRound Play a game round
-func (agent simpleAgent) PlayRound(r *http.Request) BoardStateMessage {
+func (agent agentModel) PlayRound(r *http.Request) BoardStateMessage {
 	println(agent.requestCount, agent.requestCountData)
 	if agent.delegate == "user-agent" {
 		return userAgentDelegate{}.playRound(r, agent)
@@ -224,7 +224,7 @@ func (agent simpleAgent) PlayRound(r *http.Request) BoardStateMessage {
 type playMessage struct{ state [8]string }
 
 // Sends move selection to board state manager
-func (agent simpleAgent) putBoard(board board) *http.Response {
+func (agent agentModel) putBoard(board board) *http.Response {
 	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
 	if err != nil {
 		log.Panicln(err)

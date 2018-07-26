@@ -255,9 +255,11 @@ func TestServeHTTPDeleteAgents(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	defer func() {
-		db, _ := gorm.Open("sqlite3", "chess.db")
-		db.DropTableIfExists("simple_agents", "board_models", "user_agents")
-	}()
-	os.Exit(m.Run())
+	code := m.Run()
+	db, _ := gorm.Open("sqlite3", "chess.db")
+	db.DropTableIfExists("agent_models", "board_models")
+	if errors := db.GetErrors(); len(errors) != 0 {
+		panic(errors)
+	}
+	os.Exit(code)
 }

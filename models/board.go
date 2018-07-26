@@ -33,10 +33,10 @@ func openDB() *gorm.DB {
 	}
 	tx.AutoMigrate(&boardModel{})
 
-	if !tx.HasTable(&simpleAgent{}) {
-		tx.CreateTable(&simpleAgent{})
+	if !tx.HasTable(&agentModel{}) {
+		tx.CreateTable(&agentModel{})
 	}
-	tx.AutoMigrate(&simpleAgent{})
+	tx.AutoMigrate(&agentModel{})
 
 	commitDB(tx)
 

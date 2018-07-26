@@ -667,7 +667,7 @@ func getMove(r io.Reader) [2][2]int {
 }
 
 // PlayRound Play a game round
-func (userAgentDelegate) playRound(r *http.Request, agent simpleAgent) BoardStateMessage {
+func (userAgentDelegate) playRound(r *http.Request, agent agentModel) BoardStateMessage {
 	defer r.Body.Close()
 	move := getMove(r.Body)
 	proposal := agent.GetState(r)
