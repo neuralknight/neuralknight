@@ -27,7 +27,7 @@ type simpleAgent struct {
 	UpdatedAt        time.Time
 	DeletedAt        *time.Time `sql:"index"`
 	apiURL           url.URL
-	delegate         baseAgent
+	delegate         string
 	gameID           uuid.UUID
 	gameOver         bool
 	lookahead        int
@@ -62,13 +62,10 @@ func MakeAgent(r *http.Request) AgentCreatedMessage {
 	agent.gameID = message.GameID
 	agent.player = message.Player
 	if message.User {
-		user := userAgent{agent}
-		db.Create(&user)
-		resp := user.joinGame()
-		defer resp.Body.Close()
-		return AgentCreatedMessage{user.ID}
+		agent.delegate = "user-agent"
+	} else {
+		agent.delegate = message.Delegate
 	}
-	agent.delegate = agents[message.Delegate]
 	agent.lookahead = message.Lookahead
 	db.Create(&agent)
 	resp := agent.joinGame()
@@ -83,12 +80,7 @@ func GetAgent(ID uuid.UUID) Agent {
 	var agent simpleAgent
 	db.First(&agent, "ID = ?", ID)
 	if agent.ID != ID {
-		var user userAgent
-		db.First(&user, "ID = ?", ID)
-		if user.ID != ID {
-			log.Panicln(agent)
-		}
-		return user
+		log.Panicln(agent)
 	}
 	return agent
 }
@@ -207,7 +199,11 @@ func (agent simpleAgent) joinGame() *http.Response {
 // PlayRound Play a game round
 func (agent simpleAgent) PlayRound(r *http.Request) BoardStateMessage {
 	println(agent.requestCount, agent.requestCountData)
-	resp := agent.putBoard(agent.delegate.playRound(agent.getBoardsCursor()))
+	if agent.delegate == "user-agent" {
+		return userAgentDelegate{}.playRound(r, agent)
+	}
+	delegate := agents[agent.delegate]
+	resp := agent.putBoard(delegate.playRound(agent.getBoardsCursor()))
 	defer resp.Body.Close()
 	var message BoardStateMessage
 	err := json.NewDecoder(resp.Body).Decode(message)

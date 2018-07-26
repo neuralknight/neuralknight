@@ -38,11 +38,6 @@ func openDB() *gorm.DB {
 	}
 	tx.AutoMigrate(&simpleAgent{})
 
-	if !tx.HasTable(&userAgent{}) {
-		tx.CreateTable(&userAgent{})
-	}
-	tx.AutoMigrate(&userAgent{})
-
 	commitDB(tx)
 
 	if errors := db.GetErrors(); len(errors) != 0 {
@@ -59,17 +54,18 @@ func openDB() *gorm.DB {
 func commitDB(db *gorm.DB) {
 	errors := db.GetErrors()
 	if len(errors) != 0 {
-		log.Panicln(errors)
+		panic(errors)
 	}
 	db.Commit()
 }
 
 func closeDB(db *gorm.DB) {
 	defer func() {
+		defer db.Close()
 		if r := recover(); r != nil {
 			db.Rollback()
+			panic(r)
 		}
-		db.Close()
 	}()
 	commitDB(db)
 }

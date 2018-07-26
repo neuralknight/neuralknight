@@ -1,6 +1,18 @@
 package models
 
+import "io"
+
 type board [8][8]uint8
+
+var _this io.ByteScanner = board{}
+
+func (b board) UnreadByte() error {
+	return io.EOF
+}
+
+func (b board) ReadByte() (byte, error) {
+	return '\000', io.EOF
+}
 
 // BISHOP piece.
 const (
