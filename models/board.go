@@ -3,7 +3,6 @@ package models
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
@@ -16,15 +15,18 @@ func openDB() *gorm.DB {
 	}
 
 	tx := db.Begin()
+
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
+			panic(r)
 		}
 	}()
 
-	tx.DB().SetMaxIdleConns(10)
-	tx.DB().SetMaxOpenConns(100)
-	tx.DB().SetConnMaxLifetime(time.Hour)
+	// TODO(grandquista)
+	// tx.DB().SetMaxIdleConns(10)
+	// tx.DB().SetMaxOpenConns(100)
+	// tx.DB().SetConnMaxLifetime(time.Hour)
 
 	if !tx.HasTable(&boardModel{}) {
 		tx.CreateTable(&boardModel{})
@@ -42,6 +44,14 @@ func openDB() *gorm.DB {
 	tx.AutoMigrate(&userAgent{})
 
 	commitDB(tx)
+
+	if errors := db.GetErrors(); len(errors) != 0 {
+		panic(errors)
+	}
+
+	if errors := tx.GetErrors(); len(errors) != 0 {
+		panic(errors)
+	}
 
 	return db.Begin()
 }

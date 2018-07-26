@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestShutdown(t *testing.T) {
@@ -27,4 +28,5 @@ func TestInteruptMain(t *testing.T) {
 
 func TestMain(t *testing.T) {
 	go main()
+	time.Sleep(time.Second * 2)
 }
