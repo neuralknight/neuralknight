@@ -141,7 +141,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	resp, err = http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
+	resp, err = http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
 	if err != nil {
 		log.Panicln(err)
 	}
