@@ -7,6 +7,8 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+
+	"github.com/jinzhu/gorm"
 )
 
 // baseAgent agent.
@@ -666,7 +668,7 @@ func getMove(r io.Reader) [2][2]int {
 }
 
 // PlayRound Play a game round
-func (userAgentDelegate) playRound(r *http.Request, agent agentModel) BoardStateMessage {
+func (userAgentDelegate) playRound(r *http.Request, agent agentModel, db *gorm.DB) BoardStateMessage {
 	defer r.Body.Close()
 	move := getMove(r.Body)
 	proposal := agent.GetState(r)
@@ -683,9 +685,9 @@ func (userAgentDelegate) playRound(r *http.Request, agent agentModel) BoardState
 	if err != nil {
 		log.Panicln(err)
 	}
-	agent.gameOver = message.End
-	if agent.gameOver {
-		agent.close()
+	agent.GameOver = message.End
+	if agent.GameOver {
+		agent.close(db)
 		return message
 	}
 	return message

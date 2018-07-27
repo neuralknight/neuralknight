@@ -37,24 +37,6 @@ const (
 
 var boardOutputShell = [8]string{"8|", "7|", "6|", "5|", "4|", "3|", "2|", "1|"}
 
-func getInfo(apiURL url.URL, ID uuid.UUID) string {
-	path, err := url.Parse("api/v1.0/games/" + ID.String() + "/info")
-	if err != nil {
-		log.Panicln(err)
-	}
-	apiURL = *apiURL.ResolveReference(path)
-	resp, err := http.Get(apiURL.RequestURI())
-	if err != nil {
-		log.Panicln(err)
-	}
-	var message models.BoardInfoMessage
-	err = json.NewDecoder(resp.Body).Decode(message)
-	if err != nil {
-		log.Panicln(err)
-	}
-	return message.Print
-}
-
 func formatBoard(board string) []string {
 	lines := strings.Split(board, "\n")
 	for i, line := range lines {
@@ -82,7 +64,40 @@ type CLIAgent struct {
 	apiURL url.URL
 	piece  *[2]int
 	gameID uuid.UUID
-	user   uuid.UUID
+	userID uuid.UUID
+}
+
+func (agent CLIAgent) apiURI(input string, ID uuid.UUID) string {
+	if ID.Version() == uuid.V5 {
+		input = input + ID.String()
+	}
+	path, err := url.Parse(input)
+	if err != nil {
+		log.Panicln(err)
+	}
+	gameURL := agent.apiURL.ResolveReference(path)
+	return gameURL.RequestURI()
+}
+
+func (agent CLIAgent) gameURI() string {
+	return agent.apiURI("api/v1.0/games/", agent.gameID)
+}
+
+func (agent CLIAgent) agentURI() string {
+	return agent.apiURI("api/v1.0/agent/", agent.userID)
+}
+
+func (agent CLIAgent) getInfo() string {
+	resp, err := http.Get(agent.gameURI() + "/info")
+	if err != nil {
+		log.Panicln(err)
+	}
+	var message models.BoardInfoMessage
+	err = json.NewDecoder(resp.Body).Decode(message)
+	if err != nil {
+		log.Panicln(err)
+	}
+	return message.Print
 }
 
 // MakeCLIAgent agent.
@@ -94,13 +109,10 @@ func makeCLIAgent(apiURL url.URL) CLIAgent {
 }
 
 func (agent CLIAgent) doReset() {
+	agent.gameID = uuid.UUID{}
+	agent.userID = uuid.UUID{}
 	agent.piece = nil
-	path, err := url.Parse("api/v1.0/games/")
-	if err != nil {
-		log.Panicln(err)
-	}
-	apiURL := agent.apiURL.ResolveReference(path)
-	resp, err := http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
+	resp, err := http.Post(agent.gameURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -110,20 +122,14 @@ func (agent CLIAgent) doReset() {
 		log.Panicln(err)
 	}
 	agent.gameID = game.ID
-	path, err = url.Parse("api/v1.0/agent/")
-	if err != nil {
-		log.Panicln(err)
-	}
-	apiURL = agent.apiURL.ResolveReference(path)
 	var messageCreate models.AgentCreateMessage
 	messageCreate.GameID = agent.gameID
-	messageCreate.Player = 1
 	messageCreate.User = true
 	buffer, err := json.Marshal(messageCreate)
 	if err != nil {
 		log.Panicln(err)
 	}
-	resp, err = http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
+	resp, err = http.Post(agent.agentURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -132,16 +138,14 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	agent.user = message.AgentID
 	messageCreate.User = false
-	messageCreate.Player = 2
 	messageCreate.Lookahead = 2
 	messageCreate.Delegate = "max-balance-agent"
 	buffer, err = json.Marshal(messageCreate)
 	if err != nil {
 		log.Panicln(err)
 	}
-	resp, err = http.Post(apiURL.RequestURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
+	resp, err = http.Post(agent.agentURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -150,7 +154,8 @@ func (agent CLIAgent) doReset() {
 		log.Panicln(err)
 	}
 	printCmds()
-	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+	printBoard(formatBoard(agent.getInfo()))
+	agent.userID = message.AgentID
 }
 
 // Select piece for move.
@@ -161,12 +166,7 @@ func (agent CLIAgent) doPiece(col, row string) {
 		return
 	}
 	agent.piece = args
-	path, err := url.Parse("api/v1.0/games/" + agent.gameID.String())
-	if err != nil {
-		log.Panicln(err)
-	}
-	apiURL := agent.apiURL.ResolveReference(path)
-	resp, err := http.Get(apiURL.RequestURI())
+	resp, err := http.Get(agent.gameURI())
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -185,7 +185,7 @@ func (agent CLIAgent) doPiece(col, row string) {
 		agent.printInvalid("piece " + col + " " + row)
 		return
 	}
-	board := strings.Split(getInfo(agent.apiURL, agent.gameID), "\n")
+	board := strings.Split(agent.getInfo(), "\n")
 	for i, boardRow := range board {
 		board[i] = strings.Join(strings.Split(boardRow, ""), " ")
 	}
@@ -208,18 +208,13 @@ func (agent CLIAgent) doMove(col, row string) {
 		agent.printInvalid("move " + col + " " + row)
 		return
 	}
-	path, err := url.Parse("api/v1.0/agent/" + agent.user.String())
-	if err != nil {
-		log.Panicln(err)
-	}
-	apiURL := agent.apiURL.ResolveReference(path)
 	var message models.UserMoveMessage
 	message.Move = [2][2]int{[2]int{agent.piece[1], agent.piece[0]}, [2]int{args[1], args[0]}}
 	data, err := json.Marshal(message)
 	if err != nil {
 		log.Panicln(err)
 	}
-	req, err := http.NewRequest(http.MethodPut, apiURL.RequestURI(), bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPut, agent.agentURI(), bytes.NewReader(data))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -237,23 +232,18 @@ func (agent CLIAgent) doMove(col, row string) {
 		return
 	}
 	if boardStateMessage.End {
-		printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+		printBoard(formatBoard(agent.getInfo()))
 		println("you won")
 		agent.doReset()
 		return
 	}
 	state := boardStateMessage.State
 	nextState := state
-	path, err = url.Parse("api/v1.0/games/" + agent.gameID.String())
-	if err != nil {
-		log.Panicln(err)
-	}
-	apiURL = agent.apiURL.ResolveReference(path)
-	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+	printBoard(formatBoard(agent.getInfo()))
 	println("making move ...")
 	for state == nextState {
 		time.Sleep(2)
-		resp, err = http.Get(apiURL.RequestURI())
+		resp, err = http.Get(agent.gameURI())
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -267,11 +257,11 @@ func (agent CLIAgent) doMove(col, row string) {
 			return
 		}
 	}
-	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+	printBoard(formatBoard(agent.getInfo()))
 }
 
 func (agent CLIAgent) printInvalid(args string) {
-	printBoard(formatBoard(getInfo(agent.apiURL, agent.gameID)))
+	printBoard(formatBoard(agent.getInfo()))
 	println("invalid command:", args)
 	printCmds()
 }

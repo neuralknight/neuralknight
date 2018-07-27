@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 )
 
@@ -21,18 +22,15 @@ const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-
 
 // Slayer of chess
 type agentModel struct {
-	ID               uuid.UUID `gorm:"primary_key"`
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	DeletedAt        *time.Time `sql:"index"`
-	apiURL           url.URL
-	delegate         string
-	gameID           uuid.UUID
-	gameOver         bool
-	lookahead        int
-	player           int
-	requestCount     int
-	requestCountData int
+	ID        uuid.UUID `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time `sql:"index"`
+	GameURL   url.URL
+	Delegate  string
+	GameID    uuid.UUID
+	GameOver  bool
+	Lookahead int
 }
 
 // AgentCreatedMessage model.
@@ -44,9 +42,14 @@ type AgentCreatedMessage struct {
 type AgentCreateMessage struct {
 	User      bool
 	GameID    uuid.UUID
-	Player    int
 	Lookahead int
 	Delegate  string
+}
+
+func (agent agentModel) gameURI(path *url.URL) string {
+	// gameURL := path.ResolveReference(&agent.GameURL)
+	gameURL := agent.GameURL.ResolveReference(path)
+	return gameURL.RequestURI()
 }
 
 // MakeAgent agent.
@@ -58,14 +61,13 @@ func MakeAgent(r *http.Request) AgentCreatedMessage {
 	var message AgentCreateMessage
 	json.NewDecoder(r.Body).Decode(message)
 	agent.ID = uuid.NewV5(uuid.NamespaceOID, "chess.agent")
-	agent.gameID = message.GameID
-	agent.player = message.Player
+	agent.GameID = message.GameID
 	if message.User {
-		agent.delegate = "user-agent"
+		agent.Delegate = "user-agent"
 	} else {
-		agent.delegate = message.Delegate
+		agent.Delegate = message.Delegate
 	}
-	agent.lookahead = message.Lookahead
+	agent.Lookahead = message.Lookahead
 	db.Create(&agent)
 	resp := agent.joinGame()
 	defer resp.Body.Close()
@@ -85,9 +87,7 @@ func GetAgent(ID uuid.UUID) Agent {
 }
 
 // Close agent.
-func (agent agentModel) close() {
-	db := openDB()
-	defer closeDB(db)
+func (agent agentModel) close(db *gorm.DB) {
 	db.Model(&agent).Update("gameOver", true)
 }
 
@@ -97,12 +97,11 @@ func (agent agentModel) getBoards(cursor *uuid.UUID) *http.Response {
 	if cursor != nil {
 		params.Add("cursor", cursor.String())
 	}
-	path, err := url.Parse("v1.0/games/" + agent.gameID.String() + "/states?" + params.Encode())
+	path, err := url.Parse("v1.0/games/" + agent.GameID.String() + "/states?" + params.Encode())
 	if err != nil {
 		log.Panicln(err)
 	}
-	apiURL := agent.apiURL.ResolveReference(path)
-	resp, err := http.Get(apiURL.RequestURI())
+	resp, err := http.Get(agent.gameURI(path))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -151,17 +150,16 @@ func (agent agentModel) getBoardsCursor() <-chan board {
 // GetState Gets current board state.
 func (agent agentModel) GetState(r *http.Request) BoardStateMessage {
 	defer r.Body.Close()
-	if agent.gameOver {
+	if agent.GameOver {
 		var message BoardStateMessage
 		message.End = true
 		return message
 	}
-	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
+	path, err := url.Parse("v1.0/games/" + agent.GameID.String())
 	if err != nil {
 		log.Panicln(err)
 	}
-	apiURL := agent.apiURL.ResolveReference(path)
-	resp, err := http.Get(apiURL.RequestURI())
+	resp, err := http.Get(agent.gameURI(path))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -177,7 +175,7 @@ func (agent agentModel) GetState(r *http.Request) BoardStateMessage {
 func (agent agentModel) joinGame() *http.Response {
 	var json = make(map[string]uuid.UUID, 1)
 	json["id"] = agent.ID
-	resp, err := http.PostForm(agent.apiURL.EscapedPath(), url.Values{"id": {agent.ID.String()}})
+	resp, err := http.PostForm(agent.gameURI(&url.URL{}), url.Values{"id": {agent.ID.String()}})
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -186,11 +184,12 @@ func (agent agentModel) joinGame() *http.Response {
 
 // PlayRound Play a game round
 func (agent agentModel) PlayRound(r *http.Request) BoardStateMessage {
-	println(agent.requestCount, agent.requestCountData)
-	if agent.delegate == "user-agent" {
-		return userAgentDelegate{}.playRound(r, agent)
+	db := openDB()
+	defer closeDB(db)
+	if agent.Delegate == "user-agent" {
+		return userAgentDelegate{}.playRound(r, agent, db)
 	}
-	delegate := agents[agent.delegate]
+	delegate := agents[agent.Delegate]
 	resp := agent.putBoard(delegate.playRound(agent.getBoardsCursor()))
 	defer resp.Body.Close()
 	var message BoardStateMessage
@@ -198,9 +197,9 @@ func (agent agentModel) PlayRound(r *http.Request) BoardStateMessage {
 	if err != nil {
 		log.Panicln(err)
 	}
-	agent.gameOver = message.End
-	if agent.gameOver {
-		agent.close()
+	agent.GameOver = message.End
+	if agent.GameOver {
+		agent.close(db)
 		return BoardStateMessage{}
 	}
 	if message.Invalid {
@@ -213,16 +212,15 @@ type playMessage struct{ state board }
 
 // Sends move selection to board state manager
 func (agent agentModel) putBoard(board board) *http.Response {
-	path, err := url.Parse("v1.0/games/" + agent.gameID.String())
+	path, err := url.Parse("v1.0/games/" + agent.GameID.String())
 	if err != nil {
 		log.Panicln(err)
 	}
-	apiURL := agent.apiURL.ResolveReference(path)
 	data, err := json.Marshal(playMessage{board})
 	if err != nil {
 		log.Panicln(err)
 	}
-	req, err := http.NewRequest(http.MethodPut, apiURL.RequestURI(), bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPut, agent.gameURI(path), bytes.NewReader(data))
 	if err != nil {
 		log.Panicln(err)
 	}
