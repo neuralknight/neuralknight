@@ -22,11 +22,10 @@ import (
 	"os"
 	"os/signal"
 
+	_ "github.com/RebirthDB/rebirthdb-go"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
-
-const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 
 func shutdown(srv *http.Server, sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
 	defer close(idleConnsClosed)

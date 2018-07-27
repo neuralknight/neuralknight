@@ -1,3 +1,4 @@
+# minikube start
 docker build -t neuralknight .
 # kubectl apply -f application/deployment.yaml
 # kubectl describe deployment nginx-deployment
