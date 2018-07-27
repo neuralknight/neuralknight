@@ -1,6 +1,10 @@
 package models
 
-import "io"
+import (
+	"encoding/hex"
+	"encoding/json"
+	"io"
+)
 
 type board [8][8]uint8
 
@@ -12,6 +16,32 @@ func (b board) UnreadByte() error {
 
 func (b board) ReadByte() (byte, error) {
 	return '\000', io.EOF
+}
+
+func (b *board) UnmarshalJSON(bytes []byte) error {
+	var state [8]string
+	if err := json.Unmarshal(bytes, &state); err != nil {
+		return err
+	}
+	for i, r := range state {
+		row, err := hex.DecodeString(r)
+		if err != nil {
+			return err
+		}
+		if len(row) != 8 {
+			return err
+		}
+		copy(b[i][:], row)
+	}
+	return nil
+}
+
+func (b board) MarshalJSON() ([]byte, error) {
+	var state [8]string
+	for i, r := range b {
+		state[i] = hex.EncodeToString(r[:])
+	}
+	return json.Marshal(state)
 }
 
 // BISHOP piece.

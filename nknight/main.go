@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -180,17 +179,7 @@ func (agent CLIAgent) doPiece(col, row string) {
 		println("game over")
 		return
 	}
-	var state board
-	for i, r := range message.State {
-		row, err := hex.DecodeString(r)
-		if err != nil {
-			log.Panicln(err)
-		}
-		if len(row) != 8 {
-			log.Panicln(row)
-		}
-		copy(state[i][:], row)
-	}
+	state := message.State
 	piece := state[args[1]][args[0]]
 	if piece&1 == 0 {
 		agent.printInvalid("piece " + col + " " + row)
@@ -357,6 +346,14 @@ func (agent CLIAgent) cmdLoop() {
 }
 
 func main() {
+	defer func() {
+		switch err := recover().(type) {
+		case error:
+			log.Println(err.Error())
+		default:
+			break
+		}
+	}()
 	apiURLFlag := flag.String("api_url", "http://localhost:8080", "api_url")
 	flag.Parse()
 	if apiURLFlag == nil {

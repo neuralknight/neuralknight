@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -674,17 +673,7 @@ func (userAgentDelegate) playRound(r *http.Request, agent agentModel) BoardState
 	if proposal.End {
 		return proposal
 	}
-	var out board
-	for i, r := range proposal.State {
-		row, err := hex.DecodeString(r)
-		if err != nil {
-			log.Panicln(err)
-		}
-		if len(row) != 8 {
-			log.Panicln(row)
-		}
-		copy(out[i][:], row)
-	}
+	out := proposal.State
 	out[move[1][0]][move[1][1]] = out[move[0][0]][move[0][1]]
 	out[move[0][0]][move[0][1]] = 0
 	resp := agent.putBoard(out)

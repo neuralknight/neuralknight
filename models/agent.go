@@ -2,7 +2,6 @@ package models
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -112,7 +111,7 @@ func (agent agentModel) getBoards(cursor *uuid.UUID) *http.Response {
 
 type cursorMessage struct {
 	cursor string
-	boards [][8]string
+	boards []board
 }
 
 func (agent agentModel) getBoardsCursorOne(boards chan<- board, cursor *uuid.UUID) *uuid.UUID {
@@ -124,18 +123,7 @@ func (agent agentModel) getBoardsCursorOne(boards chan<- board, cursor *uuid.UUI
 		log.Panicln(err)
 	}
 	for _, b := range message.boards {
-		var out board
-		for i, r := range b {
-			row, err := hex.DecodeString(r)
-			if err != nil {
-				log.Panicln(err)
-			}
-			if len(row) != 8 {
-				log.Panicln(row)
-			}
-			copy(out[i][:], row)
-		}
-		boards <- out
+		boards <- b
 	}
 	if message.cursor != "" {
 		cur, err := uuid.FromString(message.cursor)
@@ -221,7 +209,7 @@ func (agent agentModel) PlayRound(r *http.Request) BoardStateMessage {
 	return BoardStateMessage{}
 }
 
-type playMessage struct{ state [8]string }
+type playMessage struct{ state board }
 
 // Sends move selection to board state manager
 func (agent agentModel) putBoard(board board) *http.Response {
@@ -230,11 +218,7 @@ func (agent agentModel) putBoard(board board) *http.Response {
 		log.Panicln(err)
 	}
 	apiURL := agent.apiURL.ResolveReference(path)
-	var message playMessage
-	for i, r := range board {
-		message.state[i] = hex.EncodeToString(r[:])
-	}
-	data, err := json.Marshal(message)
+	data, err := json.Marshal(playMessage{board})
 	if err != nil {
 		log.Panicln(err)
 	}

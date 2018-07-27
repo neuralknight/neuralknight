@@ -11,7 +11,7 @@ import (
 // BoardStateMessage models.
 type BoardStateMessage struct {
 	End, Invalid bool
-	State        [8]string
+	State        board
 }
 
 // """
