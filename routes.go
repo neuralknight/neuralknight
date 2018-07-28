@@ -12,9 +12,6 @@ import (
 // Handler neuralknight
 type Handler struct{}
 
-// NotFoundMessage neuralknight
-type NotFoundMessage struct{}
-
 // ErrorMessage neuralknight
 type ErrorMessage struct {
 	Error string
@@ -56,7 +53,7 @@ func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if message == nil {
 		w.WriteHeader(http.StatusNotFound)
-		message = NotFoundMessage{}
+		message = ErrorMessage{"404 page not found", nil}
 	} else {
 		switch r.Method {
 		case http.MethodPost:
