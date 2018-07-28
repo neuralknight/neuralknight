@@ -116,7 +116,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	var game models.BoardCreateMessage
+	var game models.BoardCreatedMessage
 	err = json.NewDecoder(resp.Body).Decode(game)
 	if err != nil {
 		log.Panicln(err)

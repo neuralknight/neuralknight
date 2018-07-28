@@ -5,10 +5,19 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
 )
+
+func viewID(r *http.Request, re *regexp.Regexp, suffix string) uuid.UUID {
+	ID, err := uuid.FromString(strings.Trim(strings.TrimSuffix(strings.Trim(re.FindString(r.URL.Path), "/"), suffix), "/"))
+	if err != nil {
+		log.Panicln(err)
+	}
+	return ID
+}
 
 var routerV1Games = regexp.MustCompile("^api/v1.0/games/?$")
 var routerV1GamesID = regexp.MustCompile("^api/v1.0/games/[\\w-]+/?$")
@@ -61,10 +70,7 @@ func serveAPIGamesListHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveAPIGamesIDHTTP(w http.ResponseWriter, r *http.Request) {
-	gameID, err := uuid.FromString(extractV1GamesID.FindString(r.URL.Path))
-	if err != nil {
-		log.Panicln(err)
-	}
+	gameID := viewID(r, extractV1GamesID, "")
 	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
@@ -94,10 +100,7 @@ func serveAPIGamesIDHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveAPIGamesIDStatesHTTP(w http.ResponseWriter, r *http.Request) {
-	gameID, err := uuid.FromString(extractV1GamesIDStates.FindString(r.URL.Path))
-	if err != nil {
-		log.Panicln(err)
-	}
+	gameID := viewID(r, extractV1GamesIDStates, "states")
 	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:
@@ -113,10 +116,7 @@ func serveAPIGamesIDStatesHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveAPIGamesIDInfoHTTP(w http.ResponseWriter, r *http.Request) {
-	gameID, err := uuid.FromString(extractV1GamesIDInfo.FindString(r.URL.Path))
-	if err != nil {
-		log.Panicln(err)
-	}
+	gameID := viewID(r, extractV1GamesIDInfo, "info")
 	game := models.GetGame(gameID)
 	switch r.Method {
 	case http.MethodGet:

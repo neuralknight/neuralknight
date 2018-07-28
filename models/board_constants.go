@@ -1,28 +1,15 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/hex"
 	"encoding/json"
-	"io"
+	"strings"
 )
 
 type board [8][8]uint8
 
-var _this io.ByteScanner = board{}
-
-func (b board) UnreadByte() error {
-	return io.EOF
-}
-
-func (b board) ReadByte() (byte, error) {
-	return '\000', io.EOF
-}
-
-func (b *board) UnmarshalJSON(bytes []byte) error {
-	var state [8]string
-	if err := json.Unmarshal(bytes, &state); err != nil {
-		return err
-	}
+func (b *board) from(state [8]string) error {
 	for i, r := range state {
 		row, err := hex.DecodeString(r)
 		if err != nil {
@@ -36,12 +23,41 @@ func (b *board) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-func (b board) MarshalJSON() ([]byte, error) {
+func (b board) to() [8]string {
 	var state [8]string
 	for i, r := range b {
 		state[i] = hex.EncodeToString(r[:])
 	}
-	return json.Marshal(state)
+	return state
+}
+
+func (b *board) UnmarshalJSON(bytes []byte) error {
+	var state [8]string
+	if err := json.Unmarshal(bytes, &state); err != nil {
+		return err
+	}
+	return b.from(state)
+}
+
+func (b board) Value() (driver.Value, error) {
+	state := b.to()
+	return strings.Join(state[:], ","), nil
+}
+
+func (b board) Scan(cell interface{}) error {
+	switch cell := cell.(type) {
+	case string:
+		var state [8]string
+		copy(state[:], strings.Split(cell, ","))
+		b.from(state)
+	default:
+		return nil
+	}
+	return nil
+}
+
+func (b board) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.to())
 }
 
 // BISHOP piece.

@@ -84,20 +84,21 @@ type BoardInfoMessage struct {
 	Print string
 }
 
-// BoardCreateMessage board.
-type BoardCreateMessage struct {
+// BoardCreatedMessage board.
+type BoardCreatedMessage struct {
 	ID uuid.UUID
 }
 
 // MakeGame agent.
-func MakeGame(r *http.Request) BoardCreateMessage {
+func MakeGame(r *http.Request) BoardCreatedMessage {
 	defer r.Body.Close()
 	db := openDB()
 	defer closeDB(db)
 	var game boardModel
 	game.ID = uuid.NewV5(uuid.NamespaceOID, "chess.board")
+	game.State = initialBoard
 	db.Create(&game)
-	return BoardCreateMessage{game.ID}
+	return BoardCreatedMessage{game.ID}
 }
 
 // GetGame game.
@@ -105,7 +106,14 @@ func GetGame(ID uuid.UUID) Board {
 	db := openDB()
 	defer closeDB(db)
 	var game boardModel
-	db.First(&game, "ID = ?", ID)
+	rows, err := db.First(&game, "ID = ?", ID).Rows()
+	if err != nil {
+		log.Panicln(err)
+	}
+	if !rows.Next() {
+		log.Panicln(rows)
+	}
+	rows.Scan(&game.ID, &game.CreatedAt, &game.UpdatedAt, &game.DeletedAt, &game.State, &game.MoveCount, &game.MovesSincePawn)
 	if game.ID != ID {
 		log.Panicln(game)
 	}
@@ -147,7 +155,7 @@ func (board boardModel) GetInfo(r *http.Request) BoardStateMessage {
 
 // GetState game.
 func (board boardModel) GetState(r *http.Request) BoardStateMessage {
-	return BoardStateMessage{}
+	return BoardStateMessage{!board.active(), false, board.State}
 }
 
 // GetStates game.

@@ -328,7 +328,7 @@ type boardModel struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      *time.Time `sql:"index"`
-	State          board      `gorm:"-"`
+	State          board      `gorm:"type:varchar;size:136;not null"`
 	MoveCount      int
 	MovesSincePawn int
 }
