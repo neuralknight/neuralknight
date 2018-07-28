@@ -79,7 +79,7 @@ func GetAgent(ID uuid.UUID) Agent {
 	db := openDB()
 	defer closeDB(db)
 	var agent agentModel
-	db.First(&agent, "ID = ?", ID)
+	db.First(&agent, "id = ?", ID)
 	if agent.ID != ID {
 		log.Panicln(agent)
 	}

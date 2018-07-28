@@ -12,6 +12,9 @@ import (
 // Handler neuralknight
 type Handler struct{}
 
+// NotFoundMessage neuralknight
+type NotFoundMessage struct{}
+
 // ErrorMessage neuralknight
 type ErrorMessage struct {
 	Error string
@@ -23,11 +26,11 @@ var routerV1Games = regexp.MustCompile("^api/v1.0/games")
 var routerV1Agents = regexp.MustCompile("^api/v1.0/agents")
 
 func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	encoder := json.NewEncoder(w)
 	defer func() {
 		if err := recover(); err != nil {
-			w.Header().Set("Content-Type", "text/json; charset=utf-8")
-			w.Header().Set("X-Content-Type-Options", "nosniff")
-			encoder := json.NewEncoder(w)
 			switch err := err.(type) {
 			case error:
 				w.WriteHeader(http.StatusInternalServerError)
@@ -42,17 +45,28 @@ func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
+	var message interface{}
 	if routerV1.MatchString(r.URL.Path) {
 		if routerV1Games.MatchString(r.URL.Path) {
-			w.Header().Set("Content-Type", "text/json; charset=utf-8")
-			views.ServeAPIGamesHTTP(w, r)
-			return
+			message = views.ServeAPIGamesHTTP(r)
 		}
 		if routerV1Agents.MatchString(r.URL.Path) {
-			w.Header().Set("Content-Type", "text/json; charset=utf-8")
-			views.ServeAPIAgentsHTTP(w, r)
-			return
+			message = views.ServeAPIAgentsHTTP(r)
 		}
 	}
-	http.NotFound(w, r)
+	if message == nil {
+		w.WriteHeader(http.StatusNotFound)
+		message = NotFoundMessage{}
+	} else {
+		switch r.Method {
+		case http.MethodPost:
+			w.WriteHeader(http.StatusCreated)
+		default:
+			w.WriteHeader(http.StatusOK)
+		}
+	}
+	err := encoder.Encode(message)
+	if err != nil {
+		log.Println(err)
+	}
 }

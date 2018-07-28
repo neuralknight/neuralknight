@@ -106,7 +106,7 @@ func GetGame(ID uuid.UUID) Board {
 	db := openDB()
 	defer closeDB(db)
 	var game boardModel
-	rows, err := db.First(&game, "ID = ?", ID).Rows()
+	rows, err := db.First(&game, "id = ?", ID).Rows()
 	if err != nil {
 		log.Panicln(err)
 	}

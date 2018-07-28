@@ -1,13 +1,10 @@
 package views
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 	"regexp"
 
 	"github.com/neuralknight/neuralknight/models"
-	"github.com/satori/go.uuid"
 )
 
 var routerV1Agents = regexp.MustCompile("^api/v1.0/agents/?$")
@@ -15,54 +12,31 @@ var routerV1AgentsID = regexp.MustCompile("^api/v1.0/agents/[\\w-]+/?$")
 var extractV1AgentsID = regexp.MustCompile("(?:/)[\\w-]+(?:/?)$")
 
 // ServeAPIAgentsHTTP views.
-func ServeAPIAgentsHTTP(w http.ResponseWriter, r *http.Request) {
+func ServeAPIAgentsHTTP(r *http.Request) interface{} {
 	if routerV1Agents.MatchString(r.URL.Path) {
-		serveAPIAgentsListHTTP(w, r)
-		return
+		return serveAPIAgentsListHTTP(r)
 	}
 	if routerV1AgentsID.MatchString(r.URL.Path) {
-		serveAPIAgentsIDHTTP(w, r)
-		return
+		return serveAPIAgentsIDHTTP(r)
 	}
-	http.NotFound(w, r)
+	return nil
 }
 
-func serveAPIAgentsListHTTP(w http.ResponseWriter, r *http.Request) {
+func serveAPIAgentsListHTTP(r *http.Request) interface{} {
 	switch r.Method {
 	case http.MethodPost:
-		message := models.MakeAgent(r)
-		w.WriteHeader(http.StatusCreated)
-		err := json.NewEncoder(w).Encode(message)
-		if err != nil {
-			log.Println(err)
-		}
-	default:
-		http.NotFound(w, r)
+		return models.MakeAgent(r)
 	}
+	return nil
 }
 
-func serveAPIAgentsIDHTTP(w http.ResponseWriter, r *http.Request) {
-	agentID, err := uuid.FromString(extractV1AgentsID.FindString(r.URL.Path))
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent := models.GetAgent(agentID)
+func serveAPIAgentsIDHTTP(r *http.Request) interface{} {
+	agent := models.GetAgent(viewID(r, extractV1AgentsID, ""))
 	switch r.Method {
 	case http.MethodGet:
-		message := agent.GetState(r)
-		w.WriteHeader(http.StatusCreated)
-		err := json.NewEncoder(w).Encode(message)
-		if err != nil {
-			log.Println(err)
-		}
+		return agent.GetState(r)
 	case http.MethodPut:
-		message := agent.PlayRound(r)
-		w.WriteHeader(http.StatusCreated)
-		err := json.NewEncoder(w).Encode(message)
-		if err != nil {
-			log.Println(err)
-		}
-	default:
-		http.NotFound(w, r)
+		return agent.PlayRound(r)
 	}
+	return nil
 }
