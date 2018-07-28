@@ -274,7 +274,13 @@ func TestServeHTTPDeleteAgents(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	sigint := make(chan os.Signal, 1)
+	idleConnsClosed := make(chan struct{})
+	go listenAndServe(":3000", sigint, idleConnsClosed)
 	code := m.Run()
+	sigint <- os.Interrupt
+	<-idleConnsClosed
+	close(sigint)
 	db, _ := gorm.Open("sqlite3", "chess.db")
 	db.DropTableIfExists("agent_models", "board_models")
 	if errors := db.GetErrors(); len(errors) != 0 {

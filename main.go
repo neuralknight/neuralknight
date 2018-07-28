@@ -17,6 +17,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +28,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
+
+var portFlag = flag.Int("port", 8080, "port")
 
 func shutdown(srv *http.Server, sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
 	defer close(idleConnsClosed)
@@ -37,16 +41,26 @@ func shutdown(srv *http.Server, sigint <-chan os.Signal, idleConnsClosed chan<- 
 	}
 }
 
-// Main interruptable process.
-func Main(sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
+func listenAndServe(addr string, sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
 	var srv http.Server
 	go shutdown(&srv, sigint, idleConnsClosed)
 
+	srv.Addr = addr
 	srv.Handler = Handler{}
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Println("HTTP server ListenAndServe:", err)
 	}
+}
+
+// Main interruptable process.
+func Main(sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
+	flag.Parse()
+	if portFlag == nil {
+		log.Panicln("Failed to parse flags")
+	}
+
+	listenAndServe(fmt.Sprintf(":%d", *portFlag), sigint, idleConnsClosed)
 }
 
 func main() {

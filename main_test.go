@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestShutdown(t *testing.T) {
@@ -24,9 +23,4 @@ func TestInteruptMain(t *testing.T) {
 	sigint <- os.Interrupt
 	<-idleConnsClosed
 	close(sigint)
-}
-
-func TestMainEntry(t *testing.T) {
-	go main()
-	time.Sleep(time.Microsecond * 10)
 }

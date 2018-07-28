@@ -62,6 +62,7 @@ func MakeAgent(r *http.Request) AgentCreatedMessage {
 	json.NewDecoder(r.Body).Decode(message)
 	agent.ID = uuid.NewV5(uuid.NamespaceOID, "chess.agent")
 	agent.GameID = message.GameID
+	agent.GameURL = *r.URL
 	if message.User {
 		agent.Delegate = "user-agent"
 	} else {
