@@ -113,15 +113,21 @@ func GetGame(ID uuid.UUID) Board {
 	if !rows.Next() {
 		log.Panicln(rows)
 	}
-	rows.Scan(&game.ID, &game.CreatedAt, &game.UpdatedAt, &game.DeletedAt, &game.State, &game.MoveCount, &game.MovesSincePawn)
+	err = rows.Scan(&game.ID, &game.CreatedAt, &game.UpdatedAt, &game.DeletedAt, &game.State, &game.MoveCount, &game.MovesSincePawn)
+	if err != nil {
+		log.Panicln(err)
+	}
 	if game.ID != ID {
-		log.Panicln(game)
+		panic(game)
+	}
+	if game.ID.Version() != uuid.V5 {
+		panic(game)
 	}
 	return game
 }
 
 // GetGames game.
-func GetGames(r *http.Request) []BoardStateMessage {
+func GetGames(r *http.Request) BoardStatesMessage {
 	defer r.Body.Close()
 	db := openDB()
 	defer closeDB(db)
@@ -131,14 +137,14 @@ func GetGames(r *http.Request) []BoardStateMessage {
 		log.Panicln("Failed to get game rows", err)
 	}
 	defer rows.Close()
-	games := make([]BoardStateMessage, 0)
+	games := make(BoardStatesMessage, 0)
 	for rows.Next() {
-		var message BoardStateMessage
-		err := rows.Scan(message)
+		var game boardModel
+		err := rows.Scan(&game.ID, &game.CreatedAt, &game.UpdatedAt, &game.DeletedAt, &game.State, &game.MoveCount, &game.MovesSincePawn)
 		if err != nil {
 			log.Panicln("Failed to scan row", err)
 		}
-		games = append(games, message)
+		games = append(games, game.ID)
 	}
 	return games
 }

@@ -14,6 +14,9 @@ type BoardStateMessage struct {
 	State        board
 }
 
+// BoardStatesMessage models.
+type BoardStatesMessage []uuid.UUID
+
 // """
 // Chess state handling model.
 // """
