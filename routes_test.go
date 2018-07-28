@@ -18,28 +18,29 @@ import (
 func logError(w *httptest.ResponseRecorder) {
 	defer func() {
 		if err := recover(); err != nil {
+			log.Println(err)
 		}
 	}()
 	defer w.Result().Body.Close()
 	buffer, err := ioutil.ReadAll(w.Result().Body)
 	if err != nil {
-		log.Panicln("Agents read all:", err)
+		log.Panicln("logError read all:", err)
 	}
 	var message ErrorMessage
 	err = json.Unmarshal(buffer, &message)
 	if err != nil {
-		log.Panicln("Agents unmarshal:", err)
+		log.Panicln("logError unmarshal:", err)
 	}
 	log.Println(message.Error)
 	switch extra := message.Extra.(type) {
 	case error:
-		log.Panicln("Error extra type error", extra.Error())
+		log.Println("logError extra type error", extra.Error())
 	case string:
-		log.Panicln("Error extra type string", extra)
+		log.Println("logError extra type string", extra)
 	case nil:
-		log.Panicln("Error extra nil")
+		log.Println("logError extra nil")
 	default:
-		log.Panicln("Error extra type unknown", extra)
+		log.Println("logError extra type unknown", extra)
 	}
 }
 
