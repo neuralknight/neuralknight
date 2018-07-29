@@ -18,12 +18,12 @@ func viewID(r *http.Request, re *regexp.Regexp, suffix string) uuid.UUID {
 	return ID
 }
 
-var routerV1Games = regexp.MustCompile("^api/v1.0/games/?$")
-var routerV1GamesID = regexp.MustCompile("^api/v1.0/games/[\\w-]+/?$")
+var routerV1Games = regexp.MustCompile("^/api/v1.0/games/?$")
+var routerV1GamesID = regexp.MustCompile("^/api/v1.0/games/[\\w-]+/?$")
 var extractV1GamesID = regexp.MustCompile("(?:/)[\\w-]+(?:/?)$")
-var routerV1GamesIDStates = regexp.MustCompile("^api/v1.0/games/[\\w-]+/states/?$")
+var routerV1GamesIDStates = regexp.MustCompile("^/api/v1.0/games/[\\w-]+/states/?$")
 var extractV1GamesIDStates = regexp.MustCompile("(?:/)[\\w-]+(?:/states/?)$")
-var routerV1GamesIDInfo = regexp.MustCompile("^api/v1.0/games/[\\w-]+/info/?$")
+var routerV1GamesIDInfo = regexp.MustCompile("^/api/v1.0/games/[\\w-]+/info/?$")
 var extractV1GamesIDInfo = regexp.MustCompile("(?:/)[\\w-]+(?:/info/?)$")
 
 // ServeAPIGamesHTTP views.

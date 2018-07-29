@@ -18,28 +18,29 @@ type ErrorMessage struct {
 	Extra interface{}
 }
 
-var routerV1 = regexp.MustCompile("^api/v1.0/")
-var routerV1Games = regexp.MustCompile("^api/v1.0/games")
-var routerV1Agents = regexp.MustCompile("^api/v1.0/agents")
+var routerV1 = regexp.MustCompile("^/api/v1.0/")
+var routerV1Games = regexp.MustCompile("^/api/v1.0/games")
+var routerV1Agents = regexp.MustCompile("^/api/v1.0/agents")
 
 func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	w.Header().Set("Content-Type", "text/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	encoder := json.NewEncoder(w)
 	defer func() {
-		if err := recover(); err != nil {
-			switch err := err.(type) {
-			case error:
-				w.WriteHeader(http.StatusInternalServerError)
-				encoder.Encode(ErrorMessage{err.Error(), err})
-			case string:
-				w.WriteHeader(http.StatusBadRequest)
-				encoder.Encode(ErrorMessage{err, nil})
-			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				encoder.Encode(ErrorMessage{"Unhandled error", err})
-				log.Println("Unhandled error:", err)
-			}
+		switch err := recover().(type) {
+		case error:
+			w.WriteHeader(http.StatusInternalServerError)
+			encoder.Encode(ErrorMessage{err.Error(), err})
+		case string:
+			w.WriteHeader(http.StatusBadRequest)
+			encoder.Encode(ErrorMessage{err, nil})
+		case nil:
+			break
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			encoder.Encode(ErrorMessage{"Unhandled error", err})
+			log.Println("Unhandled error:", err)
 		}
 	}()
 	var message interface{}

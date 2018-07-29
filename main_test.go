@@ -24,3 +24,7 @@ func TestInteruptMain(t *testing.T) {
 	<-idleConnsClosed
 	close(sigint)
 }
+
+func TestMainEntry(t *testing.T) {
+	go main()
+}

@@ -7,8 +7,8 @@ import (
 	"github.com/neuralknight/neuralknight/models"
 )
 
-var routerV1Agents = regexp.MustCompile("^api/v1.0/agents/?$")
-var routerV1AgentsID = regexp.MustCompile("^api/v1.0/agents/[\\w-]+/?$")
+var routerV1Agents = regexp.MustCompile("^/api/v1.0/agents/?$")
+var routerV1AgentsID = regexp.MustCompile("^/api/v1.0/agents/[\\w-]+/?$")
 var extractV1AgentsID = regexp.MustCompile("(?:/)[\\w-]+(?:/?)$")
 
 // ServeAPIAgentsHTTP views.

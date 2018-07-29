@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -10,19 +9,22 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jinzhu/gorm"
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
 )
 
-func logError(w *httptest.ResponseRecorder) {
+var (
+	client   *http.Client
+	endpoint string
+)
+
+func logError(res *http.Response) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println(err)
 		}
 	}()
-	defer w.Result().Body.Close()
-	buffer, err := ioutil.ReadAll(w.Result().Body)
+	buffer, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Panicln("logError read all:", err)
 	}
@@ -45,21 +47,19 @@ func logError(w *httptest.ResponseRecorder) {
 }
 
 func generateGame(t *testing.T) uuid.UUID {
-	r, err := http.NewRequest(http.MethodPost, "api/v1.0/games", bytes.NewReader([]byte{}))
+	res, err := client.Post(endpoint+"/api/v1.0/games", "text/json; charset=utf-8", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 201 {
-		logError(w)
-		t.Fatal("Games model response code:", w.Code)
+	defer res.Body.Close()
+	if res.StatusCode != 201 {
+		logError(res)
+		t.Fatal("Games model response code:", res.StatusCode)
 	}
-	if w.Header().Get("Content-Type") != "text/json; charset=utf-8" {
-		t.Fatal("Games model Content-Type:", w.Header().Get("Content-Type"))
+	if res.Header.Get("Content-Type") != "text/json; charset=utf-8" {
+		t.Fatal("Games model Content-Type:", res.Header.Get("Content-Type"))
 	}
-	defer w.Result().Body.Close()
-	buffer, err := ioutil.ReadAll(w.Result().Body)
+	buffer, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Games read all:", err)
 	}
@@ -78,90 +78,80 @@ func generateGame(t *testing.T) uuid.UUID {
 }
 
 func TestServeHTTPBadURL(t *testing.T) {
-	r, err := http.NewRequest(http.MethodGet, "foo", bytes.NewReader([]byte{}))
+	res, err := client.Get(endpoint + "/foo")
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Fake url response code:", w.Code)
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Fake url response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPIndex(t *testing.T) {
-	r, err := http.NewRequest(http.MethodGet, "", bytes.NewReader([]byte{}))
+	res, err := client.Get(endpoint + "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Index response code:", w.Code)
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Index response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPNoModel(t *testing.T) {
-	r, err := http.NewRequest(http.MethodGet, "api/v1.0/", bytes.NewReader([]byte{}))
+	res, err := client.Get(endpoint + "/api/v1.0/")
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("No model response code:", w.Code)
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("No model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPGetGames(t *testing.T) {
-	r, err := http.NewRequest(http.MethodGet, "api/v1.0/games", bytes.NewReader([]byte{}))
+	res, err := client.Get(endpoint + "/api/v1.0/games")
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 200 {
-		logError(w)
-		t.Fatal("Games model response code:", w.Code)
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		logError(res)
+		t.Fatal("Games model response code:", res.StatusCode)
 	}
-	if w.Header().Get("Content-Type") != "text/json; charset=utf-8" {
-		t.Fatal("Games model Content-Type:", w.Header().Get("Content-Type"))
+	if res.Header.Get("Content-Type") != "text/json; charset=utf-8" {
+		t.Fatal("Games model Content-Type:", res.Header.Get("Content-Type"))
 	}
-	defer w.Result().Body.Close()
-	buffer, err := ioutil.ReadAll(w.Result().Body)
+	buffer, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Games read all:", err)
 	}
-	var response []struct{}
-	err = json.Unmarshal(buffer, &response)
+	var message models.BoardStatesMessage
+	err = json.Unmarshal(buffer, &message)
 	if err != nil {
 		t.Fatal("Games unmarshal:", err)
-	}
-	if len(response) != 0 {
-		t.Fatal("Games unmarshal:", response)
 	}
 }
 
 func TestServeHTTPPostGames(t *testing.T) {
 	ID := generateGame(t)
-	r, err := http.NewRequest(http.MethodGet, "api/v1.0/games/"+ID.String(), bytes.NewReader([]byte{}))
+	res, err := client.Get(endpoint + "/api/v1.0/games/" + ID.String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 200 {
-		logError(w)
-		t.Fatal("Games model response code:", w.Code)
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		logError(res)
+		t.Fatal("Games model response code:", res.StatusCode)
 	}
-	if w.Header().Get("Content-Type") != "text/json; charset=utf-8" {
-		t.Fatal("Games model Content-Type:", w.Header().Get("Content-Type"))
+	if res.Header.Get("Content-Type") != "text/json; charset=utf-8" {
+		t.Fatal("Games model Content-Type:", res.Header.Get("Content-Type"))
 	}
-	defer w.Result().Body.Close()
-	buffer, err := ioutil.ReadAll(w.Result().Body)
+	buffer, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Games read all:", err)
 	}
@@ -170,122 +160,101 @@ func TestServeHTTPPostGames(t *testing.T) {
 	if err != nil {
 		t.Fatal("Games unmarshal:", err)
 	}
-	log.Println(response.State)
+	log.Println(response)
 }
 
 func TestServeHTTPPutGames(t *testing.T) {
-	r, err := http.NewRequest(http.MethodPut, "api/v1.0/games", bytes.NewReader([]byte{}))
+	req, err := http.NewRequest(http.MethodPut, endpoint+"/api/v1.0/games/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Games model response code:", w.Code)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Games model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPDeleteGames(t *testing.T) {
-	r, err := http.NewRequest(http.MethodDelete, "api/v1.0/games", bytes.NewReader([]byte{}))
+	req, err := http.NewRequest(http.MethodDelete, endpoint+"/api/v1.0/games/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Games model response code:", w.Code)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Games model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPGetAgents(t *testing.T) {
-	r, err := http.NewRequest(http.MethodGet, "api/v1.0/agents", bytes.NewReader([]byte{}))
+	res, err := client.Get(endpoint + "/api/v1.0/agents/")
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Agents model response code:", w.Code)
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Agents model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPPostAgents(t *testing.T) {
-	r, err := http.NewRequest(http.MethodPost, "api/v1.0/agents", bytes.NewReader([]byte{}))
+	res, err := client.Post(endpoint+"/api/v1.0/agents/", "text/json; charset=utf-8", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 400 {
-		logError(w)
-		t.Fatal("Agents model response code:", w.Code)
-	}
-	defer w.Result().Body.Close()
-	buffer, err := ioutil.ReadAll(w.Result().Body)
-	if err != nil {
-		t.Fatal("Agents read all:", err)
-	}
-	var message ErrorMessage
-	err = json.Unmarshal(buffer, &message)
-	if err != nil {
-		t.Fatal("Agents unmarshal:", err)
-	}
-	if len(message.Error) == 0 {
-		t.Fatal("Agents error len: 0")
-	}
-	switch extra := message.Extra.(type) {
-	case error:
-		t.Fatal("Agents extra type error")
-	case string:
-		t.Fatal("Agents extra type string", extra)
-	case nil:
-		break
-	default:
-		t.Fatal("Agents extra type unknown", extra)
+	logError(res)
+	if res.StatusCode != 400 {
+		t.Fatal("Agents model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPPutAgents(t *testing.T) {
-	r, err := http.NewRequest(http.MethodPut, "api/v1.0/agents", bytes.NewReader([]byte{}))
+	req, err := http.NewRequest(http.MethodPut, endpoint+"/api/v1.0/agents/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Agents model response code:", w.Code)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Agents model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPDeleteAgents(t *testing.T) {
-	r, err := http.NewRequest(http.MethodDelete, "api/v1.0/agents", bytes.NewReader([]byte{}))
+	req, err := http.NewRequest(http.MethodDelete, endpoint+"/api/v1.0/agents/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	defer w.Result().Body.Close()
-	Handler{}.ServeHTTP(w, r)
-	if w.Code != 404 {
-		t.Fatal("Agents model response code:", w.Code)
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	logError(res)
+	if res.StatusCode != 404 {
+		t.Fatal("Agents model response code:", res.StatusCode)
 	}
 }
 
 func TestMain(m *testing.M) {
-	sigint := make(chan os.Signal, 1)
-	idleConnsClosed := make(chan struct{})
-	go listenAndServe(":3000", sigint, idleConnsClosed)
+	srv := httptest.NewTLSServer(Handler{})
+	client = srv.Client()
+	endpoint = srv.URL
 	code := m.Run()
-	sigint <- os.Interrupt
-	<-idleConnsClosed
-	close(sigint)
-	db, _ := gorm.Open("sqlite3", "chess.db")
-	db.DropTableIfExists("agent_models", "board_models")
-	if errors := db.GetErrors(); len(errors) != 0 {
-		panic(errors)
-	}
+	srv.Close()
 	os.Exit(code)
 }

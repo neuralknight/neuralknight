@@ -137,7 +137,7 @@ func GetGames(r *http.Request) BoardStatesMessage {
 		log.Panicln("Failed to get game rows", err)
 	}
 	defer rows.Close()
-	games := make(BoardStatesMessage, 0)
+	games := make([]uuid.UUID, 0)
 	for rows.Next() {
 		var game boardModel
 		err := rows.Scan(&game.ID, &game.CreatedAt, &game.UpdatedAt, &game.DeletedAt, &game.State, &game.MoveCount, &game.MovesSincePawn)
@@ -146,7 +146,7 @@ func GetGames(r *http.Request) BoardStatesMessage {
 		}
 		games = append(games, game.ID)
 	}
-	return games
+	return BoardStatesMessage{games}
 }
 
 // AddPlayer game.
