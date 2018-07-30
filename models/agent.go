@@ -3,10 +3,11 @@ package models
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
@@ -14,8 +15,8 @@ import (
 
 // Agent agent.
 type Agent interface {
-	PlayRound(r *http.Request) BoardStateMessage
-	GetState(r *http.Request) BoardStateMessage
+	PlayRound(decoder *json.Decoder) BoardStateMessage
+	GetState(decoder *json.Decoder) BoardStateMessage
 }
 
 const connStr = "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
@@ -35,7 +36,7 @@ type agentModel struct {
 
 // AgentCreatedMessage model.
 type AgentCreatedMessage struct {
-	AgentID uuid.UUID
+	ID uuid.UUID
 }
 
 // AgentCreateMessage model.
@@ -56,20 +57,21 @@ func (agent agentModel) gameURI(input string) string {
 		log.Panicln(err)
 	}
 	gameURL := agent.GameURL.ResolveReference(path)
-	return gameURL.RequestURI()
+	uri := gameURL.RequestURI()
+	log.Println(uri)
+	return uri
 }
 
 // MakeAgent agent.
-func MakeAgent(r *http.Request) AgentCreatedMessage {
-	defer r.Body.Close()
+func MakeAgent(decoder *json.Decoder) AgentCreatedMessage {
 	db := openDB()
 	defer closeDB(db)
 	var agent agentModel
 	var message AgentCreateMessage
-	json.NewDecoder(r.Body).Decode(message)
+	decoder.Decode(message)
 	agent.ID = uuid.NewV5(uuid.NamespaceOID, "chess.agent")
 	agent.GameID = message.GameID
-	agent.GameURL = *r.URL
+	// agent.GameURL = *r.URL
 	if message.User {
 		agent.Delegate = "user-agent"
 	} else {
@@ -77,7 +79,7 @@ func MakeAgent(r *http.Request) AgentCreatedMessage {
 	}
 	agent.Lookahead = message.Lookahead
 	db.Create(&agent)
-	agent.joinGame()
+	// agent.joinGame()
 	return AgentCreatedMessage{agent.ID}
 }
 
@@ -161,8 +163,7 @@ func (agent agentModel) getBoardsCursor() <-chan board {
 }
 
 // GetState Gets current board state.
-func (agent agentModel) GetState(r *http.Request) BoardStateMessage {
-	defer r.Body.Close()
+func (agent agentModel) GetState(decoder *json.Decoder) BoardStateMessage {
 	if agent.GameOver {
 		var message BoardStateMessage
 		message.End = true
@@ -195,11 +196,11 @@ func (agent agentModel) joinGame() {
 }
 
 // PlayRound Play a game round
-func (agent agentModel) PlayRound(r *http.Request) BoardStateMessage {
+func (agent agentModel) PlayRound(decoder *json.Decoder) BoardStateMessage {
 	db := openDB()
 	defer closeDB(db)
 	if agent.Delegate == "user-agent" {
-		return userAgentDelegate{}.playRound(r, agent, db)
+		return userAgentDelegate{}.playRound(decoder, agent, db)
 	}
 	delegate := agents[agent.Delegate]
 	resp := agent.putBoard(delegate.playRound(agent.getBoardsCursor()))
@@ -215,7 +216,7 @@ func (agent agentModel) PlayRound(r *http.Request) BoardStateMessage {
 		return BoardStateMessage{}
 	}
 	if message.Invalid {
-		return agent.PlayRound(r)
+		return agent.PlayRound(decoder)
 	}
 	return BoardStateMessage{}
 }

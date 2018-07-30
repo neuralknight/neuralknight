@@ -1,9 +1,10 @@
 package models
 
 import (
-	"log"
 	"math"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/satori/go.uuid"
 )

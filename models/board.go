@@ -1,8 +1,9 @@
 package models
 
 import (
-	"log"
-	"net/http"
+	"encoding/json"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
@@ -72,11 +73,11 @@ func closeDB(db *gorm.DB) {
 
 // Board board.
 type Board interface {
-	AddPlayer(r *http.Request) BoardStateMessage
-	GetInfo(r *http.Request) BoardStateMessage
-	GetState(r *http.Request) BoardStateMessage
-	GetStates(r *http.Request) BoardStateMessage
-	PlayRound(r *http.Request) BoardStateMessage
+	AddPlayer(decoder *json.Decoder) BoardStateMessage
+	GetInfo(decoder *json.Decoder) BoardStateMessage
+	GetState(decoder *json.Decoder) BoardStateMessage
+	GetStates(decoder *json.Decoder) BoardStateMessage
+	PlayRound(decoder *json.Decoder) BoardStateMessage
 }
 
 // BoardInfoMessage board.
@@ -90,8 +91,7 @@ type BoardCreatedMessage struct {
 }
 
 // MakeGame agent.
-func MakeGame(r *http.Request) BoardCreatedMessage {
-	defer r.Body.Close()
+func MakeGame(decoder *json.Decoder) BoardCreatedMessage {
 	db := openDB()
 	defer closeDB(db)
 	var game boardModel
@@ -127,8 +127,7 @@ func GetGame(ID uuid.UUID) Board {
 }
 
 // GetGames game.
-func GetGames(r *http.Request) BoardStatesMessage {
-	defer r.Body.Close()
+func GetGames(decoder *json.Decoder) BoardStatesMessage {
 	db := openDB()
 	defer closeDB(db)
 	var game boardModel
@@ -150,27 +149,27 @@ func GetGames(r *http.Request) BoardStatesMessage {
 }
 
 // AddPlayer game.
-func (board boardModel) AddPlayer(r *http.Request) BoardStateMessage {
+func (board boardModel) AddPlayer(decoder *json.Decoder) BoardStateMessage {
 	return BoardStateMessage{}
 }
 
 // GetInfo game.
-func (board boardModel) GetInfo(r *http.Request) BoardStateMessage {
+func (board boardModel) GetInfo(decoder *json.Decoder) BoardStateMessage {
 	return BoardStateMessage{}
 }
 
 // GetState game.
-func (board boardModel) GetState(r *http.Request) BoardStateMessage {
+func (board boardModel) GetState(decoder *json.Decoder) BoardStateMessage {
 	return BoardStateMessage{!board.active(), false, board.State}
 }
 
 // GetStates game.
-func (board boardModel) GetStates(r *http.Request) BoardStateMessage {
+func (board boardModel) GetStates(decoder *json.Decoder) BoardStateMessage {
 	return BoardStateMessage{}
 }
 
 // PlayRound game.
-func (board boardModel) PlayRound(r *http.Request) BoardStateMessage {
+func (board boardModel) PlayRound(decoder *json.Decoder) BoardStateMessage {
 	return BoardStateMessage{}
 }
 

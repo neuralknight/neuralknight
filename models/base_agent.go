@@ -2,11 +2,10 @@ package models
 
 import (
 	"encoding/json"
-	"io"
-	"log"
 	"math"
 	"math/rand"
-	"net/http"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jinzhu/gorm"
 )
@@ -658,9 +657,9 @@ type UserMoveMessage struct {
 	Move [2][2]int
 }
 
-func getMove(r io.Reader) [2][2]int {
+func getMove(decoder *json.Decoder) [2][2]int {
 	var message UserMoveMessage
-	err := json.NewDecoder(r).Decode(message)
+	err := decoder.Decode(message)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -668,10 +667,9 @@ func getMove(r io.Reader) [2][2]int {
 }
 
 // PlayRound Play a game round
-func (userAgentDelegate) playRound(r *http.Request, agent agentModel, db *gorm.DB) BoardStateMessage {
-	defer r.Body.Close()
-	move := getMove(r.Body)
-	proposal := agent.GetState(r)
+func (userAgentDelegate) playRound(decoder *json.Decoder, agent agentModel, db *gorm.DB) BoardStateMessage {
+	move := getMove(decoder)
+	proposal := agent.GetState(decoder)
 	if proposal.End {
 		return proposal
 	}

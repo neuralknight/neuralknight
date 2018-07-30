@@ -19,10 +19,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
+
+	log "github.com/sirupsen/logrus"
 
 	_ "github.com/RebirthDB/rebirthdb-go"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -53,20 +54,14 @@ func listenAndServe(addr string, sigint <-chan os.Signal, idleConnsClosed chan<-
 	}
 }
 
-// Main interruptable process.
-func Main(sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
+func main() {
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt)
 	flag.Parse()
 	if portFlag == nil {
 		log.Panicln("Failed to parse flags")
 	}
-
-	listenAndServe(fmt.Sprintf(":%d", *portFlag), sigint, idleConnsClosed)
-}
-
-func main() {
-	sigint := make(chan os.Signal, 1)
 	idleConnsClosed := make(chan struct{})
-	signal.Notify(sigint, os.Interrupt)
-	go Main(sigint, idleConnsClosed)
+	go listenAndServe(fmt.Sprintf(":%d", *portFlag), sigint, idleConnsClosed)
 	<-idleConnsClosed
 }

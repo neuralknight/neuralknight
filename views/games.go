@@ -1,17 +1,19 @@
 package views
 
 import (
-	"log"
+	"encoding/json"
 	"net/http"
 	"regexp"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
 )
 
-func viewID(r *http.Request, re *regexp.Regexp, suffix string) uuid.UUID {
-	ID, err := uuid.FromString(strings.Trim(strings.TrimSuffix(strings.Trim(re.FindString(r.URL.Path), "/"), suffix), "/"))
+func viewID(path string, re *regexp.Regexp, suffix string) uuid.UUID {
+	ID, err := uuid.FromString(strings.Trim(strings.TrimSuffix(strings.Trim(re.FindString(path), "/"), suffix), "/"))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -27,59 +29,56 @@ var routerV1GamesIDInfo = regexp.MustCompile("^/api/v1.0/games/[\\w-]+/info/?$")
 var extractV1GamesIDInfo = regexp.MustCompile("(?:/)[\\w-]+(?:/info/?)$")
 
 // ServeAPIGamesHTTP views.
-func ServeAPIGamesHTTP(r *http.Request) interface{} {
-	if routerV1Games.MatchString(r.URL.Path) {
-		return serveAPIGamesListHTTP(r)
+func ServeAPIGamesHTTP(path string, method string, decoder *json.Decoder) interface{} {
+	if routerV1Games.MatchString(path) {
+		return serveAPIGamesListHTTP(method, decoder)
 	}
-	if routerV1GamesID.MatchString(r.URL.Path) {
-		return serveAPIGamesIDHTTP(r)
+	if routerV1GamesID.MatchString(path) {
+		return serveAPIGamesIDHTTP(models.GetGame(viewID(path, extractV1GamesID, "")), method, decoder)
 	}
-	if routerV1GamesIDStates.MatchString(r.URL.Path) {
-		return serveAPIGamesIDStatesHTTP(r)
+	if routerV1GamesIDStates.MatchString(path) {
+		return serveAPIGamesIDStatesHTTP(models.GetGame(viewID(path, extractV1GamesID, "states")), method, decoder)
 	}
-	if routerV1GamesIDInfo.MatchString(r.URL.Path) {
-		return serveAPIGamesIDInfoHTTP(r)
-	}
-	return nil
-}
-
-func serveAPIGamesListHTTP(r *http.Request) interface{} {
-	switch r.Method {
-	case http.MethodGet:
-		return models.GetGames(r)
-	case http.MethodPost:
-		return models.MakeGame(r)
+	if routerV1GamesIDInfo.MatchString(path) {
+		return serveAPIGamesIDInfoHTTP(models.GetGame(viewID(path, extractV1GamesID, "info")), method, decoder)
 	}
 	return nil
 }
 
-func serveAPIGamesIDHTTP(r *http.Request) interface{} {
-	game := models.GetGame(viewID(r, extractV1GamesID, ""))
-	switch r.Method {
+func serveAPIGamesListHTTP(method string, decoder *json.Decoder) interface{} {
+	switch method {
 	case http.MethodGet:
-		return game.GetState(r)
+		return models.GetGames(decoder)
 	case http.MethodPost:
-		return game.AddPlayer(r)
+		return models.MakeGame(decoder)
+	}
+	return nil
+}
+
+func serveAPIGamesIDHTTP(game models.Board, method string, decoder *json.Decoder) interface{} {
+	switch method {
+	case http.MethodGet:
+		return game.GetState(decoder)
+	case http.MethodPost:
+		return game.AddPlayer(decoder)
 	case http.MethodPut:
-		return game.PlayRound(r)
+		return game.PlayRound(decoder)
 	}
 	return nil
 }
 
-func serveAPIGamesIDStatesHTTP(r *http.Request) interface{} {
-	game := models.GetGame(viewID(r, extractV1GamesIDStates, "states"))
-	switch r.Method {
+func serveAPIGamesIDStatesHTTP(game models.Board, method string, decoder *json.Decoder) interface{} {
+	switch method {
 	case http.MethodGet:
-		return game.GetStates(r)
+		return game.GetStates(decoder)
 	}
 	return nil
 }
 
-func serveAPIGamesIDInfoHTTP(r *http.Request) interface{} {
-	game := models.GetGame(viewID(r, extractV1GamesIDInfo, "info"))
-	switch r.Method {
+func serveAPIGamesIDInfoHTTP(game models.Board, method string, decoder *json.Decoder) interface{} {
+	switch method {
 	case http.MethodGet:
-		return game.GetInfo(r)
+		return game.GetInfo(decoder)
 	}
 	return nil
 }

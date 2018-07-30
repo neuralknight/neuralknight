@@ -1,6 +1,7 @@
 package views
 
 import (
+	"encoding/json"
 	"net/http"
 	"regexp"
 
@@ -12,31 +13,30 @@ var routerV1AgentsID = regexp.MustCompile("^/api/v1.0/agents/[\\w-]+/?$")
 var extractV1AgentsID = regexp.MustCompile("(?:/)[\\w-]+(?:/?)$")
 
 // ServeAPIAgentsHTTP views.
-func ServeAPIAgentsHTTP(r *http.Request) interface{} {
-	if routerV1Agents.MatchString(r.URL.Path) {
-		return serveAPIAgentsListHTTP(r)
+func ServeAPIAgentsHTTP(path string, method string, decoder *json.Decoder) interface{} {
+	if routerV1Agents.MatchString(path) {
+		return serveAPIAgentsListHTTP(method, decoder)
 	}
-	if routerV1AgentsID.MatchString(r.URL.Path) {
-		return serveAPIAgentsIDHTTP(r)
+	if routerV1AgentsID.MatchString(path) {
+		return serveAPIAgentsIDHTTP(models.GetAgent(viewID(path, extractV1AgentsID, "")), method, decoder)
 	}
 	return nil
 }
 
-func serveAPIAgentsListHTTP(r *http.Request) interface{} {
-	switch r.Method {
+func serveAPIAgentsListHTTP(method string, decoder *json.Decoder) interface{} {
+	switch method {
 	case http.MethodPost:
-		return models.MakeAgent(r)
+		return models.MakeAgent(decoder)
 	}
 	return nil
 }
 
-func serveAPIAgentsIDHTTP(r *http.Request) interface{} {
-	agent := models.GetAgent(viewID(r, extractV1AgentsID, ""))
-	switch r.Method {
+func serveAPIAgentsIDHTTP(agent models.Agent, method string, decoder *json.Decoder) interface{} {
+	switch method {
 	case http.MethodGet:
-		return agent.GetState(r)
+		return agent.GetState(decoder)
 	case http.MethodPut:
-		return agent.PlayRound(r)
+		return agent.PlayRound(decoder)
 	}
 	return nil
 }

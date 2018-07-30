@@ -1,13 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
@@ -53,7 +55,6 @@ func generateGame(t *testing.T) uuid.UUID {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 201 {
-		logError(res)
 		t.Fatal("Games model response code:", res.StatusCode)
 	}
 	if res.Header.Get("Content-Type") != "text/json; charset=utf-8" {
@@ -77,13 +78,24 @@ func generateGame(t *testing.T) uuid.UUID {
 	return message.ID
 }
 
+func addAgent(t *testing.T, gameID uuid.UUID) uuid.UUID {
+	res, err := client.Post(endpoint+"/api/v1.0/agents/", "text/json; charset=utf-8", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != 400 {
+		t.Fatal("Agents model response code:", res.StatusCode)
+	}
+	var message models.AgentCreatedMessage
+	return message.ID
+}
+
 func TestServeHTTPBadURL(t *testing.T) {
 	res, err := client.Get(endpoint + "/foo")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Fake url response code:", res.StatusCode)
 	}
@@ -95,7 +107,6 @@ func TestServeHTTPIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Index response code:", res.StatusCode)
 	}
@@ -107,7 +118,6 @@ func TestServeHTTPNoModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("No model response code:", res.StatusCode)
 	}
@@ -120,7 +130,6 @@ func TestServeHTTPGetGames(t *testing.T) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		logError(res)
 		t.Fatal("Games model response code:", res.StatusCode)
 	}
 	if res.Header.Get("Content-Type") != "text/json; charset=utf-8" {
@@ -145,7 +154,6 @@ func TestServeHTTPPostGames(t *testing.T) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		logError(res)
 		t.Fatal("Games model response code:", res.StatusCode)
 	}
 	if res.Header.Get("Content-Type") != "text/json; charset=utf-8" {
@@ -173,7 +181,6 @@ func TestServeHTTPPutGames(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Games model response code:", res.StatusCode)
 	}
@@ -189,7 +196,6 @@ func TestServeHTTPDeleteGames(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Games model response code:", res.StatusCode)
 	}
@@ -201,19 +207,25 @@ func TestServeHTTPGetAgents(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Agents model response code:", res.StatusCode)
 	}
 }
 
 func TestServeHTTPPostAgents(t *testing.T) {
-	res, err := client.Post(endpoint+"/api/v1.0/agents/", "text/json; charset=utf-8", nil)
+	message := models.AgentCreateMessage{}
+	message.User = true
+	message.GameID = generateGame(t)
+	buffer, err := json.Marshal(message)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := client.Post(endpoint+"/api/v1.0/agents/", "text/json; charset=utf-8", bytes.NewReader(buffer))
 	if err != nil {
 		t.Fatal(err)
 	}
 	logError(res)
-	if res.StatusCode != 400 {
+	if res.StatusCode != 201 {
 		t.Fatal("Agents model response code:", res.StatusCode)
 	}
 }
@@ -228,7 +240,6 @@ func TestServeHTTPPutAgents(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Agents model response code:", res.StatusCode)
 	}
@@ -244,7 +255,6 @@ func TestServeHTTPDeleteAgents(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	logError(res)
 	if res.StatusCode != 404 {
 		t.Fatal("Agents model response code:", res.StatusCode)
 	}

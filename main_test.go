@@ -16,10 +16,10 @@ func TestShutdown(t *testing.T) {
 	close(sigint)
 }
 
-func TestInteruptMain(t *testing.T) {
+func TestListenAndServe(t *testing.T) {
 	sigint := make(chan os.Signal, 1)
 	idleConnsClosed := make(chan struct{})
-	go Main(sigint, idleConnsClosed)
+	go listenAndServe(":3000", sigint, idleConnsClosed)
 	sigint <- os.Interrupt
 	<-idleConnsClosed
 	close(sigint)

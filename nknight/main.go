@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
@@ -155,7 +156,7 @@ func (agent CLIAgent) doReset() {
 	}
 	printCmds()
 	printBoard(formatBoard(agent.getInfo()))
-	agent.userID = message.AgentID
+	agent.userID = message.ID
 }
 
 // Select piece for move.
