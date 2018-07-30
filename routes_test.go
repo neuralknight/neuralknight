@@ -6,13 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -215,7 +215,12 @@ func TestServeHTTPGetAgents(t *testing.T) {
 func TestServeHTTPPostAgents(t *testing.T) {
 	message := models.AgentCreateMessage{}
 	message.User = true
-	message.GameID = generateGame(t)
+	gameID := generateGame(t)
+	gameURL, err := url.Parse(endpoint + "/api/v1.0/games/" + gameID.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	message.GameURL = *gameURL
 	buffer, err := json.Marshal(message)
 	if err != nil {
 		t.Fatal(err)
@@ -261,7 +266,7 @@ func TestServeHTTPDeleteAgents(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	srv := httptest.NewTLSServer(Handler{})
+	srv := httptest.NewServer(Handler{})
 	client = srv.Client()
 	endpoint = srv.URL
 	code := m.Run()

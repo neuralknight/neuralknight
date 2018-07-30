@@ -659,7 +659,7 @@ type UserMoveMessage struct {
 
 func getMove(decoder *json.Decoder) [2][2]int {
 	var message UserMoveMessage
-	err := decoder.Decode(message)
+	err := decoder.Decode(&message)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -676,19 +676,7 @@ func (userAgentDelegate) playRound(decoder *json.Decoder, agent agentModel, db *
 	out := proposal.State
 	out[move[1][0]][move[1][1]] = out[move[0][0]][move[0][1]]
 	out[move[0][0]][move[0][1]] = 0
-	resp := agent.putBoard(out)
-	defer resp.Body.Close()
-	var message BoardStateMessage
-	err := json.NewDecoder(resp.Body).Decode(message)
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent.GameOver = message.End
-	if agent.GameOver {
-		agent.close(db)
-		return message
-	}
-	return message
+	return agent.putBoard(out)
 }
 
 // agents agents.

@@ -47,14 +47,17 @@ func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	buffer, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Infoln(err)
+		log.Panicln(err)
+	}
+	if r.Method != http.MethodGet && len(buffer) == 0 {
+		log.Infoln("Empty body: ", r.Method, r.RequestURI)
 	}
 	log.Infoln("Request body: ", string(buffer))
 	reader := bytes.NewReader(buffer)
 	var message interface{}
 	if routerV1.MatchString(r.URL.Path) {
 		if routerV1Games.MatchString(r.URL.Path) {
-			message = views.ServeAPIGamesHTTP(r.URL.Path, r.Method, json.NewDecoder(reader))
+			message = views.ServeAPIGamesHTTP(r.URL.Path, r.Method, r.URL.Query(), json.NewDecoder(reader))
 		}
 		if routerV1Agents.MatchString(r.URL.Path) {
 			message = views.ServeAPIAgentsHTTP(r.URL.Path, r.Method, json.NewDecoder(reader))

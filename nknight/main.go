@@ -13,7 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuralknight/neuralknight/models"
-	"github.com/satori/go.uuid"
 )
 
 type board [8][8]uint8
@@ -62,30 +61,18 @@ func printCmds() {
 
 // CLIAgent agent.
 type CLIAgent struct {
-	apiURL url.URL
-	piece  *[2]int
-	gameID uuid.UUID
-	userID uuid.UUID
-}
-
-func (agent CLIAgent) apiURI(input string, ID uuid.UUID) string {
-	if ID.Version() == uuid.V5 {
-		input = input + ID.String()
-	}
-	path, err := url.Parse(input)
-	if err != nil {
-		log.Panicln(err)
-	}
-	gameURL := agent.apiURL.ResolveReference(path)
-	return gameURL.RequestURI()
+	apiURL  *url.URL
+	piece   *[2]int
+	gameURL *url.URL
+	userURL *url.URL
 }
 
 func (agent CLIAgent) gameURI() string {
-	return agent.apiURI("api/v1.0/games/", agent.gameID)
+	return agent.gameURL.RequestURI()
 }
 
 func (agent CLIAgent) agentURI() string {
-	return agent.apiURI("api/v1.0/agent/", agent.userID)
+	return agent.userURL.RequestURI()
 }
 
 func (agent CLIAgent) getInfo() string {
@@ -94,7 +81,7 @@ func (agent CLIAgent) getInfo() string {
 		log.Panicln(err)
 	}
 	var message models.BoardInfoMessage
-	err = json.NewDecoder(resp.Body).Decode(message)
+	err = json.NewDecoder(resp.Body).Decode(&message)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -102,7 +89,7 @@ func (agent CLIAgent) getInfo() string {
 }
 
 // MakeCLIAgent agent.
-func makeCLIAgent(apiURL url.URL) CLIAgent {
+func makeCLIAgent(apiURL *url.URL) CLIAgent {
 	var agent CLIAgent
 	agent.apiURL = apiURL
 	agent.doReset()
@@ -110,21 +97,25 @@ func makeCLIAgent(apiURL url.URL) CLIAgent {
 }
 
 func (agent CLIAgent) doReset() {
-	agent.gameID = uuid.UUID{}
-	agent.userID = uuid.UUID{}
+	agent.gameURL = nil
+	agent.userURL = nil
 	agent.piece = nil
 	resp, err := http.Post(agent.gameURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
 	if err != nil {
 		log.Panicln(err)
 	}
 	var game models.BoardCreatedMessage
-	err = json.NewDecoder(resp.Body).Decode(game)
+	err = json.NewDecoder(resp.Body).Decode(&game)
 	if err != nil {
 		log.Panicln(err)
 	}
-	agent.gameID = game.ID
+	gameURL, err := url.Parse("api/v1.0/games/" + game.ID.String())
+	if err != nil {
+		log.Panicln(err)
+	}
+	agent.gameURL = gameURL
 	var messageCreate models.AgentCreateMessage
-	messageCreate.GameID = agent.gameID
+	messageCreate.GameURL = *gameURL
 	messageCreate.User = true
 	buffer, err := json.Marshal(messageCreate)
 	if err != nil {
@@ -135,7 +126,7 @@ func (agent CLIAgent) doReset() {
 		log.Panicln(err)
 	}
 	var message models.AgentCreatedMessage
-	err = json.NewDecoder(resp.Body).Decode(message)
+	err = json.NewDecoder(resp.Body).Decode(&message)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -150,13 +141,17 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	err = json.NewDecoder(resp.Body).Decode(message)
+	err = json.NewDecoder(resp.Body).Decode(&message)
 	if err != nil {
 		log.Panicln(err)
 	}
 	printCmds()
 	printBoard(formatBoard(agent.getInfo()))
-	agent.userID = message.ID
+	userURL, err := url.Parse("api/v1.0/agents/" + message.ID.String())
+	if err != nil {
+		log.Panicln(err)
+	}
+	agent.userURL = userURL
 }
 
 // Select piece for move.
@@ -172,7 +167,7 @@ func (agent CLIAgent) doPiece(col, row string) {
 		log.Panicln(err)
 	}
 	var message models.BoardStateMessage
-	err = json.NewDecoder(resp.Body).Decode(message)
+	err = json.NewDecoder(resp.Body).Decode(&message)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -227,7 +222,10 @@ func (agent CLIAgent) doMove(col, row string) {
 	}
 	defer resp.Body.Close()
 	var boardStateMessage models.BoardStateMessage
-	json.NewDecoder(resp.Body).Decode(boardStateMessage)
+	err = json.NewDecoder(resp.Body).Decode(&boardStateMessage)
+	if err != nil {
+		log.Panicln(err)
+	}
 	if boardStateMessage.Invalid {
 		println("Invalid move.")
 		return
@@ -248,7 +246,7 @@ func (agent CLIAgent) doMove(col, row string) {
 		if err != nil {
 			log.Panicln(err)
 		}
-		err = json.NewDecoder(resp.Body).Decode(boardStateMessage)
+		err = json.NewDecoder(resp.Body).Decode(&boardStateMessage)
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -354,5 +352,5 @@ func main() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	makeCLIAgent(*apiURL).cmdLoop()
+	makeCLIAgent(apiURL).cmdLoop()
 }

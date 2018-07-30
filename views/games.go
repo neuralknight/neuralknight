@@ -3,6 +3,7 @@ package views
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -29,12 +30,12 @@ var routerV1GamesIDInfo = regexp.MustCompile("^/api/v1.0/games/[\\w-]+/info/?$")
 var extractV1GamesIDInfo = regexp.MustCompile("(?:/)[\\w-]+(?:/info/?)$")
 
 // ServeAPIGamesHTTP views.
-func ServeAPIGamesHTTP(path string, method string, decoder *json.Decoder) interface{} {
+func ServeAPIGamesHTTP(path string, method string, values url.Values, decoder *json.Decoder) interface{} {
 	if routerV1Games.MatchString(path) {
 		return serveAPIGamesListHTTP(method, decoder)
 	}
 	if routerV1GamesID.MatchString(path) {
-		return serveAPIGamesIDHTTP(models.GetGame(viewID(path, extractV1GamesID, "")), method, decoder)
+		return serveAPIGamesIDHTTP(models.GetGame(viewID(path, extractV1GamesID, "")), method, values, decoder)
 	}
 	if routerV1GamesIDStates.MatchString(path) {
 		return serveAPIGamesIDStatesHTTP(models.GetGame(viewID(path, extractV1GamesID, "states")), method, decoder)
@@ -55,10 +56,10 @@ func serveAPIGamesListHTTP(method string, decoder *json.Decoder) interface{} {
 	return nil
 }
 
-func serveAPIGamesIDHTTP(game models.Board, method string, decoder *json.Decoder) interface{} {
+func serveAPIGamesIDHTTP(game models.Board, method string, values url.Values, decoder *json.Decoder) interface{} {
 	switch method {
 	case http.MethodGet:
-		return game.GetState(decoder)
+		return game.GetState(values)
 	case http.MethodPost:
 		return game.AddPlayer(decoder)
 	case http.MethodPut:

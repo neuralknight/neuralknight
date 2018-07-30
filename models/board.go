@@ -2,12 +2,18 @@ package models
 
 import (
 	"encoding/json"
+	"net/url"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 )
+
+// GameJoinMessage board
+type GameJoinMessage struct {
+	AgentURL url.URL
+}
 
 func openDB() *gorm.DB {
 	db, err := gorm.Open("sqlite3", "chess.db")
@@ -75,7 +81,7 @@ func closeDB(db *gorm.DB) {
 type Board interface {
 	AddPlayer(decoder *json.Decoder) BoardStateMessage
 	GetInfo(decoder *json.Decoder) BoardStateMessage
-	GetState(decoder *json.Decoder) BoardStateMessage
+	GetState(values url.Values) BoardStateMessage
 	GetStates(decoder *json.Decoder) BoardStateMessage
 	PlayRound(decoder *json.Decoder) BoardStateMessage
 }
@@ -159,7 +165,7 @@ func (board boardModel) GetInfo(decoder *json.Decoder) BoardStateMessage {
 }
 
 // GetState game.
-func (board boardModel) GetState(decoder *json.Decoder) BoardStateMessage {
+func (board boardModel) GetState(values url.Values) BoardStateMessage {
 	return BoardStateMessage{!board.active(), false, board.State}
 }
 
