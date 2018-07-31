@@ -1,11 +1,13 @@
-package main
+package nknight_test
 
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/neuralknight/neuralknight/views"
+	log "github.com/sirupsen/logrus"
 	. "gopkg.in/check.v1"
 )
 
@@ -20,7 +22,17 @@ type NKnightSuite struct {
 var _ = Suite(&NKnightSuite{})
 
 func (s *NKnightSuite) TestMainEntry(c *C) {
-	go main()
+	defer func() {
+		switch err := recover().(type) {
+		case error:
+			log.Println(err.Error())
+		default:
+			break
+		}
+	}()
+	apiURL, err := url.Parse(s.endpoint)
+	c.Assert(err, Not(NotNil))
+	nknight.MakeCLIAgent(apiURL).CmdLoop()
 }
 
 func (s *NKnightSuite) SetUpSuite(c *C) {
