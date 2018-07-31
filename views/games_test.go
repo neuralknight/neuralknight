@@ -1,9 +1,13 @@
-package views
+package views_test
 
 import (
-	"testing"
+	. "gopkg.in/check.v1"
 )
 
-func TestBoardView(t *testing.T) {
+type GamesSuite struct{}
+
+var _ = Suite(&GamesSuite{})
+
+func (s *GamesSuite) TestBoardView(c *C) {
 
 }

@@ -23,10 +23,12 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/neuralknight/neuralknight/views"
+
 	log "github.com/sirupsen/logrus"
 
-	_ "github.com/RebirthDB/rebirthdb-go"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	// _ "github.com/RebirthDB/rebirthdb-go"
+	// _ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
@@ -47,7 +49,7 @@ func listenAndServe(addr string, sigint <-chan os.Signal, idleConnsClosed chan<-
 	go shutdown(&srv, sigint, idleConnsClosed)
 
 	srv.Addr = addr
-	srv.Handler = Handler{}
+	srv.Handler = views.Handler{}
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Println("HTTP server ListenAndServe:", err)

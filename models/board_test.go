@@ -1,13 +1,22 @@
-package models
+package models_test
 
 import (
-	"math"
 	"testing"
+
+	. "gopkg.in/check.v1"
+
+	"math"
 
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
 )
+
+func Test(t *testing.T) { TestingT(t) }
+
+type BoardSuite struct{}
+
+var _ = Suite(&BoardSuite{})
 
 func TestBoard(t *testing.T) {
 	properties := gopter.NewProperties(nil)
