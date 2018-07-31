@@ -30,7 +30,7 @@ var routerV1GamesIDInfo = regexp.MustCompile("^/api/v1.0/games/[\\w-]+/info/?$")
 var extractV1GamesIDInfo = regexp.MustCompile("(?:/)[\\w-]+(?:/info/?)$")
 
 // ServeAPIGamesHTTP views.
-func ServeAPIGamesHTTP(path string, method string, values url.Values, decoder *json.Decoder) interface{} {
+func serveAPIGamesHTTP(path string, method string, values url.Values, decoder *json.Decoder) interface{} {
 	if routerV1Games.MatchString(path) {
 		return serveAPIGamesListHTTP(method, decoder)
 	}

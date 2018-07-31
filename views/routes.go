@@ -1,4 +1,4 @@
-package main
+package views
 
 import (
 	"bytes"
@@ -8,8 +8,6 @@ import (
 	"regexp"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/neuralknight/neuralknight/views"
 )
 
 // Handler neuralknight
@@ -22,8 +20,8 @@ type ErrorMessage struct {
 }
 
 var routerV1 = regexp.MustCompile("^/api/v1.0/")
-var routerV1Games = regexp.MustCompile("^/api/v1.0/games")
-var routerV1Agents = regexp.MustCompile("^/api/v1.0/agents")
+var routerV1GamesAny = regexp.MustCompile("^/api/v1.0/games")
+var routerV1AgentsAny = regexp.MustCompile("^/api/v1.0/agents")
 
 func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -56,11 +54,11 @@ func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reader := bytes.NewReader(buffer)
 	var message interface{}
 	if routerV1.MatchString(r.URL.Path) {
-		if routerV1Games.MatchString(r.URL.Path) {
-			message = views.ServeAPIGamesHTTP(r.URL.Path, r.Method, r.URL.Query(), json.NewDecoder(reader))
+		if routerV1GamesAny.MatchString(r.URL.Path) {
+			message = serveAPIGamesHTTP(r.URL.Path, r.Method, r.URL.Query(), json.NewDecoder(reader))
 		}
-		if routerV1Agents.MatchString(r.URL.Path) {
-			message = views.ServeAPIAgentsHTTP(r.URL.Path, r.Method, json.NewDecoder(reader))
+		if routerV1AgentsAny.MatchString(r.URL.Path) {
+			message = serveAPIAgentsHTTP(r.URL.Path, r.Method, json.NewDecoder(reader))
 		}
 	}
 	if message == nil {

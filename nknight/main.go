@@ -89,7 +89,7 @@ func (agent CLIAgent) getInfo() string {
 }
 
 // MakeCLIAgent agent.
-func makeCLIAgent(apiURL *url.URL) CLIAgent {
+func MakeCLIAgent(apiURL *url.URL) CLIAgent {
 	var agent CLIAgent
 	agent.apiURL = apiURL
 	agent.doReset()
@@ -307,7 +307,7 @@ func (agent CLIAgent) parse(col, row string) *[2]int {
 }
 
 // Sanitize data.
-func (agent CLIAgent) cmdLoop() {
+func (agent CLIAgent) CmdLoop() {
 	for {
 		print(prompt)
 		var cmd, col, row string
@@ -352,5 +352,5 @@ func main() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	makeCLIAgent(apiURL).cmdLoop()
+	MakeCLIAgent(apiURL).CmdLoop()
 }

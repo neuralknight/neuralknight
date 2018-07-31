@@ -1,10 +1,14 @@
-package models
+package models_test
 
 import (
-	"testing"
+	. "gopkg.in/check.v1"
 )
 
-func TestMockBoard(t *testing.T) {
+type MockBoardSuite struct{}
+
+var _ = Suite(&MockBoardSuite{})
+
+func (s *MockBoardSuite) TestMockBoard(c *C) {
 
 }
 
