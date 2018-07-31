@@ -1,4 +1,4 @@
-package nkight
+package nknight
 
 import (
 	"bytes"

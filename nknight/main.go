@@ -6,7 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuralknight/neuralknight/nkight/nkight"
+	"github.com/neuralknight/neuralknight/nknight/nknight"
 )
 
 func main() {

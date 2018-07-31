@@ -32,7 +32,7 @@ func (s *NKnightSuite) TestMainEntry(c *C) {
 	}()
 	apiURL, err := url.Parse(s.endpoint)
 	c.Assert(err, Not(NotNil))
-	nknight.MakeCLIAgent(apiURL).CmdLoop()
+	MakeCLIAgent(apiURL).CmdLoop()
 }
 
 func (s *NKnightSuite) SetUpSuite(c *C) {
