@@ -1,10 +1,14 @@
-package views
+package views_test
 
 import (
-	"testing"
+	. "gopkg.in/check.v1"
 )
 
-func TestAgentView(t *testing.T) {
+type AgentSuite struct{}
+
+var _ = Suite(&AgentSuite{})
+
+func (s *AgentSuite) TestAgentView(c *C) {
 
 }
 

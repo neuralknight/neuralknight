@@ -1,10 +1,14 @@
-package models
+package models_test
 
 import (
-	"testing"
+	. "gopkg.in/check.v1"
 )
 
-func TestMockAgent(t *testing.T) {
+type MockAgentSuite struct{}
+
+var _ = Suite(&MockAgentSuite{})
+
+func (s *MockAgentSuite) TestMockAgent(c *C) {
 
 }
 
