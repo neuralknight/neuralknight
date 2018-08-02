@@ -101,6 +101,28 @@ func MakeCLIAgent(apiURL url.URL) CLIAgent {
 	return agent
 }
 
+func (agent CLIAgent) newAgent(create models.AgentCreateMessage) models.AgentCreatedMessage {
+	buffer, err := json.Marshal(create)
+	if err != nil {
+		log.Panicln(err)
+	}
+	agentURL, err := url.Parse("api/v1.0/agents/")
+	if err != nil {
+		log.Panicln(err)
+	}
+	agentURL = agent.apiURL.ResolveReference(agentURL)
+	resp, err := http.Post(agentURL.String(), "text/json; charset=utf-8", bytes.NewReader(buffer))
+	if err != nil {
+		log.Panicln(err)
+	}
+	var message models.AgentCreatedMessage
+	err = json.NewDecoder(resp.Body).Decode(&message)
+	if err != nil {
+		log.Panicln(err)
+	}
+	return message
+}
+
 func (agent CLIAgent) doReset() {
 	agent.gameURL = nil
 	agent.userURL = nil
@@ -123,50 +145,23 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	agent.gameURL = gameURL
-	var messageCreate models.AgentCreateMessage
-	messageCreate.GameURL = *gameURL
-	messageCreate.User = true
-	buffer, err := json.Marshal(messageCreate)
+	agent.gameURL = agent.apiURL.ResolveReference(gameURL)
+	player := agent.newAgent(models.AgentCreateMessage{
+		GameURL: *gameURL,
+		User:    true,
+	})
+	ai := agent.newAgent(models.AgentCreateMessage{
+		Lookahead: 2,
+		Delegate:  "max-balance-agent",
+	})
+	agentURL, err := url.Parse("api/v1.0/agents/" + player.ID.String())
 	if err != nil {
 		log.Panicln(err)
 	}
-	agentURL, err := url.Parse("api/v1.0/agents/")
-	if err != nil {
-		log.Panicln(err)
-	}
-	agentURL = agent.apiURL.ResolveReference(agentURL)
-	resp, err = http.Post(agentURL.String(), "text/json; charset=utf-8", bytes.NewReader(buffer))
-	if err != nil {
-		log.Panicln(err)
-	}
-	// var message models.AgentCreatedMessage
-	// err = json.NewDecoder(resp.Body).Decode(&message)
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-	// messageCreate.User = false
-	// messageCreate.Lookahead = 2
-	// messageCreate.Delegate = "max-balance-agent"
-	// buffer, err = json.Marshal(messageCreate)
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-	// resp, err = http.Post(agent.agentURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-	// err = json.NewDecoder(resp.Body).Decode(&message)
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-	// printCmds()
-	// printBoard(formatBoard(agent.getInfo()))
-	// userURL, err := url.Parse("api/v1.0/agents/" + message.ID.String())
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-	// agent.userURL = userURL
+	agent.userURL = agent.apiURL.ResolveReference(agentURL)
+	log.Infoln(ai)
+	printCmds()
+	printBoard(formatBoard(agent.getInfo()))
 }
 
 // Select piece for move.

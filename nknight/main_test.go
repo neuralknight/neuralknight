@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/neuralknight/neuralknight/views"
+	log "github.com/sirupsen/logrus"
 	. "gopkg.in/check.v1"
 )
 
@@ -21,10 +22,26 @@ type NKnightSuite struct {
 var _ = Suite(&NKnightSuite{})
 
 func (s *NKnightSuite) TestCmdLoop(c *C) {
+	defer func() {
+		switch err := recover().(type) {
+		case error:
+			log.Println(err.Error())
+		default:
+			break
+		}
+	}()
 	CmdLoop(s.endpoint)
 }
 
 func (s *NKnightSuite) TestMainEntry(c *C) {
+	defer func() {
+		switch err := recover().(type) {
+		case error:
+			log.Println(err.Error())
+		default:
+			break
+		}
+	}()
 	Main()
 }
 
