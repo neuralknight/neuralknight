@@ -3,7 +3,6 @@ package views_test
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/neuralknight/neuralknight/views"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -199,10 +199,4 @@ func (s *RoutesSuite) TearDownTest(c *C) {}
 
 func (s *RoutesSuite) TearDownSuite(c *C) {
 	s.srv.Close()
-}
-
-func (s *RoutesSuite) TestHelloWorld(c *C) {
-	c.Assert(42, Equals, "42")
-	c.Assert(io.ErrClosedPipe, ErrorMatches, "io: .*on closed pipe")
-	c.Check(42, Equals, 42)
 }

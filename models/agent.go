@@ -54,7 +54,7 @@ func (agent agentModel) gameURI(input string) string {
 	if err != nil {
 		log.Panicln(err)
 	}
-	return agent.GameURL.ResolveReference(path).RequestURI()
+	return agent.GameURL.ResolveReference(path).String()
 }
 
 // MakeAgent agent.

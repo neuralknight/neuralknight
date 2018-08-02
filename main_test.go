@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	. "gopkg.in/check.v1"
 )
 

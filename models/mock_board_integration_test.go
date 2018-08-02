@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	. "gopkg.in/check.v1"
 )
 

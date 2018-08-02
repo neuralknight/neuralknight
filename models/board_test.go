@@ -7,6 +7,7 @@ import (
 
 	"math"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"

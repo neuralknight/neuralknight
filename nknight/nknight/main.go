@@ -60,18 +60,24 @@ func printCmds() {
 
 // CLIAgent agent.
 type CLIAgent struct {
-	apiURL  *url.URL
+	apiURL  url.URL
 	piece   *[2]int
 	gameURL *url.URL
 	userURL *url.URL
 }
 
 func (agent CLIAgent) gameURI() string {
-	return agent.gameURL.RequestURI()
+	if agent.gameURL == nil {
+		log.Fatalln("no game url found")
+	}
+	return agent.gameURL.String()
 }
 
 func (agent CLIAgent) agentURI() string {
-	return agent.userURL.RequestURI()
+	if agent.userURL == nil {
+		log.Fatalln("no agent url found")
+	}
+	return agent.userURL.String()
 }
 
 func (agent CLIAgent) getInfo() string {
@@ -88,7 +94,7 @@ func (agent CLIAgent) getInfo() string {
 }
 
 // MakeCLIAgent agent.
-func MakeCLIAgent(apiURL *url.URL) CLIAgent {
+func MakeCLIAgent(apiURL url.URL) CLIAgent {
 	var agent CLIAgent
 	agent.apiURL = apiURL
 	agent.doReset()
@@ -99,7 +105,12 @@ func (agent CLIAgent) doReset() {
 	agent.gameURL = nil
 	agent.userURL = nil
 	agent.piece = nil
-	resp, err := http.Post(agent.gameURI(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
+	gameURL, err := url.Parse("api/v1.0/games/")
+	if err != nil {
+		log.Panicln(err)
+	}
+	gameURL = agent.apiURL.ResolveReference(gameURL)
+	resp, err := http.Post(gameURL.String(), "text/json; charset=utf-8", bytes.NewBufferString("{}"))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -108,7 +119,7 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	gameURL, err := url.Parse("api/v1.0/games/" + game.ID.String())
+	gameURL, err = url.Parse("api/v1.0/games/" + game.ID.String())
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -120,37 +131,42 @@ func (agent CLIAgent) doReset() {
 	if err != nil {
 		log.Panicln(err)
 	}
-	resp, err = http.Post(agent.agentURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
+	agentURL, err := url.Parse("api/v1.0/agents/")
 	if err != nil {
 		log.Panicln(err)
 	}
-	var message models.AgentCreatedMessage
-	err = json.NewDecoder(resp.Body).Decode(&message)
+	agentURL = agent.apiURL.ResolveReference(agentURL)
+	resp, err = http.Post(agentURL.String(), "text/json; charset=utf-8", bytes.NewReader(buffer))
 	if err != nil {
 		log.Panicln(err)
 	}
-	messageCreate.User = false
-	messageCreate.Lookahead = 2
-	messageCreate.Delegate = "max-balance-agent"
-	buffer, err = json.Marshal(messageCreate)
-	if err != nil {
-		log.Panicln(err)
-	}
-	resp, err = http.Post(agent.agentURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
-	if err != nil {
-		log.Panicln(err)
-	}
-	err = json.NewDecoder(resp.Body).Decode(&message)
-	if err != nil {
-		log.Panicln(err)
-	}
-	printCmds()
-	printBoard(formatBoard(agent.getInfo()))
-	userURL, err := url.Parse("api/v1.0/agents/" + message.ID.String())
-	if err != nil {
-		log.Panicln(err)
-	}
-	agent.userURL = userURL
+	// var message models.AgentCreatedMessage
+	// err = json.NewDecoder(resp.Body).Decode(&message)
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
+	// messageCreate.User = false
+	// messageCreate.Lookahead = 2
+	// messageCreate.Delegate = "max-balance-agent"
+	// buffer, err = json.Marshal(messageCreate)
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
+	// resp, err = http.Post(agent.agentURI(), "text/json; charset=utf-8", bytes.NewReader(buffer))
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
+	// err = json.NewDecoder(resp.Body).Decode(&message)
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
+	// printCmds()
+	// printBoard(formatBoard(agent.getInfo()))
+	// userURL, err := url.Parse("api/v1.0/agents/" + message.ID.String())
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
+	// agent.userURL = userURL
 }
 
 // Select piece for move.
@@ -305,7 +321,7 @@ func (agent CLIAgent) parse(col, row string) *[2]int {
 	return &output
 }
 
-// Sanitize data.
+// CmdLoop Sanitize data.
 func (agent CLIAgent) CmdLoop() {
 	for {
 		print(prompt)

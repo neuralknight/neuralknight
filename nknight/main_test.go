@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/neuralknight/neuralknight/views"
 	. "gopkg.in/check.v1"
 )
@@ -19,8 +20,12 @@ type NKnightSuite struct {
 
 var _ = Suite(&NKnightSuite{})
 
+func (s *NKnightSuite) TestCmdLoop(c *C) {
+	CmdLoop(s.endpoint)
+}
+
 func (s *NKnightSuite) TestMainEntry(c *C) {
-	go main()
+	Main()
 }
 
 func (s *NKnightSuite) SetUpSuite(c *C) {

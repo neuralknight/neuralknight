@@ -1,13 +1,15 @@
 package nknight_test
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/neuralknight/neuralknight/nknight/nknight"
 	"github.com/neuralknight/neuralknight/views"
-	log "github.com/sirupsen/logrus"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	. "gopkg.in/check.v1"
 )
 
@@ -32,7 +34,8 @@ func (s *NKnightSuite) TestMainEntry(c *C) {
 	}()
 	apiURL, err := url.Parse(s.endpoint)
 	c.Assert(err, Not(NotNil))
-	MakeCLIAgent(apiURL).CmdLoop()
+	agent := nknight.MakeCLIAgent(*apiURL)
+	c.Assert(agent, NotNil)
 }
 
 func (s *NKnightSuite) SetUpSuite(c *C) {

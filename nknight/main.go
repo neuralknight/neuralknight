@@ -4,9 +4,8 @@ import (
 	"flag"
 	"net/url"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/neuralknight/neuralknight/nknight/nknight"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -18,14 +17,24 @@ func main() {
 			break
 		}
 	}()
+	Main()
+}
+
+// Main entry.
+func Main() {
 	apiURLFlag := flag.String("api_url", "http://localhost:8080", "api_url")
 	flag.Parse()
 	if apiURLFlag == nil {
 		log.Panicln("Failed to parse flags")
 	}
-	apiURL, err := url.Parse(*apiURLFlag)
+	CmdLoop(*apiURLFlag)
+}
+
+// CmdLoop entry.
+func CmdLoop(apiURLFlag string) {
+	apiURL, err := url.Parse(apiURLFlag)
 	if err != nil {
 		log.Panicln(err)
 	}
-	nkight.MakeCLIAgent(apiURL).CmdLoop()
+	nknight.MakeCLIAgent(*apiURL).CmdLoop()
 }
