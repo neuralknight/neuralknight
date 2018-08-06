@@ -18,17 +18,14 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 
-	"github.com/neuralknight/neuralknight/views"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/neuralknight/neuralknight/views"
 	log "github.com/sirupsen/logrus"
 )
-
-var portFlag = flag.Int("port", 8080, "port")
 
 func shutdown(srv *http.Server, sigint <-chan os.Signal, idleConnsClosed chan<- struct{}) {
 	defer close(idleConnsClosed)
@@ -56,10 +53,7 @@ func main() {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
 	flag.Parse()
-	if portFlag == nil {
-		log.Panicln("Failed to parse flags")
-	}
 	idleConnsClosed := make(chan struct{})
-	go listenAndServe(fmt.Sprintf(":%d", *portFlag), sigint, idleConnsClosed)
+	go listenAndServe(":8080", sigint, idleConnsClosed)
 	<-idleConnsClosed
 }
