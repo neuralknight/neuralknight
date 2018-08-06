@@ -24,12 +24,8 @@ import (
 	"os/signal"
 
 	"github.com/neuralknight/neuralknight/views"
-
-	log "github.com/sirupsen/logrus"
-
-	// _ "github.com/RebirthDB/rebirthdb-go"
-	// _ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	log "github.com/sirupsen/logrus"
 )
 
 var portFlag = flag.Int("port", 8080, "port")

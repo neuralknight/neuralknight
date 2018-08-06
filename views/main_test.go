@@ -9,13 +9,12 @@ import (
 	"net/url"
 	"testing"
 
-	. "gopkg.in/check.v1"
-
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/neuralknight/neuralknight/views"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+	. "gopkg.in/check.v1"
 )
 
 func (s *RoutesSuite) logError(res *http.Response) {

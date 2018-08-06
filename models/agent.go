@@ -7,9 +7,8 @@ import (
 	"net/url"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // Agent agent.

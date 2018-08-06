@@ -9,9 +9,8 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/neuralknight/neuralknight/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type board [8][8]uint8
