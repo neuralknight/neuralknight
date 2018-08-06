@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"net/url"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // GameJoinMessage board

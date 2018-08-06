@@ -6,9 +6,7 @@ go:
   - "1.10.x"
   - master
 
-after_install:
+script:
   - go vet
-
-after_success:
   - go get github.com/mattn/goveralls
   - $GOPATH/bin/goveralls -v -service=travis-ci

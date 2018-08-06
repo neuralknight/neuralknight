@@ -7,9 +7,8 @@ import (
 	"net/url"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // Agent agent.
@@ -54,7 +53,7 @@ func (agent agentModel) gameURI(input string) string {
 	if err != nil {
 		log.Panicln(err)
 	}
-	return agent.GameURL.ResolveReference(path).RequestURI()
+	return agent.GameURL.ResolveReference(path).String()
 }
 
 // MakeAgent agent.

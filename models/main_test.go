@@ -1,13 +1,21 @@
-package models
+package models_test
 
 import (
 	"math"
 	"testing"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
+	. "gopkg.in/check.v1"
 )
+
+func Test(t *testing.T) { TestingT(t) }
+
+type BoardSuite struct{}
+
+var _ = Suite(&BoardSuite{})
 
 func TestBoard(t *testing.T) {
 	properties := gopter.NewProperties(nil)
@@ -330,3 +338,292 @@ func TestBoard(t *testing.T) {
 //         (0, 0, 0, 0, 0, 0, 0, 0),
 //         (0, 9, 9, 9, 9, 9, 9, 9),
 //         (13, 7, 3, 11, 5, 3, 7, 13))))
+// from os import environ
+// from pyramid.testing import DummyRequest, setUp, tearDown
+// from pytest import fixture
+//
+// from ..models.board import Board
+// from ..models.meta import Base
+//
+//
+// @fixture
+// def configuration(request):
+//     """
+//     Create database models for testing purposes.
+//     """
+//     config = setUp(settings={
+//         "sqlalchemy.url": environ.get(
+//             "TEST_DATABASE_URL", "postgres://localhost:5432/testing_neuralknight")
+//     })
+//     config.include("neuralknight.models")
+//     config.include("neuralknight.routes")
+//     yield config
+//     tearDown()
+//
+//
+// @fixture
+// def db_session(configuration, request):
+//     """
+//     Create a database session for interacting with the test database.
+//     """
+//     SessionFactory = configuration.registry["dbsession_factory"]
+//     session = SessionFactory()
+//     engine = session.bind
+//     Base.metadata.create_all(engine)
+//     yield session
+//     session.transaction.rollback()
+//     Base.metadata.drop_all(engine)
+//
+//
+// @fixture
+// def dummy_request(db_session):
+//     """
+//     Create a dummy GET request with a dbsession.
+//     """
+//     return DummyRequest(dbsession=db_session)
+//
+//
+// @fixture
+// def dummy_post_request(db_session):
+//     """
+//     Create a dummy POST request with a dbsession.
+//     """
+//     return DummyRequest(dbsession=db_session, post={}, json={})
+//
+//
+// @fixture(scope="session")
+// def testapp(request):
+//     """
+//     Functional test for app to support mocking.
+//     """
+//     import neuralknight
+//     from webtest import TestApp
+//
+//     app = neuralknight.main({}, **{
+//         "sqlalchemy.url": environ.get(
+//             "TEST_DATABASE_URL", "postgres://localhost:5432/testing_neuralknight")
+//     })
+//
+//     SessionFactory = app.registry["dbsession_factory"]
+//     engine = SessionFactory().bind
+//     Base.metadata.create_all(bind=engine)
+//     neuralknight.testapp = TestApp(app)
+//     yield neuralknight.testapp
+//     Base.metadata.drop_all(bind=engine)
+//
+//
+// @fixture
+// def start_board():
+//     return Board()
+//
+//
+// @fixture
+// def pawn_capture_board():
+//     return Board(tuple(map(bytes, [
+//         [12, 6, 2, 10, 4, 2, 6, 12],
+//         [8, 8, 8, 0, 8, 0, 8, 8],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 8, 0, 8, 0, 0],
+//         [0, 0, 0, 0, 9, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [9, 9, 9, 9, 0, 9, 9, 9],
+//         [13, 7, 3, 11, 5, 3, 7, 13]])))
+//
+//
+// @fixture
+// def min_pawn_board():
+//     return Board(tuple(map(bytes, [
+//         [0, 0, 0, 0, 4, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 9, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 5, 0, 0, 0]])))
+//
+//
+// @fixture
+// def end_game_board():
+//     return Board(tuple(map(bytes, [
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 4, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 11, 0],
+//         [0, 0, 0, 5, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0],
+//         [0, 0, 0, 0, 0, 0, 0, 0]])))
+
+// from ..models import BaseBoard, BaseAgent
+//
+//
+// class MockBoard(BaseBoard):
+//     def __init__(self, testapp, cursor=None):
+//         self.testapp = testapp
+//         self.args = {}
+//         self.kwargs = {}
+//         self.cursor = cursor
+//         super().__init__([[0 for i in range(8)] for j in range(8)])
+//
+//     def slice_cursor_v1(self, *args, **kwargs):
+//         self.args["slice_cursor_v1"] = args
+//         self.kwargs["slice_cursor_v1"] = kwargs
+//         return {
+//             "cursor": self.cursor,
+//             "boards": [(self.board,)]
+//         }
+//
+//     def add_player_v1(self, *args, **kwargs):
+//         self.args["add_player_v1"] = args
+//         self.kwargs["add_player_v1"] = kwargs
+//         player = args[1]
+//         if self.player1:
+//             self.player2 = player
+//         else:
+//             self.player1 = player
+//         self.poke_player(False)
+//         return {}
+//
+//     def update_state_v1(self, *args, **kwargs):
+//         self.args["update_state_v1"] = args
+//         self.kwargs["update_state_v1"] = kwargs
+//         return {"end": True}
+//
+//
+// def test_player_connection(testapp):
+//     """Assert players connect to board"""
+//     mockboard = MockBoard(testapp)
+//     player1 = testapp.post_json("/issue-agent", {"id": mockboard.id}).json
+//     player2 = testapp.post_json("/issue-agent", {"id": mockboard.id, "player": 2}).json
+//     assert player1
+//     assert player2
+//
+//
+// this needs to change - need to check multi-gets
+// def test_get_boards(testapp):
+//     mockboard = MockBoard(testapp, 1)
+//     player1 = testapp.post_json("/issue-agent", {"id": mockboard.id}).json
+//     assert player1["AgentID"] in BaseAgent.AGENT_POOL
+//     player2 = testapp.post_json("/issue-agent", {"id": mockboard.id, "player": 2}).json
+//     assert player2
+//     assert player1["AgentID"] not in BaseAgent.AGENT_POOL
+//
+//
+// def test_choose_valid_move(testapp):
+//     """Assert agent chooses valid move and game ends"""
+//     mockboard = MockBoard(testapp)
+//     state = mockboard.current_state_v1()
+//     player1 = testapp.post_json("/issue-agent", {"id": mockboard.id}).json
+//      assert player1["AgentID"] in BaseAgent.AGENT_POOL
+//     player2 = testapp.post_json("/issue-agent", {"id": mockboard.id, "player": 2}).json
+//     assert state == mockboard.current_state_v1()
+//     assert player2
+//     assert player1["AgentID"] not in BaseAgent.AGENT_POOL
+//
+//
+// def test_play_game(testapp):
+//     mockboard = MockBoard(testapp)
+//     player1 = testapp.post_json("/issue-agent", {"id": mockboard.id}).json
+//      assert player1["AgentID"] in BaseAgent.AGENT_POOL
+//     player2 = testapp.post_json("/issue-agent", {"id": mockboard.id, "player": 2}).json
+//     assert player2
+//     assert player1["AgentID"] not in BaseAgent.AGENT_POOL
+//
+//
+// def test_user_connection(testapp):
+//     mockboard = MockBoard(testapp)
+//     player1 = testapp.post_json("/issue-agent", {"id": mockboard.id, "user": True}).json
+//     assert player1
+// from ..models.base_agent import BaseAgent
+//
+//
+// class MockAgent(BaseAgent):
+//     def __init__(self, testapp, moves, game_id, player):
+//         self.testapp = testapp
+//         self.args = []
+//         self.kwargs = []
+//         self.moves = iter(moves)
+//         self.past_end = False
+//         super().__init__(game_id, player)
+//
+//     def play_round(self, *args, **kwargs):
+//         self.args.append(args)
+//         self.kwargs.append(kwargs)
+//         try:
+//             return self.put_board(next(self.moves))
+//         except StopIteration:
+//             self.past_end = True
+//         return {}
+//
+//
+// def test_home_endpoint(testapp):
+//     response = testapp.get("/")
+//     assert response.status_code == 200
+//
+//
+// def test_games_endpoint(testapp):
+//     response = testapp.get("/v1.0/games")
+//     assert response.status_code == 200
+//     assert "ids" in response.json
+//
+//
+// def test_agent_play_no_moves(testapp):
+//     game = testapp.post_json("/v1.0/games").json
+//     player1 = MockAgent(testapp, [], game["id"], 1)
+//     player2 = MockAgent(testapp, [], game["id"], 2)
+//     assert player1.AgentID != player2.AgentID
+//     assert player1.args.pop() == ()
+//     assert player1.kwargs.pop() == {}
+//     assert player1.past_end
+//     assert not player2.args
+//     assert not player2.kwargs
+//     assert not player2.past_end
+//
+//
+// def test_agent_play_through(testapp):
+//     player1_moves = [tuple(map(bytes, (
+//         (12, 6, 2, 10, 4, 2, 6, 12),
+//         (8, 8, 8, 8, 8, 8, 8, 8),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 9, 0, 0, 0),
+//         (9, 9, 9, 9, 0, 9, 9, 9),
+//         (13, 7, 3, 11, 5, 3, 7, 13)))), tuple(map(bytes, (
+//
+//         (12, 6, 2, 10, 4, 2, 6, 12),
+//         (8, 8, 8, 8, 8, 0, 8, 8),
+//         (0, 0, 0, 0, 0, 8, 0, 0),
+//         (0, 0, 0, 0, 0, 0, 0, 11),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 9, 0, 0, 0),
+//         (9, 9, 9, 9, 0, 9, 9, 9),
+//         (13, 7, 3, 0, 5, 3, 7, 13))))]
+//     player1_moves = [player1_moves[0]]
+//     player2_moves = [tuple(map(bytes, (
+//         (12, 6, 2, 4, 10, 2, 6, 12),
+//         (8, 8, 8, 0, 8, 8, 8, 8),
+//         (0, 0, 0, 8, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 9, 0, 0, 0, 0, 0),
+//         (9, 9, 0, 9, 9, 9, 9, 9),
+//         (13, 7, 3, 5, 11, 3, 7, 13)))), tuple(map(bytes, (
+//
+//         (12, 6, 2, 4, 0, 2, 6, 12),
+//         (8, 8, 8, 0, 8, 8, 8, 8),
+//         (0, 0, 0, 8, 0, 0, 0, 0),
+//         (0, 0, 0, 0, 0, 0, 0, 0),
+//         (10, 0, 0, 0, 0, 0, 0, 0),
+//         (0, 0, 9, 0, 0, 0, 0, 0),
+//         (9, 9, 0, 9, 9, 9, 9, 9),
+//         (13, 7, 3, 5, 11, 3, 7, 13))))]
+//     player2_moves = []
+//     game = testapp.post_json("/v1.0/games").json
+//     player1 = MockAgent(testapp, player1_moves, game["id"], 1)
+//     player2 = MockAgent(testapp, player2_moves, game["id"], 2)
+//     assert len(player1.args) == 1
+//     assert len(player2.args) == 1
+//     assert not player1.past_end
+//     assert player2.past_end

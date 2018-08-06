@@ -5,9 +5,8 @@ import (
 	"math"
 	"math/rand"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/jinzhu/gorm"
+	log "github.com/sirupsen/logrus"
 )
 
 // baseAgent agent.

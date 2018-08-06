@@ -1,13 +1,15 @@
-package main
+package nknight_test
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
+	"github.com/neuralknight/neuralknight/nknight/nknight"
 	"github.com/neuralknight/neuralknight/views"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	log "github.com/sirupsen/logrus"
 	. "gopkg.in/check.v1"
 )
 
@@ -21,18 +23,6 @@ type NKnightSuite struct {
 
 var _ = Suite(&NKnightSuite{})
 
-func (s *NKnightSuite) TestCmdLoop(c *C) {
-	defer func() {
-		switch err := recover().(type) {
-		case error:
-			log.Println(err.Error())
-		default:
-			break
-		}
-	}()
-	CmdLoop(s.endpoint)
-}
-
 func (s *NKnightSuite) TestMainEntry(c *C) {
 	defer func() {
 		switch err := recover().(type) {
@@ -42,7 +32,10 @@ func (s *NKnightSuite) TestMainEntry(c *C) {
 			break
 		}
 	}()
-	Main()
+	apiURL, err := url.Parse(s.endpoint)
+	c.Assert(err, Not(NotNil))
+	agent := nknight.MakeCLIAgent(*apiURL)
+	c.Assert(agent, NotNil)
 }
 
 func (s *NKnightSuite) SetUpSuite(c *C) {
