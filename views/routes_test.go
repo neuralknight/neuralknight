@@ -46,8 +46,21 @@ func (s *RoutesSuite) logError(res *http.Response) {
 	}
 }
 
+func (s RoutesSuite) makeURLString(input string) string {
+	srvURL, err := url.Parse(s.srv.URL)
+	if err != nil {
+		log.Panicln(err)
+	}
+	uriURL, err := url.Parse(input)
+	if err != nil {
+		log.Panicln(err)
+	}
+	uriURL = srvURL.ResolveReference(uriURL)
+	return uriURL.String()
+}
+
 func (s *RoutesSuite) generateGame(c *C) uuid.UUID {
-	res, err := s.client.Post(s.endpoint+"/api/v1.0/games", "text/json; charset=utf-8", nil)
+	res, err := s.client.Post(s.makeURLString("api/v1.0/games"), "text/json; charset=utf-8", nil)
 	c.Assert(err, Not(NotNil))
 	defer res.Body.Close()
 	c.Assert(res.StatusCode, Equals, 201)
@@ -63,7 +76,7 @@ func (s *RoutesSuite) generateGame(c *C) uuid.UUID {
 }
 
 func (s *RoutesSuite) addAgent(c *C, gameID uuid.UUID) uuid.UUID {
-	res, err := s.client.Post(s.endpoint+"/api/v1.0/agents/", "text/json; charset=utf-8", nil)
+	res, err := s.client.Post(s.makeURLString("api/v1.0/agents"), "text/json; charset=utf-8", nil)
 	c.Assert(err, Not(NotNil))
 	c.Assert(res.StatusCode, Equals, 400)
 	var message models.AgentCreatedMessage
@@ -71,7 +84,7 @@ func (s *RoutesSuite) addAgent(c *C, gameID uuid.UUID) uuid.UUID {
 }
 
 func (s *RoutesSuite) TestServeHTTPBadURL(c *C) {
-	res, err := s.client.Get(s.endpoint + "/foo")
+	res, err := s.client.Get(s.makeURLString("foo"))
 	c.Assert(err, Not(NotNil))
 	defer res.Body.Close()
 	c.Assert(res.StatusCode, Equals, 404)
@@ -85,14 +98,14 @@ func (s *RoutesSuite) TestServeHTTPIndex(c *C) {
 }
 
 func (s *RoutesSuite) TestServeHTTPNoModel(c *C) {
-	res, err := s.client.Get(s.endpoint + "/api/v1.0/")
+	res, err := s.client.Get(s.makeURLString("api/v1.0/"))
 	c.Assert(err, Not(NotNil))
 	defer res.Body.Close()
 	c.Assert(res.StatusCode, Equals, 404)
 }
 
 func (s *RoutesSuite) TestServeHTTPGetGames(c *C) {
-	res, err := s.client.Get(s.endpoint + "/api/v1.0/games")
+	res, err := s.client.Get(s.makeURLString("api/v1.0/games"))
 	c.Assert(err, Not(NotNil))
 	defer res.Body.Close()
 	c.Assert(res.StatusCode, Equals, 200)
@@ -106,7 +119,7 @@ func (s *RoutesSuite) TestServeHTTPGetGames(c *C) {
 
 func (s *RoutesSuite) TestServeHTTPPostGames(c *C) {
 	ID := s.generateGame(c)
-	res, err := s.client.Get(s.endpoint + "/api/v1.0/games/" + ID.String())
+	res, err := s.client.Get(s.makeURLString("api/v1.0/games/" + ID.String()))
 	c.Assert(err, Not(NotNil))
 	defer res.Body.Close()
 	c.Assert(res.StatusCode, Equals, 200)
@@ -120,7 +133,7 @@ func (s *RoutesSuite) TestServeHTTPPostGames(c *C) {
 }
 
 func (s *RoutesSuite) TestServeHTTPPutGames(c *C) {
-	req, err := http.NewRequest(http.MethodPut, s.endpoint+"/api/v1.0/games/", nil)
+	req, err := http.NewRequest(http.MethodPut, s.makeURLString("api/v1.0/games"), nil)
 	c.Assert(err, Not(NotNil))
 	res, err := s.client.Do(req)
 	c.Assert(err, Not(NotNil))
@@ -129,7 +142,7 @@ func (s *RoutesSuite) TestServeHTTPPutGames(c *C) {
 }
 
 func (s *RoutesSuite) TestServeHTTPDeleteGames(c *C) {
-	req, err := http.NewRequest(http.MethodDelete, s.endpoint+"/api/v1.0/games/", nil)
+	req, err := http.NewRequest(http.MethodDelete, s.makeURLString("api/v1.0/games"), nil)
 	c.Assert(err, Not(NotNil))
 	res, err := s.client.Do(req)
 	c.Assert(err, Not(NotNil))
@@ -138,7 +151,7 @@ func (s *RoutesSuite) TestServeHTTPDeleteGames(c *C) {
 }
 
 func (s *RoutesSuite) TestServeHTTPGetAgents(c *C) {
-	res, err := s.client.Get(s.endpoint + "/api/v1.0/agents/")
+	res, err := s.client.Get(s.makeURLString("api/v1.0/agents"))
 	c.Assert(err, Not(NotNil))
 	defer res.Body.Close()
 	c.Assert(res.StatusCode, Equals, 404)
@@ -148,19 +161,19 @@ func (s *RoutesSuite) TestServeHTTPPostAgents(c *C) {
 	message := models.AgentCreateMessage{}
 	message.User = true
 	gameID := s.generateGame(c)
-	gameURL, err := url.Parse(s.endpoint + "/api/v1.0/games/" + gameID.String())
+	gameURL, err := url.Parse(s.makeURLString("api/v1.0/games/" + gameID.String()))
 	c.Assert(err, Not(NotNil))
 	message.GameURL = *gameURL
 	buffer, err := json.Marshal(message)
 	c.Assert(err, Not(NotNil))
-	res, err := s.client.Post(s.endpoint+"/api/v1.0/agents/", "text/json; charset=utf-8", bytes.NewReader(buffer))
+	res, err := s.client.Post(s.makeURLString("api/v1.0/agents"), "text/json; charset=utf-8", bytes.NewReader(buffer))
 	c.Assert(err, Not(NotNil))
 	s.logError(res)
 	c.Assert(res.StatusCode, Equals, 201)
 }
 
 func (s *RoutesSuite) TestServeHTTPPutAgents(c *C) {
-	req, err := http.NewRequest(http.MethodPut, s.endpoint+"/api/v1.0/agents/", nil)
+	req, err := http.NewRequest(http.MethodPut, s.makeURLString("api/v1.0/agents"), nil)
 	c.Assert(err, Not(NotNil))
 	res, err := s.client.Do(req)
 	c.Assert(err, Not(NotNil))
@@ -169,7 +182,7 @@ func (s *RoutesSuite) TestServeHTTPPutAgents(c *C) {
 }
 
 func (s *RoutesSuite) TestServeHTTPDeleteAgents(c *C) {
-	req, err := http.NewRequest(http.MethodDelete, s.endpoint+"/api/v1.0/agents/", nil)
+	req, err := http.NewRequest(http.MethodDelete, s.makeURLString("api/v1.0/agents"), nil)
 	c.Assert(err, Not(NotNil))
 	res, err := s.client.Do(req)
 	c.Assert(err, Not(NotNil))

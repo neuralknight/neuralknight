@@ -47,10 +47,6 @@ func (f Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	if r.Method != http.MethodGet && len(buffer) == 0 {
-		log.Infoln("Empty body: ", r.Method, r.RequestURI)
-	}
-	log.Infoln("Request body: ", string(buffer))
 	reader := bytes.NewReader(buffer)
 	var message interface{}
 	if routerV1.MatchString(r.URL.Path) {
