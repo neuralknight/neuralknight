@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/neuralknight/neuralknight/views"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/neuralknight/neuralknight/views"
 	log "github.com/sirupsen/logrus"
 	. "gopkg.in/check.v1"
 )
