@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"testing"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/neuralknight/neuralknight/views"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	. "gopkg.in/check.v1"

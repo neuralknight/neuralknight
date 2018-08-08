@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"testing"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/neuralknight/neuralknight/nknight/nknight"
 	"github.com/neuralknight/neuralknight/views"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	. "gopkg.in/check.v1"
 )
 
