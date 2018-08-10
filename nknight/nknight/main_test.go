@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/neuralknight/neuralknight/nknight/nknight"
 	"github.com/neuralknight/neuralknight/views"
@@ -46,7 +47,12 @@ func (s *NKnightSuite) SetUpSuite(c *C) {
 
 func (s *NKnightSuite) SetUpTest(c *C) {}
 
-func (s *NKnightSuite) TearDownTest(c *C) {}
+func (s *NKnightSuite) TearDownTest(c *C) {
+	db, _ := gorm.Open("sqlite3", "chess.db")
+	db = db.Begin()
+	defer db.Commit()
+	db.DropTableIfExists("game_models", "agent_models")
+}
 
 func (s *NKnightSuite) TearDownSuite(c *C) {
 	s.srv.Close()
