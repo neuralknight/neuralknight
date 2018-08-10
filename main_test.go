@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	log "github.com/sirupsen/logrus"
 	. "gopkg.in/check.v1"
@@ -49,4 +50,11 @@ func (s *NKnightSuite) TestListenAndServe(c *C) {
 func (s *NKnightSuite) TestMainEntry(c *C) {
 	go main()
 	<-time.After(1 * time.Second)
+}
+
+func (s *NKnightSuite) TearDownTest(c *C) {
+	db, _ := gorm.Open("sqlite3", "chess.db")
+	db = db.Begin()
+	defer db.Commit()
+	db.DropTableIfExists("game_models", "agent_models")
 }

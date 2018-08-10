@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/neuralknight/neuralknight/models"
 	"github.com/neuralknight/neuralknight/views"
@@ -114,6 +115,7 @@ func (s *RoutesSuite) TestServeHTTPGetGames(c *C) {
 	var message models.BoardStatesMessage
 	err = json.Unmarshal(buffer, &message)
 	c.Assert(err, Not(NotNil))
+	c.Assert(len(message.Games), Equals, 0)
 }
 
 func (s *RoutesSuite) TestServeHTTPPostGames(c *C) {
@@ -207,7 +209,12 @@ func (s *RoutesSuite) SetUpSuite(c *C) {
 
 func (s *RoutesSuite) SetUpTest(c *C) {}
 
-func (s *RoutesSuite) TearDownTest(c *C) {}
+func (s *RoutesSuite) TearDownTest(c *C) {
+	db, _ := gorm.Open("sqlite3", "chess.db")
+	db = db.Begin()
+	defer db.Commit()
+	db.DropTableIfExists("game_models", "agent_models")
+}
 
 func (s *RoutesSuite) TearDownSuite(c *C) {
 	s.srv.Close()
