@@ -23,7 +23,7 @@ import (
 	"os/signal"
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"github.com/neuralknight/neuralknight/views"
+	"github.com/neuralknight/backend-views"
 	log "github.com/sirupsen/logrus"
 )
 
