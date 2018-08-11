@@ -150,6 +150,9 @@ func GetGames(decoder *json.Decoder) BoardStatesMessage {
 		}
 		games = append(games, game.ID)
 	}
+	if err := rows.Err(); err != nil {
+		log.Panicln("Error iterating rows", err)
+	}
 	return BoardStatesMessage{games}
 }
 
