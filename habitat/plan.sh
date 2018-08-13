@@ -1,5 +1,5 @@
-pkg_name=neuralknight
-pkg_origin=grandquista
-pkg_version="0.1.0"
-pkg_scaffolding="core/scaffolding-go"
-
+#!/bin/bash
+export pkg_name=neuralknight
+export pkg_origin=grandquista
+export pkg_version="0.1.0"
+export pkg_scaffolding="core/scaffolding-go"
