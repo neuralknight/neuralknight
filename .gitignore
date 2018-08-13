@@ -12,3 +12,4 @@
 *.out
 
 chess.db
+results/
