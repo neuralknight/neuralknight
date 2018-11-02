@@ -16,7 +16,7 @@ require (
 	github.com/neuralknight/backend-models v0.0.0-20180901191801-14d0efddf8ab // indirect
 	github.com/neuralknight/backend-views v0.0.0-20180819214234-a7d12df94e3b
 	github.com/satori/go.uuid v1.2.0 // indirect
-	github.com/sirupsen/logrus v1.1.0
+	github.com/sirupsen/logrus v1.2.0
 	google.golang.org/appengine v1.2.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )
