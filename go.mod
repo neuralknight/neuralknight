@@ -11,6 +11,6 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0 // indirect
 	github.com/neuralknight/backend-views v0.0.0-20181114155622-6c6ad2f9cef7
-	github.com/sirupsen/logrus v1.2.0
+	github.com/sirupsen/logrus v1.3.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )
