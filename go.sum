@@ -2,6 +2,7 @@ cloud.google.com/go v0.28.0 h1:KZ/88LWSw8NxMkjdQyX7LQSGR9PkHr4PaVuNm8zgFq0=
 cloud.google.com/go v0.28.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.33.0 h1:1kNZapR5iXMPsPEca6Rqg+EN4/8/ZukNjMdwNQEllWk=
 cloud.google.com/go v0.33.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+cloud.google.com/go v0.34.0 h1:eOI3/cP2VTU6uZLDYAoic+eyzzB9YyGmJ7eIjl8rOPg=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -9,6 +10,8 @@ github.com/denisenkom/go-mssqldb v0.0.0-20180901172138-1eb28afdf9b6 h1:BZGp1dbKF
 github.com/denisenkom/go-mssqldb v0.0.0-20180901172138-1eb28afdf9b6/go.mod h1:xN/JuLBIz4bjkxNmByTiV1IbhfnYb6oo99phBn4Eqhc=
 github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f h1:WH0w/R4Yoey+04HhFxqZ6VX6I0d7RMyw5aXQ9UTvQPs=
 github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f/go.mod h1:xN/JuLBIz4bjkxNmByTiV1IbhfnYb6oo99phBn4Eqhc=
+github.com/denisenkom/go-mssqldb v0.0.0-20190121005146-b04fd42d9952 h1:b5OnbZD49x9g+/FcYbs/vukEt8C/jUbGhCJ3uduQmu8=
+github.com/denisenkom/go-mssqldb v0.0.0-20190121005146-b04fd42d9952/go.mod h1:xN/JuLBIz4bjkxNmByTiV1IbhfnYb6oo99phBn4Eqhc=
 github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 h1:Yzb9+7DPaBjB8zlTR87/ElzFsnQfuHnVUVqpZZIcV5Y=
 github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5/go.mod h1:a2zkGnVExMxdzMo3M0Hi/3sEU+cWnZpSni0O6/Yb/P0=
 github.com/go-sql-driver/mysql v1.4.0 h1:7LxgVwFb2hIQtMm87NdgAVfXjnt4OePseqT1tKx+opk=
@@ -59,8 +62,8 @@ github.com/neuralknight/backend-views v0.0.0-20181025052249-fc8979d1f5f5 h1:RkvX
 github.com/neuralknight/backend-views v0.0.0-20181025052249-fc8979d1f5f5/go.mod h1:4Ai5p34WjvSqxfTpdBke5cI2j61bPnE7vWRcio7P2XE=
 github.com/neuralknight/backend-views v0.0.0-20181114155622-6c6ad2f9cef7 h1:U+URQzEQ9xdTmaJhUXl1jamzse+7JUnRUKBHV9ACcIU=
 github.com/neuralknight/backend-views v0.0.0-20181114155622-6c6ad2f9cef7/go.mod h1:cQtH32ll9XQNVCifWcuSogAKzSzsY+KbBM541/rCZ4Y=
-github.com/neuralknight/backend-views v0.0.0-20181210000332-403e75ba7b3d h1:qh3jGZ6mmR3oh2ORQwwxHtuOeS8YefZ9DVXy3rkSsRs=
-github.com/neuralknight/backend-views v0.0.0-20181210000332-403e75ba7b3d/go.mod h1:mczhYrF+30UsyB/5X3za/KKnprrc/V+A2MxoFbboals=
+github.com/neuralknight/backend-views v0.0.0-20190112161726-b5f89d54f3a7 h1:snFMmtzMKL6GLLWG6blbnOnr1CuOoi5bcArX59uvG7s=
+github.com/neuralknight/backend-views v0.0.0-20190112161726-b5f89d54f3a7/go.mod h1:/85J7gWz8XZ1sls7Gg35Y9DvbU8DP+lX6ZwEKbZwc4Q=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
