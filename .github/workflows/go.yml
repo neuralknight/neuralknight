@@ -1,0 +1,16 @@
+name: Go
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3.1.0
+    - uses: actions/setup-go@v3.3.1
+      with:
+        go-version: 1.19
+    - run: go vet -v ./...
+    - run: go build -v ./...
+    - run: go test -v ./...
+
+on:
+  push: {}
